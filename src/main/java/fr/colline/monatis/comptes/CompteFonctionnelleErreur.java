@@ -11,7 +11,13 @@ public enum CompteFonctionnelleErreur implements MonatisErreur {
 	 */
 	SUPPRESSION_COMPTE_AVEC_OPERATION(
 			"Suppression du compte d'ID %s : ce compte ne peut être supprimé car il est associé à %d opérations"),
-	
+
+	/**
+			"Suppression du compte d'ID %s : ce compte ne peut être supprimé car il est associé à %d évaluations"),
+	 */
+	SUPPRESSION_COMPTE_AVEC_EVALUATION(
+			"Suppression du compte d'ID %s : ce compte ne peut être supprimé car il est associé à %d évaluations"),
+	 
 	/**
 			"Un compte d'identifiant '%s' existe déjà mais ce n'est pas un compte technique (c'est un compte de type '%s')"),
 	 */

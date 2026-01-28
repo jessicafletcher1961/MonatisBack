@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import fr.colline.monatis.comptes.controller.CompteResponseDto;
 import fr.colline.monatis.comptes.model.CompteInterne;
 import fr.colline.monatis.comptes.model.TypeCompte;
+import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.comptes.service.CompteInterneService;
 import fr.colline.monatis.erreurs.ControllerVerificateurService;
 import fr.colline.monatis.exceptions.ControllerException;
@@ -47,7 +48,7 @@ public class CompteInterneController {
 		Sort tri = Sort.by("identifiant");
 		List<CompteInterne> liste = compteInterneService.rechercherTous(tri);
 		for ( CompteInterne compteInterne : liste ) {
-			resultat.add(CompteInterneResponseDtoMapper.mapperModelToSimpleResponseDto(compteInterne));
+			resultat.add(CompteInterneResponseDtoMapper.mapperModelToBasicResponseDto(compteInterne));
 		}
 		return resultat;
 	}
@@ -70,7 +71,7 @@ public class CompteInterneController {
 		CompteInterne compteInterne = new CompteInterne();
 		compteInterne = mapperCreationRequestDtoToModel(dto, compteInterne);
 		compteInterne = compteInterneService.creerCompte(compteInterne);
-		return CompteInterneResponseDtoMapper.mapperModelToDetailedResponseDto(compteInterne);
+		return CompteInterneResponseDtoMapper.mapperModelToSimpleResponseDto(compteInterne);
 	}
 
 	@PutMapping("/mod/{identifiant}")
@@ -84,7 +85,7 @@ public class CompteInterneController {
 				OBLIGATOIRE);
 		compteInterne = mapperModificationRequestDtoToModel(dto, compteInterne);
 		compteInterne = compteInterneService.modifierCompte(compteInterne);
-		return CompteInterneResponseDtoMapper.mapperModelToDetailedResponseDto(compteInterne);
+		return CompteInterneResponseDtoMapper.mapperModelToSimpleResponseDto(compteInterne);
 	}
 
 	@DeleteMapping("/del/{identifiant}")
@@ -99,11 +100,24 @@ public class CompteInterneController {
 		compteInterneService.supprimerCompte(compteInterne);
 	}
 
+	@GetMapping("/{codeTypeFonctionnement}")
+	public List<CompteResponseDto> getAllCompteParTypeFonctionnement(@PathVariable String codeTypeFonctionnement) throws ServiceException, ControllerException {
+
+		TypeFonctionnement typeFonctionnement = verificateur.verifierTypeFonctionnement(codeTypeFonctionnement, OBLIGATOIRE, null);
+		
+		return compteInterneService.rechercherParTypeFonctionnement(typeFonctionnement)
+				.stream()
+				.sorted((c1,c2)->{return c1.getIdentifiant().compareTo(c2.getIdentifiant());})
+				.map((c)->{return CompteInterneResponseDtoMapper.mapperModelToBasicResponseDto(c);})
+				.toList();
+	}
+
 	private CompteInterne mapperCreationRequestDtoToModel(CompteInterneRequestDto dto, CompteInterne compteInterne) throws ControllerException, ServiceException {
 		
 		compteInterne.setIdentifiant(verificateur.verifierIdentifiantValideEtUnique(dto.identifiant, compteInterne.getId(), OBLIGATOIRE));
 		compteInterne.setLibelle(verificateur.verifierLibelle(dto.libelle, FACULTATIF, null));
 		
+		compteInterne.setDateCloture(verificateur.verifierDate(dto.dateCloture, FACULTATIF, null));
 		compteInterne.setTypeFonctionnement(verificateur.verifierTypeFonctionnement(dto.codeTypeFonctionnement, OBLIGATOIRE, null));
 		compteInterne.setDateSoldeInitial(verificateur.verifierDate(dto.dateSoldeInitial, FACULTATIF, LocalDate.now()));
 		compteInterne.setMontantSoldeInitialEnCentimes(verificateur.verifierMontantEnCentimes(dto.montantSoldeInitialEnCentimes, FACULTATIF, 0L));
@@ -124,6 +138,7 @@ public class CompteInterneController {
 		if ( dto.identifiant != null ) compteInterne.setIdentifiant(verificateur.verifierIdentifiantValideEtUnique(dto.identifiant, compteInterne.getId(), OBLIGATOIRE));
 		if ( dto.libelle  != null ) compteInterne.setLibelle(verificateur.verifierLibelle(dto.libelle, FACULTATIF, null));
 		
+		if ( dto.dateCloture != null ) compteInterne.setDateCloture(verificateur.verifierDate(dto.dateCloture, FACULTATIF, null));
 		if ( dto.codeTypeFonctionnement != null ) compteInterne.setTypeFonctionnement(verificateur.verifierTypeFonctionnement(dto.codeTypeFonctionnement, OBLIGATOIRE, null));
 		if ( dto.dateSoldeInitial != null ) compteInterne.setDateSoldeInitial(verificateur.verifierDate(dto.dateSoldeInitial, FACULTATIF, LocalDate.now()));
 		if ( dto.montantSoldeInitialEnCentimes != null ) compteInterne.setMontantSoldeInitialEnCentimes(verificateur.verifierMontantEnCentimes(dto.montantSoldeInitialEnCentimes, FACULTATIF, 0L));

@@ -11,20 +11,20 @@ public class ReleveCompte {
 	private Compte compte;
 	
 	private LocalDate dateDebutReleve;
+
+	private LocalDate dateFinReleve;
 	
 	private Long montantSoldeDebutReleveEnCentimes;
-	
-	private List<Operation> operationsRecette;
-	
-	private List<Operation> operationsDepense;
-	
-	private LocalDate dateFinReleve;
 	
 	private Long montantSoldeFinReleveEnCentimes;
 
 	private Long montantTotalOperationsRecetteEnCentimes;
 	
 	private Long montantTotalOperationsDepenseEnCentimes;
+	
+	private List<Operation> operationsRecette;
+	
+	private List<Operation> operationsDepense;
 
 	public Compte getCompte() {
 		return compte;
@@ -40,6 +40,14 @@ public class ReleveCompte {
 
 	public void setDateDebutReleve(LocalDate dateDebutReleve) {
 		this.dateDebutReleve = dateDebutReleve;
+	}
+
+	public LocalDate getDateFinReleve() {
+		return dateFinReleve;
+	}
+
+	public void setDateFinReleve(LocalDate dateFinReleve) {
+		this.dateFinReleve = dateFinReleve;
 	}
 
 	public Long getMontantSoldeDebutReleveEnCentimes() {
@@ -66,14 +74,6 @@ public class ReleveCompte {
 		this.operationsDepense = operationsDepense;
 	}
 
-	public LocalDate getDateFinReleve() {
-		return dateFinReleve;
-	}
-
-	public void setDateFinReleve(LocalDate dateFinReleve) {
-		this.dateFinReleve = dateFinReleve;
-	}
-
 	public Long getMontantSoldeFinReleveEnCentimes() {
 		return montantSoldeFinReleveEnCentimes;
 	}
@@ -96,5 +96,5 @@ public class ReleveCompte {
 
 	public void setMontantTotalOperationsDepenseEnCentimes(Long montantTotalOperationsDepenseEnCentimes) {
 		this.montantTotalOperationsDepenseEnCentimes = montantTotalOperationsDepenseEnCentimes;
-	}	
+	}
 }

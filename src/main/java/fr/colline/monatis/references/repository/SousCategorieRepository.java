@@ -10,7 +10,7 @@ import fr.colline.monatis.references.model.SousCategorie;
 public interface SousCategorieRepository extends ReferenceRepository<SousCategorie> {
 
 	@Query(nativeQuery = true,
-			value = "select count(1) from public.operation_detail where sous_categorie_id = :id")
-	public int compterOperationDetailParSousCategorieId(@Param("id") Long sousCategorieId);
+			value = "select count(1) from public.operation_ligne where sous_categorie_id = :id")
+	public int compterOperationLigneParSousCategorieId(@Param("id") Long sousCategorieId);
 
 }

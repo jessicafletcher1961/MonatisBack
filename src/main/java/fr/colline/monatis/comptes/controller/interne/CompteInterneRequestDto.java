@@ -10,6 +10,7 @@ public class CompteInterneRequestDto extends CompteRequestDto implements Seriali
 
 	private static final long serialVersionUID = 6039735257697945819L;
 	
+	public String dateCloture;
 	public String codeTypeFonctionnement;
 	public LocalDate dateSoldeInitial;
 	public Long montantSoldeInitialEnCentimes;

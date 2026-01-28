@@ -1,6 +1,8 @@
 package fr.colline.monatis.rapports.controller;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
@@ -8,15 +10,19 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
 
 import fr.colline.monatis.budgets.controller.BudgetResponseDtoMapper;
+import fr.colline.monatis.comptes.controller.interne.CompteInterneResponseDtoMapper;
 import fr.colline.monatis.comptes.model.Compte;
 import fr.colline.monatis.comptes.model.CompteExterne;
 import fr.colline.monatis.comptes.model.CompteInterne;
 import fr.colline.monatis.comptes.model.CompteTechnique;
+import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.erreurs.GeneriqueTechniqueErreur;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.operations.model.Operation;
 import fr.colline.monatis.rapports.RapportControleErreur;
 import fr.colline.monatis.rapports.controller.budgets.EtatAvancementBudgetResponseDto;
+import fr.colline.monatis.rapports.controller.liste_resume_comptes_interne.ListeResumeCompteInterneParTypeFonctionnementResponseDto;
+import fr.colline.monatis.rapports.controller.liste_resume_comptes_interne.ResumeCompteInterneResponseDto;
 import fr.colline.monatis.rapports.controller.plus_moins_values.EtatPlusMoinsValueResponseDto;
 import fr.colline.monatis.rapports.controller.plus_moins_values.HistoriquePlusMoinsValueResponseDto;
 import fr.colline.monatis.rapports.controller.plus_moins_values.PlusMoinsValueResponseDto;
@@ -30,6 +36,7 @@ import fr.colline.monatis.rapports.model.EtatPlusMoinsValues;
 import fr.colline.monatis.rapports.model.HistoriquePlusMoinsValues;
 import fr.colline.monatis.rapports.model.PlusMoinsValue;
 import fr.colline.monatis.rapports.model.ReleveCompte;
+import fr.colline.monatis.rapports.model.ResumeCompteInterne;
 import fr.colline.monatis.references.controller.souscategorie.SousCategorieResponseDtoMapper;
 import fr.colline.monatis.references.model.Banque;
 import fr.colline.monatis.references.model.Titulaire;
@@ -117,6 +124,21 @@ public class CompteRapportModelToResponseDtoMapper {
 		}
 	}
 
+	public static ListeResumeCompteInterneParTypeFonctionnementResponseDto mapperResumeCompteInterne(TypeFonctionnement typeFonctionnement, List<ResumeCompteInterne> resumes) {
+		
+		ListeResumeCompteInterneParTypeFonctionnementResponseDto dto = new ListeResumeCompteInterneParTypeFonctionnementResponseDto();
+		
+		dto.typeFonctionnement = CompteInterneResponseDtoMapper.mapperModelToResponseDto(typeFonctionnement);
+		
+		dto.comptesInternes = new ArrayList<>();
+		for ( ResumeCompteInterne resume : resumes ) {
+			dto.comptesInternes.add(mapperResumeCompteInterne(resume));
+		}
+		Collections.sort(dto.comptesInternes, (c1,c2) -> {return c1.compteInterne.identifiant.compareTo(c2.compteInterne.identifiant);});
+		
+		return dto;
+	}
+	
 	public static HistoriquePlusMoinsValueResponseDto mapperHistoriquePlusMoinsValue(HistoriquePlusMoinsValues historique) throws ControllerException {
 
 		HistoriquePlusMoinsValueResponseDto dto = new HistoriquePlusMoinsValueResponseDto();
@@ -125,7 +147,7 @@ public class CompteRapportModelToResponseDtoMapper {
 
 		dto.plusMoinsValues = new ArrayList<>();
 		for ( PlusMoinsValue plusMoinsValue : historique.getPlusMoinsValues() ) {
-			dto.plusMoinsValues.add(mapperPlusMoinsValueResponseDto(plusMoinsValue));
+			dto.plusMoinsValues.add(mapperPlusMoinsValue(plusMoinsValue));
 		}
 
 		return dto;
@@ -137,11 +159,11 @@ public class CompteRapportModelToResponseDtoMapper {
 		EtatPlusMoinsValueResponseDto dto = new EtatPlusMoinsValueResponseDto();
 
 		dto.enteteCompte = mapperEnteteCompte(etat.getCompteInterne());
-		dto.plusMoinsValue = CompteRapportModelToResponseDtoMapper.mapperPlusMoinsValueResponseDto(etat.getPlusMoinsValue());
+		dto.plusMoinsValue = CompteRapportModelToResponseDtoMapper.mapperPlusMoinsValue(etat.getPlusMoinsValue());
 
 		return dto;
 	}
-
+	
 	public static EtatAvancementBudgetResponseDto mapperEtatAvancementBudget(
 			EtatAvancementBudget etatAvancement) {
 
@@ -191,6 +213,16 @@ public class CompteRapportModelToResponseDtoMapper {
 		dto.libelleAutreCompte = operation.getCompteRecette().getLibelle();
 		dto.codeTypeAutreCompte = operation.getCompteRecette().getTypeCompte().getCode();
 
+		return dto;
+	}
+
+	private static ResumeCompteInterneResponseDto mapperResumeCompteInterne(ResumeCompteInterne resumeCompteInterne) {
+		
+		ResumeCompteInterneResponseDto dto = new ResumeCompteInterneResponseDto();
+		
+		dto.compteInterne = CompteInterneResponseDtoMapper.mapperModelToBasicResponseDto(resumeCompteInterne.getCompteInterne());
+		dto.soldeEnEuros = (float) (resumeCompteInterne.getSolde() / 100.00);
+		
 		return dto;
 	}
 
@@ -246,7 +278,7 @@ public class CompteRapportModelToResponseDtoMapper {
 		}
 	}
 
-	private static PlusMoinsValueResponseDto mapperPlusMoinsValueResponseDto(PlusMoinsValue plusMoinsValue) {
+	private static PlusMoinsValueResponseDto mapperPlusMoinsValue(PlusMoinsValue plusMoinsValue) {
 
 		PlusMoinsValueResponseDto dto = new PlusMoinsValueResponseDto();
 
@@ -254,9 +286,9 @@ public class CompteRapportModelToResponseDtoMapper {
 		dto.dateFinEvaluation = plusMoinsValue.getDateFinEvaluation();
 		dto.montantSoldeInitialEnEuros = (float) (plusMoinsValue.getMontantSoldeInitialEnCentimes() / 100.00);
 		dto.montantSoldeFinalEnEuros = (float) (plusMoinsValue.getMontantSoldeFinalEnCentimes() / 100.00);
-		dto.montantMouvementsEnEuros = (float) (plusMoinsValue.getMontantMouvementsEnCentimes() / 100.00);
-		dto.montantRemunerationEnEuros = (float) (plusMoinsValue.getMontantsGainsEtFraisEnCentimes() / 100.00);
-		dto.montantReevaluationEnEuros = (float) (plusMoinsValue.getMontantReevaluationEnCentimes() / 100.00);
+		dto.montantReelEnEuros = (float) (plusMoinsValue.getMontantReelEnCentimes() / 100.00);
+		dto.montantTechniqueEnEuros = (float) (plusMoinsValue.getMontantTechniqueEnCentimes() / 100.00);
+		dto.montantPlusMoinsValueEnEuros = (float) (plusMoinsValue.getMontantPlusMoinsValueEnCentimes() / 100.00);
 		dto.montantPlusMoinsValueEnPourcentage = plusMoinsValue.getMontantPlusMoinsValueEnPourcentage();
 
 		return dto;

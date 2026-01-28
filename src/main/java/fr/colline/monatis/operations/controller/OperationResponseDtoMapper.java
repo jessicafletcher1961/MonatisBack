@@ -10,6 +10,7 @@ import fr.colline.monatis.operations.controller.response.OperationDetailedRespon
 import fr.colline.monatis.operations.controller.response.OperationLigneBasicResponseDto;
 import fr.colline.monatis.operations.controller.response.OperationLigneDetailedResponseDto;
 import fr.colline.monatis.operations.controller.response.OperationLigneSimpleResponseDto;
+import fr.colline.monatis.operations.controller.response.OperationResponseDto;
 import fr.colline.monatis.operations.controller.response.OperationSimpleResponseDto;
 import fr.colline.monatis.operations.model.Operation;
 import fr.colline.monatis.operations.model.OperationLigne;
@@ -19,7 +20,7 @@ import fr.colline.monatis.references.model.Beneficiaire;
 
 public class OperationResponseDtoMapper {
 
-	public static OperationBasicResponseDto mapperModelToBasicResponseDto(Operation operation) {
+	public static OperationResponseDto mapperModelToBasicResponseDto(Operation operation) {
 
 		OperationBasicResponseDto dto = new OperationBasicResponseDto();
 		
@@ -30,6 +31,7 @@ public class OperationResponseDtoMapper {
 		dto.libelle = operation.getLibelle();
 		dto.identifiantCompteDepense = operation.getCompteDepense().getIdentifiant();
 		dto.identifiantCompteRecette = operation.getCompteRecette().getIdentifiant();
+		dto.pointee = operation.isPointee();
 		
 		dto.lignes = new ArrayList<>();
 		if ( operation.getLignes() != null ) {
@@ -69,7 +71,7 @@ public class OperationResponseDtoMapper {
 		return dto;
 	}
 
-	public static OperationSimpleResponseDto mapperModelToSimpleResponseDto(Operation operation) throws ControllerException {
+	public static OperationResponseDto mapperModelToSimpleResponseDto(Operation operation) throws ControllerException {
 
 		OperationSimpleResponseDto dto = new OperationSimpleResponseDto();
 		
@@ -80,6 +82,7 @@ public class OperationResponseDtoMapper {
 		dto.libelle = operation.getLibelle();
 		dto.compteDepense = CompteResponseDtoMapper.mapperModelToBasicResponseDto(operation.getCompteDepense());
 		dto.compteRecette = CompteResponseDtoMapper.mapperModelToBasicResponseDto(operation.getCompteRecette());
+		dto.pointee = operation.isPointee();
 		
 		dto.lignes = new ArrayList<>();
 		if ( operation.getLignes() != null ) {
@@ -119,7 +122,7 @@ public class OperationResponseDtoMapper {
 		return dto;
 	}
 
-	public static OperationDetailedResponseDto mapperModelToDetailedResponseDto(Operation operation) throws ControllerException {
+	public static OperationResponseDto mapperModelToDetailedResponseDto(Operation operation) throws ControllerException {
 
 		OperationDetailedResponseDto dto = new OperationDetailedResponseDto();
 		
@@ -130,6 +133,7 @@ public class OperationResponseDtoMapper {
 		dto.libelle = operation.getLibelle();
 		dto.compteDepense = CompteResponseDtoMapper.mapperModelToSimpleResponseDto(operation.getCompteDepense());
 		dto.compteRecette = CompteResponseDtoMapper.mapperModelToSimpleResponseDto(operation.getCompteRecette());
+		dto.pointee = operation.isPointee();
 		
 		dto.lignes = new ArrayList<>();
 		if ( operation.getLignes() != null ) {

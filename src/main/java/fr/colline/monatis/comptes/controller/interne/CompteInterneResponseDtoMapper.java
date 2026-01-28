@@ -3,6 +3,7 @@ package fr.colline.monatis.comptes.controller.interne;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import fr.colline.monatis.comptes.controller.CompteResponseDto;
 import fr.colline.monatis.comptes.model.CompteInterne;
 import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.references.controller.banque.BanqueResponseDtoMapper;
@@ -11,13 +12,14 @@ import fr.colline.monatis.references.model.Titulaire;
 
 public class CompteInterneResponseDtoMapper {
 
-	public static CompteInterneBasicResponseDto mapperModelToBasicResponseDto(CompteInterne compteInterne) {
+	public static CompteResponseDto mapperModelToBasicResponseDto(CompteInterne compteInterne) {
 
 		CompteInterneBasicResponseDto dto = new CompteInterneBasicResponseDto();
 		
 		dto.identifiant = compteInterne.getIdentifiant();
 		dto.libelle = compteInterne.getLibelle();
 		
+		dto.dateCloture = compteInterne.getDateCloture();
 		dto.codeTypeFonctionnement = compteInterne.getTypeFonctionnement().getCode();
 		dto.dateSoldeInitial = compteInterne.getDateSoldeInitial();
 		dto.montantSoldeInitialEnCentimes = compteInterne.getMontantSoldeInitialEnCentimes();
@@ -37,14 +39,15 @@ public class CompteInterneResponseDtoMapper {
 		return dto;
 	}
 
-	public static CompteInterneSimpleResponseDto mapperModelToSimpleResponseDto(CompteInterne compteInterne) {
+	public static CompteResponseDto mapperModelToSimpleResponseDto(CompteInterne compteInterne) {
 
 		CompteInterneSimpleResponseDto dto = new CompteInterneSimpleResponseDto();
 		
 		dto.identifiant = compteInterne.getIdentifiant();
 		dto.libelle = compteInterne.getLibelle();
 
-		dto.typeFonctionnement = CompteInterneResponseDtoMapper.mapperModelToResponseDto(compteInterne.getTypeFonctionnement());
+		dto.dateCloture = compteInterne.getDateCloture();
+		dto.typeFonctionnement = mapperModelToResponseDto(compteInterne.getTypeFonctionnement());
 		dto.dateSoldeInitial = compteInterne.getDateSoldeInitial();
 		dto.montantSoldeInitialEnCentimes = compteInterne.getMontantSoldeInitialEnCentimes();
 		if ( compteInterne.getBanque() != null ) {
@@ -63,13 +66,14 @@ public class CompteInterneResponseDtoMapper {
 		return dto;
 	}
 
-	public static CompteInterneDetailedResponseDto mapperModelToDetailedResponseDto(CompteInterne compteInterne) {
+	public static CompteResponseDto mapperModelToDetailedResponseDto(CompteInterne compteInterne) {
 
 		CompteInterneDetailedResponseDto dto = new CompteInterneDetailedResponseDto();
 		
 		dto.identifiant = compteInterne.getIdentifiant();
 		dto.libelle = compteInterne.getLibelle();
 
+		dto.dateCloture = compteInterne.getDateCloture();
 		dto.typeFonctionnement = mapperModelToResponseDto(compteInterne.getTypeFonctionnement());
 		dto.dateSoldeInitial = compteInterne.getDateSoldeInitial();
 		dto.montantSoldeInitialEnCentimes = compteInterne.getMontantSoldeInitialEnCentimes();
@@ -89,7 +93,7 @@ public class CompteInterneResponseDtoMapper {
 		return dto;
 	}
 
-	private static TypeFonctionnementDto mapperModelToResponseDto(TypeFonctionnement typeFonctionnement) {
+	public static TypeFonctionnementDto mapperModelToResponseDto(TypeFonctionnement typeFonctionnement) {
 		
 		TypeFonctionnementDto dto = new TypeFonctionnementDto();
 		

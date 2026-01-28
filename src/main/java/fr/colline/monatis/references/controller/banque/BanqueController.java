@@ -43,7 +43,7 @@ public class BanqueController {
 		Sort tri = Sort.by("nom");
 		List<Banque> liste = banqueService.rechercherTous(tri);
 		for ( Banque banque : liste ) {
-			resultat.add(BanqueResponseDtoMapper.mapperModelToSimpleResponseDto(banque));
+			resultat.add(BanqueResponseDtoMapper.mapperModelToBasicResponseDto(banque));
 		}
 		return resultat;
 	}
@@ -61,7 +61,7 @@ public class BanqueController {
 		Banque banque = new Banque();
 		banque = mapperCreationRequestDtoToModel(dto, banque);
 		banque = banqueService.creerReference(banque);
-		return BanqueResponseDtoMapper.mapperModelToDetailedResponseDto(banque);
+		return BanqueResponseDtoMapper.mapperModelToSimpleResponseDto(banque);
 	}
 
 	@PutMapping("/mod/{nom}")
@@ -72,7 +72,7 @@ public class BanqueController {
 		Banque banque = verificateur.verifierBanque(nom, OBLIGATOIRE);
 		banque = mapperModificationRequestDtoToModel(dto, banque);
 		banque = banqueService.modifierReference(banque);
-		return BanqueResponseDtoMapper.mapperModelToDetailedResponseDto(banque);
+		return BanqueResponseDtoMapper.mapperModelToSimpleResponseDto(banque);
 	}
 
 	@DeleteMapping("/del/{nom}")

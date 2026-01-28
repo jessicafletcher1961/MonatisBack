@@ -3,6 +3,7 @@ package fr.colline.monatis.rapports.controller;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +16,12 @@ import fr.colline.monatis.budgets.model.TypePeriode;
 import fr.colline.monatis.comptes.model.Compte;
 import fr.colline.monatis.comptes.model.CompteInterne;
 import fr.colline.monatis.comptes.model.TypeCompte;
+import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.erreurs.ControllerVerificateurService;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.rapports.RapportControleErreur;
+import fr.colline.monatis.rapports.controller.liste_resume_comptes_interne.ListeResumeCompteInterneParTypeFonctionnementResponseDto;
 import fr.colline.monatis.rapports.controller.plus_moins_values.EtatPlusMoinsValueRequestDto;
 import fr.colline.monatis.rapports.controller.plus_moins_values.EtatPlusMoinsValueResponseDto;
 import fr.colline.monatis.rapports.controller.plus_moins_values.HistoriquePlusMoinsValueRequestDto;
@@ -27,6 +30,7 @@ import fr.colline.monatis.rapports.controller.releve_compte.ReleveCompteRequestD
 import fr.colline.monatis.rapports.controller.releve_compte.ReleveCompteResponseDto;
 import fr.colline.monatis.rapports.model.EtatPlusMoinsValues;
 import fr.colline.monatis.rapports.model.HistoriquePlusMoinsValues;
+import fr.colline.monatis.rapports.model.ListeResumeCompteInterne;
 import fr.colline.monatis.rapports.model.ReleveCompte;
 import fr.colline.monatis.rapports.service.RapportService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -101,6 +105,13 @@ public class RapportController {
 		LocalDate dateDebut = verificateur.verifierDate(requestDto.dateDebut, FACULTATIF, compteInterne.getDateSoldeInitial());
 		LocalDate dateFin = verificateur.verifierDate(requestDto.dateFin, FACULTATIF, LocalDate.now());
 		
+		if ( dateFin.isBefore(dateDebut) ) {
+			throw new ControllerException(
+					RapportControleErreur.DATE_FIN_AVANT_DATE_DEBUT, 
+					dateFin, 
+					dateDebut);
+		}
+
 		HistoriquePlusMoinsValues historique = rapportService.rechercherHistoriquePlusMoinsValue(
 				compteInterne, 
 				dateDebut,
@@ -109,7 +120,7 @@ public class RapportController {
 		
 		return CompteRapportModelToResponseDtoMapper.mapperHistoriquePlusMoinsValue(historique);
 	}
-	
+
 	@GetMapping("/plus_moins_value/etat")
 	public List<EtatPlusMoinsValueResponseDto> getEtatPlusMoinsValue(
 			@RequestBody EtatPlusMoinsValueRequestDto requestDto) throws ControllerException, ServiceException {
@@ -126,6 +137,24 @@ public class RapportController {
 		for ( EtatPlusMoinsValues etat : etats ) {
 			dto.add(CompteRapportModelToResponseDtoMapper.mapperEtatPlusMoinsValue(etat));
 		}
+		
+		return dto;
+	}
+
+	@GetMapping("/resumes_comptes_internes")
+	public List<ListeResumeCompteInterneParTypeFonctionnementResponseDto> getListeResumeCompteInterne(
+			@RequestBody(required = false) LocalDate dateCible) throws ControllerException, ServiceException {
+		
+		dateCible = verificateur.verifierDate(dateCible, FACULTATIF, LocalDate.now());
+		
+		ListeResumeCompteInterne model = rapportService.rechercherListeResumeCompteInterne(dateCible);
+		
+		List<ListeResumeCompteInterneParTypeFonctionnementResponseDto> dto = new ArrayList<ListeResumeCompteInterneParTypeFonctionnementResponseDto>();
+		
+		for ( TypeFonctionnement typeFonctionnement : model.getMap().keySet() ) {
+			dto.add(CompteRapportModelToResponseDtoMapper.mapperResumeCompteInterne(typeFonctionnement, model.getMap().get(typeFonctionnement)));
+		}
+		Collections.sort(dto, (d1,d2) -> {return d1.typeFonctionnement.code.compareTo(d2.typeFonctionnement.code);});
 		
 		return dto;
 	}

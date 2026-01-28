@@ -19,10 +19,10 @@ public enum ReferenceFonctionnelleErreur implements MonatisErreur {
 			"Suppression de la banque de nom '%s' : cette banque ne peut être supprimée car elle est associée à %s comptes internes"),
 
 	/**
-			"Suppression du bénéficiaire de nom '%s' : ce bénéficiaire ne peut être supprimé car il est associé à %s détails opération"),
+			"Suppression du bénéficiaire de nom '%s' : ce bénéficiaire ne peut être supprimé car il est associé à %s opérations"),
 	 */
-	SUPPRESSION_BENEFICIAIRE_AVEC_OPERATION_DETAILS(
-			"Suppression du bénéficiaire de nom '%s' : ce bénéficiaire ne peut être supprimé car il est associé à %s détails opération"),
+	SUPPRESSION_BENEFICIAIRE_AVEC_OPERATION(
+			"Suppression du bénéficiaire de nom '%s' : ce bénéficiaire ne peut être supprimé car il est associé à %s opérations"),
 	
 	/**
 			"Suppression de la catégorie de nom '%s' : cette catégorie ne peut être supprimée car elle est associée à %s sous-catégories"), 
@@ -31,10 +31,10 @@ public enum ReferenceFonctionnelleErreur implements MonatisErreur {
 			"Suppression de la catégorie de nom '%s' : cette catégorie ne peut être supprimée car elle est associée à %s sous-catégories"), 
 	
 	/**
-			"Suppression de la sous-catégorie de nom '%s' : cette sous-catégorie ne peut être supprimée car elle est associée à %s détails opération"), 
+			"Suppression de la sous-catégorie de nom '%s' : cette sous-catégorie ne peut être supprimée car elle est associée à %s opérations"), 
 	 */
-	SUPPRESSION_SOUS_CATEGORIE_AVEC_OPERATION_DETAILS(
-			"Suppression de la sous-catégorie de nom '%s' : cette sous-catégorie ne peut être supprimée car elle est associée à %s détails opération"), 
+	SUPPRESSION_SOUS_CATEGORIE_AVEC_OPERATION(
+			"Suppression de la sous-catégorie de nom '%s' : cette sous-catégorie ne peut être supprimée car elle est associée à %s opérations"), 
 	
 	/**
 			"Suppression du titulaire de nom '%s' : ce titulaire ne peut être supprimée car il est associé à %s comptes internes"), 

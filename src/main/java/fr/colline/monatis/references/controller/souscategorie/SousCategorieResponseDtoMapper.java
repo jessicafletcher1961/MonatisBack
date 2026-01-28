@@ -1,11 +1,12 @@
 package fr.colline.monatis.references.controller.souscategorie;
 
+import fr.colline.monatis.references.controller.ReferenceResponseDto;
 import fr.colline.monatis.references.controller.categorie.CategorieResponseDtoMapper;
 import fr.colline.monatis.references.model.SousCategorie;
 
 public class SousCategorieResponseDtoMapper {
 
-	public static SousCategorieBasicResponseDto mapperModelToBasicResponseDto(SousCategorie sousCategorie) {
+	public static ReferenceResponseDto mapperModelToBasicResponseDto(SousCategorie sousCategorie) {
 		
 		SousCategorieBasicResponseDto dto = new SousCategorieBasicResponseDto();
 		
@@ -19,7 +20,7 @@ public class SousCategorieResponseDtoMapper {
 		return dto;
 	}
 
-	public static SousCategorieSimpleResponseDto mapperModelToSimpleResponseDto(SousCategorie sousCategorie) {
+	public static ReferenceResponseDto mapperModelToSimpleResponseDto(SousCategorie sousCategorie) {
 		
 		SousCategorieSimpleResponseDto dto = new SousCategorieSimpleResponseDto();
 		
@@ -33,7 +34,7 @@ public class SousCategorieResponseDtoMapper {
 		return dto;
 	}
 
-	public static SousCategorieDetailedResponseDto mapperModelToDetailedResponseDto(SousCategorie sousCategorie) {
+	public static ReferenceResponseDto mapperModelToDetailedResponseDto(SousCategorie sousCategorie) {
 		
 		SousCategorieDetailedResponseDto dto = new SousCategorieDetailedResponseDto();
 		

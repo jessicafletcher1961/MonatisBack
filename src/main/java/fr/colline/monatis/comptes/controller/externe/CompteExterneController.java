@@ -43,7 +43,7 @@ public class CompteExterneController {
 		Sort tri = Sort.by("identifiant");
 		List<CompteExterne> liste = compteExterneService.rechercherTous(tri);
 		for ( CompteExterne compteExterne : liste ) {
-			resultat.add(CompteExterneResponseDtoMapper.mapperModelToSimpleResponseDto(compteExterne));
+			resultat.add(CompteExterneResponseDtoMapper.mapperModelToBasicResponseDto(compteExterne));
 		}
 		return resultat;
 	}
@@ -66,7 +66,7 @@ public class CompteExterneController {
 		CompteExterne compteExterne = new CompteExterne();
 		compteExterne = mapperCreationRequestDtoToModel(dto, compteExterne);
 		compteExterne = compteExterneService.creerCompte(compteExterne);
-		return CompteExterneResponseDtoMapper.mapperModelToDetailedResponseDto(compteExterne);
+		return CompteExterneResponseDtoMapper.mapperModelToSimpleResponseDto(compteExterne);
 	}
 
 	@PutMapping("/mod/{identifiant}")
@@ -80,7 +80,7 @@ public class CompteExterneController {
 				OBLIGATOIRE);
 		compteExterne = mapperModificationRequestDtoToModel(dto, compteExterne);
 		compteExterne = compteExterneService.modifierCompte(compteExterne);
-		return CompteExterneResponseDtoMapper.mapperModelToDetailedResponseDto(compteExterne);
+		return CompteExterneResponseDtoMapper.mapperModelToSimpleResponseDto(compteExterne);
 	}
 
 	@DeleteMapping("/del/{identifiant}")

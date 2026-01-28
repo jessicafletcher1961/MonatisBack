@@ -16,11 +16,11 @@ public class PlusMoinsValue {
 	
 	private Long montantSoldeFinalEnCentimes;
 	
-	private Long montantMouvementsEnCentimes;
+	private Long montantReelEnCentimes;
 	
-	private Long montantsGainsEtFraisEnCentimes;
+	private Long montantTechniqueEnCentimes;
 	
-	private Long montantReevaluationEnCentimes;
+	private Long montantPlusMoinsValueEnCentimes;
 	
 	private Float montantPlusMoinsValueEnPourcentage;
 
@@ -64,28 +64,28 @@ public class PlusMoinsValue {
 		this.montantSoldeFinalEnCentimes = montantSoldeFinalEnCentimes;
 	}
 
-	public Long getMontantMouvementsEnCentimes() {
-		return montantMouvementsEnCentimes;
+	public Long getMontantReelEnCentimes() {
+		return montantReelEnCentimes;
 	}
 
-	public void setMontantMouvementsEnCentimes(Long montantOperationsEnCentimes) {
-		this.montantMouvementsEnCentimes = montantOperationsEnCentimes;
+	public void setMontantReelEnCentimes(Long montantReelEnCentimes) {
+		this.montantReelEnCentimes = montantReelEnCentimes;
 	}
 
-	public Long getMontantsGainsEtFraisEnCentimes() {
-		return montantsGainsEtFraisEnCentimes;
+	public Long getMontantTechniqueEnCentimes() {
+		return montantTechniqueEnCentimes;
 	}
 
-	public void setMontantsGainsEtFraisEnCentimes(Long montantOperationsEnCentimes) {
-		this.montantsGainsEtFraisEnCentimes = montantOperationsEnCentimes;
+	public void setMontantTechniqueEnCentimes(Long montantTechniqueEnCentimes) {
+		this.montantTechniqueEnCentimes = montantTechniqueEnCentimes;
 	}
 
-	public Long getMontantReevaluationEnCentimes() {
-		return montantReevaluationEnCentimes;
+	public Long getMontantPlusMoinsValueEnCentimes() {
+		return montantPlusMoinsValueEnCentimes;
 	}
 
-	public void setMontantReevaluationEnCentimes(Long montantOperationsEnCentimes) {
-		this.montantReevaluationEnCentimes = montantOperationsEnCentimes;
+	public void setMontantPlusMoinsValueEnCentimes(Long montantPlusMoinsValueEnCentimes) {
+		this.montantPlusMoinsValueEnCentimes = montantPlusMoinsValueEnCentimes;
 	}
 
 	public Float getMontantPlusMoinsValueEnPourcentage() {
@@ -95,5 +95,5 @@ public class PlusMoinsValue {
 	public void setMontantPlusMoinsValueEnPourcentage(Float montantPlusMoinsValueEnPourcentage) {
 		this.montantPlusMoinsValueEnPourcentage = montantPlusMoinsValueEnPourcentage;
 	}
-	
+
 }

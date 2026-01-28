@@ -7,13 +7,12 @@ import org.springframework.stereotype.Service;
 
 import fr.colline.monatis.comptes.model.CompteExterne;
 import fr.colline.monatis.comptes.model.CompteInterne;
-import fr.colline.monatis.comptes.model.CompteTechnique;
 import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.comptes.service.CompteExterneService;
 import fr.colline.monatis.comptes.service.CompteInterneService;
 import fr.colline.monatis.comptes.service.CompteTechniqueService;
+import fr.colline.monatis.evaluations.service.EvaluationService;
 import fr.colline.monatis.exceptions.ServiceException;
-import fr.colline.monatis.operations.service.EvaluationService;
 import fr.colline.monatis.operations.service.OperationService;
 import fr.colline.monatis.references.model.Banque;
 import fr.colline.monatis.references.model.Beneficiaire;
@@ -108,10 +107,11 @@ public class InitialisationBasicService {
 
 		// Les évènements
 		beneficiaireService.creerReference(new Beneficiaire("VACANCES-2025-10", "Vacances en Dordogne du 30/09/2025 au 11/10/2025"));
+
+		// Les objets
 		beneficiaireService.creerReference(new Beneficiaire("YARIS-XX-111-YY", "La TOYOTA-YARIS achetée en 2021"));
 		beneficiaireService.creerReference(new Beneficiaire("FJR-AA-222-BB", "La YAMAHA-FJR achetée en 2019"));
-		beneficiaireService.creerReference(new Beneficiaire("MAISON-PONTOISE", "Habitation principale au 33 rue de la République à Lille"));
-		beneficiaireService.creerReference(new Beneficiaire("APPARTEMENT-LYON", "Appartement mis en location au 156 avenue Charles de Gaulle à Lyon"));
+		beneficiaireService.creerReference(new Beneficiaire("APPART-LA-ROCHELLE", "Habitation principale au 29 allée des sources La Rochelle"));
 		
 	}
 
@@ -219,30 +219,51 @@ public class InitialisationBasicService {
 		compteInterneService.creerCompte(new CompteInterne(
 				"COMPTE-JOINT", 
 				"COMPTE DE DEPOT N° 11111 11111 11111111111 - BIC : CEPA FRPP 222 - IBAN : FR76 3333 3333 3333 3333 3333 333",
+				null,
 				TypeFonctionnement.COURANT,
-				LocalDate.parse("2024-01-01"), 
+				LocalDate.parse("2024-01-02"), 
 				266832L,
 				bnp,
 				kevin, jessica));
 		compteInterneService.creerCompte(new CompteInterne(
 				"LIVRET-A-JESSICA",
 				"LIVRET A 99999999999",
-				TypeFonctionnement.EPARGNE,
+				null,
+				TypeFonctionnement.FINANCIER,
 				LocalDate.parse("2018-12-22"), 
 				50000L,
 				laPoste,
 				jessica));
 		compteInterneService.creerCompte(new CompteInterne(
 				"COMPTE-TITRE-KEVIN",
-				"BPUC - Compte-titre nº INF88888888",
-				TypeFonctionnement.PATRIMOINE,
+				"CACE - Compte-titre nº INF88888888",
+				null,
+				TypeFonctionnement.FINANCIER,
 				LocalDate.parse("2023-10-14"), 
 				200000L,
 				ca,
 				kevin));
+		compteInterneService.creerCompte(new CompteInterne(
+				"EMPRUNT-LA-ROCHELLE",
+				"BNP - Emprunt n° 8888888888 de 230 000,00 € sur 18 ans pour l'appartement de La Rochelle. Première echéance le 08/07/2024 et dernière échéance le 08/06/2042",
+				LocalDate.parse("2042-06-08"), 
+				TypeFonctionnement.FINANCIER,
+				LocalDate.parse("2024-06-08"), 
+				-23000000L,
+				bnp,
+				kevin, jessica));
+		compteInterneService.creerCompte(new CompteInterne(
+				"APPART-LA-ROCHELLE",
+				"Habitation pribcipale au 29 allée des sources La Rochelle",
+				null, 
+				TypeFonctionnement.BIEN,
+				LocalDate.parse("2024-06-29"), 
+				23000000L,
+				null,
+				kevin, jessica));
 	}
 	
-	public void creerOperations() throws ServiceException {
+	private void creerOperations() throws ServiceException {
 
 //		CompteInterne compteJoint = compteInterneService.rechercherParIdentifiant("COMPTE-JOINT");
 //		Beneficiaire jessica = beneficiaireService.rechercherParNom("JESSICA");

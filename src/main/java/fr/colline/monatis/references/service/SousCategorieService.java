@@ -39,7 +39,7 @@ public class SousCategorieService extends ReferenceService<SousCategorie> {
 
 		int nombreDetailOperationAssocie;
 		try {
-			nombreDetailOperationAssocie = sousCategorieRepository.compterOperationDetailParSousCategorieId(sousCategorie.getId());
+			nombreDetailOperationAssocie = sousCategorieRepository.compterOperationLigneParSousCategorieId(sousCategorie.getId());
 		}
 		catch ( Throwable t ) {
 			throw new ServiceException(
@@ -51,7 +51,7 @@ public class SousCategorieService extends ReferenceService<SousCategorie> {
 
 		if ( nombreDetailOperationAssocie > 0 ) {
 			throw new ServiceException(
-					ReferenceFonctionnelleErreur.SUPPRESSION_SOUS_CATEGORIE_AVEC_OPERATION_DETAILS, 
+					ReferenceFonctionnelleErreur.SUPPRESSION_SOUS_CATEGORIE_AVEC_OPERATION, 
 					sousCategorie.getNom(),
 					nombreDetailOperationAssocie);
 		}

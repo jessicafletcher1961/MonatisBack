@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import fr.colline.monatis.erreurs.ControllerVerificateurService;
@@ -41,7 +43,7 @@ public class SousCategorieController {
 		Sort tri = Sort.by("nom");
 		List<SousCategorie> liste = sousCategorieService.rechercherTous(tri);
 		for ( SousCategorie sousCategorie : liste ) {
-			resultat.add(SousCategorieResponseDtoMapper.mapperModelToSimpleResponseDto(sousCategorie));
+			resultat.add(SousCategorieResponseDtoMapper.mapperModelToBasicResponseDto(sousCategorie));
 		}
 		return resultat;
 	}
@@ -61,7 +63,7 @@ public class SousCategorieController {
 		SousCategorie sousCategorie = new SousCategorie();
 		sousCategorie = mapperCreationRequestDtoToModel(dto, sousCategorie);
 		sousCategorie = sousCategorieService.creerReference(sousCategorie);
-		return SousCategorieResponseDtoMapper.mapperModelToDetailedResponseDto(sousCategorie);
+		return SousCategorieResponseDtoMapper.mapperModelToSimpleResponseDto(sousCategorie);
 	}
 
 	@PutMapping("/mod/{nom}")
@@ -72,10 +74,11 @@ public class SousCategorieController {
 		SousCategorie sousCategorie = verificateur.verifierSousCategorie(nom, OBLIGATOIRE);
 		sousCategorie = mapperModificationRequestDtoToModel(dto, sousCategorie);
 		sousCategorie = sousCategorieService.modifierReference(sousCategorie);
-		return SousCategorieResponseDtoMapper.mapperModelToDetailedResponseDto(sousCategorie);
+		return SousCategorieResponseDtoMapper.mapperModelToSimpleResponseDto(sousCategorie);
 	}
 
 	@DeleteMapping("/del/{nom}")
+	@ResponseStatus(value = HttpStatus.NO_CONTENT)
 	public void supprimerReference(
 			@PathVariable String nom) throws ControllerException, ServiceException {
 

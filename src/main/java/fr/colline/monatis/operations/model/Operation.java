@@ -54,6 +54,8 @@ public class Operation {
 	@ManyToOne(optional = false)
 	@JoinColumn(name = "compte_depense_id")
 	private Compte compteDepense;
+
+	private Boolean pointee;
 	
 	@OneToMany(
 			mappedBy = "operation",
@@ -126,6 +128,14 @@ public class Operation {
 		this.compteDepense = compteDepense;
 	}
 
+	public Boolean isPointee() {
+		return pointee;
+	}
+
+	public void setPointee(Boolean pointee) {
+		this.pointee = pointee;
+	}
+
 	public Set<OperationLigne> getLignes() {
 		return lignes;
 	}
@@ -139,7 +149,8 @@ public class Operation {
 			LocalDate dateValeur,
 			Long montantEnCentimes,
 			Compte compteRecette,
-			Compte compteDepense) {
+			Compte compteDepense,
+			Boolean pointee) {
 	
 		this.numero = numero;
 		this.libelle = libelle;
@@ -148,6 +159,7 @@ public class Operation {
 		this.montantEnCentimes = montantEnCentimes;
 		this.compteRecette = compteRecette;
 		this.compteDepense = compteDepense;
+		this.pointee = pointee;
 	}
 	
 	public Operation(
@@ -158,6 +170,7 @@ public class Operation {
 			Long montantEnCentimes,
 			Compte compteRecette,
 			Compte compteDepense,
+			Boolean pointee,
 			OperationLigne...lignes) {
 		
 		this.numero = numero;
@@ -167,6 +180,7 @@ public class Operation {
 		this.montantEnCentimes = montantEnCentimes;
 		this.compteRecette = compteRecette;
 		this.compteDepense = compteDepense;
+		this.pointee = pointee;
 		changerLignes(new HashSet<OperationLigne>(Arrays.asList(lignes)));
 	}
 

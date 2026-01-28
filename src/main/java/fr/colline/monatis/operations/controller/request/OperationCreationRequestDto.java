@@ -15,6 +15,7 @@ public class OperationCreationRequestDto implements Serializable {
 	public Long montantEnCentimes;
 	public String identifiantCompteDepense;
 	public String identifiantCompteRecette;
+	
 	public String nomSousCategorie;
 	public List<String> nomsBeneficiaires;
 

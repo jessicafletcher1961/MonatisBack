@@ -3,13 +3,14 @@ package fr.colline.monatis.references.controller.categorie;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import fr.colline.monatis.references.controller.ReferenceResponseDto;
 import fr.colline.monatis.references.controller.souscategorie.SousCategorieResponseDtoMapper;
 import fr.colline.monatis.references.model.Categorie;
 import fr.colline.monatis.references.model.SousCategorie;
 
 public class CategorieResponseDtoMapper {
 
-	public static CategorieBasicResponseDto mapperModelToBasicResponseDto(Categorie categorie) {
+	public static ReferenceResponseDto mapperModelToBasicResponseDto(Categorie categorie) {
 		
 		CategorieBasicResponseDto dto = new CategorieBasicResponseDto();
 		
@@ -29,7 +30,7 @@ public class CategorieResponseDtoMapper {
 		return dto;
 	}
 
-	public static CategorieSimpleResponseDto mapperModelToSimpleResponseDto(Categorie categorie) {
+	public static ReferenceResponseDto mapperModelToSimpleResponseDto(Categorie categorie) {
 		
 		CategorieSimpleResponseDto dto = new CategorieSimpleResponseDto();
 		
@@ -49,7 +50,7 @@ public class CategorieResponseDtoMapper {
 		return dto;
 	}
 
-	public static CategorieDetailedResponseDto mapperModelToDetailedResponseDto(Categorie categorie) {
+	public static ReferenceResponseDto mapperModelToDetailedResponseDto(Categorie categorie) {
 		
 		CategorieDetailedResponseDto dto = new CategorieDetailedResponseDto();
 		

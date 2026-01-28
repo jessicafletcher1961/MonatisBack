@@ -64,8 +64,15 @@ public enum CompteTechniqueErreur implements MonatisErreur {
 	/**
 			"Un problème technique est survenu lors de la vérification de la non-utilisation par des opérations du compte de type '%s' et d'ID %s"),
 	 */
-	COMPTAGE_USAGE_PAR_ID(
+	COMPTAGE_USAGE_OPERATION_PAR_ID(
 			"Un problème technique est survenu lors de la vérification de la non-utilisation par des opérations du compte de type '%s' et d'ID %s"),
+	
+	/**
+			"Un problème technique est survenu lors de la vérification de la non-utilisation par des évaluations du compte interne d'ID %s"),
+	 */
+	COMPTAGE_USAGE_EVALUATION_PAR_ID(
+			"Un problème technique est survenu lors de la vérification de la non-utilisation par des évaluations du compte interne d'ID %s"),
+
 	
 	;
 

@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import fr.colline.monatis.erreurs.ControllerVerificateurService;
@@ -41,7 +43,7 @@ public class CategorieController {
 		Sort tri = Sort.by("nom");
 		List<Categorie> liste = categorieService.rechercherTous(tri);
 		for ( Categorie categorie : liste ) {
-			resultat.add(CategorieResponseDtoMapper.mapperModelToSimpleResponseDto(categorie));
+			resultat.add(CategorieResponseDtoMapper.mapperModelToBasicResponseDto(categorie));
 		}
 		return resultat;
 	}
@@ -61,7 +63,7 @@ public class CategorieController {
 		Categorie categorie = new Categorie();
 		categorie = mapperCreationRequestDtoToModel(dto, categorie);
 		categorie = categorieService.creerReference(categorie);
-		return CategorieResponseDtoMapper.mapperModelToDetailedResponseDto(categorie);
+		return CategorieResponseDtoMapper.mapperModelToSimpleResponseDto(categorie);
 	}
 
 	@PutMapping("/mod/{nom}")
@@ -72,10 +74,11 @@ public class CategorieController {
 		Categorie categorie = verificateur.verifierCategorie(nom, OBLIGATOIRE);
 		categorie = mapperModificationRequestDtoToModel(dto, categorie);
 		categorie = categorieService.modifierReference(categorie);
-		return CategorieResponseDtoMapper.mapperModelToDetailedResponseDto(categorie);
+		return CategorieResponseDtoMapper.mapperModelToSimpleResponseDto(categorie);
 	}
 
 	@DeleteMapping("/del/{nom}")
+	@ResponseStatus(value = HttpStatus.NO_CONTENT)
 	public void supprimerReference(
 			@PathVariable String nom) throws ControllerException, ServiceException {
 

@@ -1,6 +1,7 @@
 package fr.colline.monatis.erreurs;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,14 +13,14 @@ import fr.colline.monatis.comptes.model.CompteInterne;
 import fr.colline.monatis.comptes.model.TypeCompte;
 import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.comptes.service.CompteGeneriqueService;
+import fr.colline.monatis.evaluations.EvaluationControleErreur;
+import fr.colline.monatis.evaluations.model.Evaluation;
+import fr.colline.monatis.evaluations.service.EvaluationService;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ServiceException;
-import fr.colline.monatis.operations.EvaluationControleErreur;
 import fr.colline.monatis.operations.OperationControleErreur;
-import fr.colline.monatis.operations.model.Evaluation;
 import fr.colline.monatis.operations.model.Operation;
 import fr.colline.monatis.operations.model.TypeOperation;
-import fr.colline.monatis.operations.service.EvaluationService;
 import fr.colline.monatis.operations.service.OperationService;
 import fr.colline.monatis.references.ReferenceControleErreur;
 import fr.colline.monatis.references.model.Banque;
@@ -220,6 +221,30 @@ public class ControllerVerificateurService {
 		}
 
 		return date;
+	}
+
+	public LocalDate verifierDate(String date, boolean obligatoire, LocalDate valeurParDefaut) throws ControllerException {
+
+		if ( date == null || date.isBlank() ) {
+			if ( obligatoire ) {
+				throw new ControllerException(
+						GeneriqueControleErreur.DATE_OBLIGATOIRE);
+			}
+			return valeurParDefaut;
+		}
+		
+		try {
+			return LocalDate.parse(date);
+		}
+		catch ( DateTimeParseException e) {
+			if ( obligatoire ) {
+				throw new ControllerException(
+						e,
+						GeneriqueControleErreur.DATE_INVALIDE,
+						date);
+			}
+			return valeurParDefaut;
+		}
 	}
 
 	public Long verifierMontantEnCentimes(Long montantEnCentimes, boolean obligatoire, Long valeurParDefaut) throws ControllerException {
@@ -448,6 +473,5 @@ public class ControllerVerificateurService {
 			return evaluation;
 		}
 	}
-
 }
 

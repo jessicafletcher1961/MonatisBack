@@ -10,7 +10,7 @@ import fr.colline.monatis.references.model.Beneficiaire;
 public interface BeneficiaireRepository extends ReferenceRepository<Beneficiaire> {
 
 	@Query(nativeQuery = true,
-			value = "select count(1) from public.operation_detail_beneficiaire where beneficiaire_id = :id")
-	public int compterOperationDetailParBeneficiaireId(@Param("id") Long beneficiaireId);	
+			value = "select count(1) from public.operation_ligne_beneficiaire where beneficiaire_id = :id")
+	public int compterOperationLigneParBeneficiaireId(@Param("id") Long beneficiaireId);	
 
 }

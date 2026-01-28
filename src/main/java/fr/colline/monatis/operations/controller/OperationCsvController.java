@@ -23,7 +23,6 @@ import fr.colline.monatis.operations.OperationControleErreur;
 import fr.colline.monatis.operations.OperationFonctionnelleErreur;
 import fr.colline.monatis.operations.OperationTechniqueErreur;
 import fr.colline.monatis.operations.model.TypeOperation;
-import fr.colline.monatis.operations.model.TypeProgrammation;
 import fr.colline.monatis.operations.service.OperationService;
 import jakarta.transaction.Transactional;
 
@@ -42,9 +41,6 @@ public class OperationCsvController {
 		csvBody.add(Arrays.asList("type", "code", "libelle"));
 		for ( TypeOperation type : TypeOperation.values() ) {
 			csvBody.add(Arrays.asList("operation", type.getCode(), type.getLibelle()));
-		}
-		for ( TypeProgrammation type : TypeProgrammation.values() ) {
-			csvBody.add(Arrays.asList("programmation", type.getCode(), type.getLibelle()));
 		}
 
 		String csvFileName = "operations-types.csv";
@@ -71,7 +67,6 @@ public class OperationCsvController {
 
 		return genererContenu(csvBody, csvFileName);
 	}
-
 
 	private ResponseEntity<?> genererContenu(List<List<String>> csvBody, String csvFileName) {
 		

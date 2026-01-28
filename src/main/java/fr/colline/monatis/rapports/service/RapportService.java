@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import fr.colline.monatis.budgets.model.TypePeriode;
 import fr.colline.monatis.comptes.model.Compte;
 import fr.colline.monatis.comptes.model.CompteInterne;
+import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.comptes.service.CompteInterneService;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ServiceException;
@@ -22,8 +23,10 @@ import fr.colline.monatis.operations.service.OperationService;
 import fr.colline.monatis.rapports.RapportControleErreur;
 import fr.colline.monatis.rapports.model.EtatPlusMoinsValues;
 import fr.colline.monatis.rapports.model.HistoriquePlusMoinsValues;
+import fr.colline.monatis.rapports.model.ListeResumeCompteInterne;
 import fr.colline.monatis.rapports.model.PlusMoinsValue;
 import fr.colline.monatis.rapports.model.ReleveCompte;
+import fr.colline.monatis.rapports.model.ResumeCompteInterne;
 import fr.colline.monatis.utils.DateEtPeriodeUtils;
 
 /**
@@ -37,6 +40,9 @@ public class RapportService {
 	@Autowired private OperationService operationService;
 	@Autowired private CompteInterneService compteInterneService;
 	
+	@Autowired private SoldeService soldeService;
+	@Autowired private PlusMoinsValueService plusMoinsValueService;
+	
 	public ReleveCompte rechercherReleveCompte(
 			Compte compte,
 			LocalDate dateDebut,
@@ -45,6 +51,7 @@ public class RapportService {
 		ReleveCompte releve = new ReleveCompte();
 		
 		releve.setCompte(compte);
+		releve.setDateDebutReleve(dateDebut);
 		releve.setDateFinReleve(dateFin);
 
 		if ( CompteInterne.class.isAssignableFrom(compte.getClass()) ) {
@@ -53,7 +60,6 @@ public class RapportService {
 
 			// Tout à 0 si la date de fin du relevé se situe avant la date du solde initial du compte
 			if ( dateFin.isBefore(compteInterne.getDateSoldeInitial()) ) {
-				releve.setDateDebutReleve(dateDebut);
 				releve.setMontantSoldeDebutReleveEnCentimes(0L);
 				releve.setMontantSoldeFinReleveEnCentimes(0L);
 				releve.setMontantTotalOperationsRecetteEnCentimes(0L);
@@ -80,25 +86,41 @@ public class RapportService {
 			else {
 				// Si la date de début du relevé est postérieure à la date du solde initial du compte,
 				// le solde initial du relevé est égal au solde initial du compte auquel on ajoute toutes les 
-				// opérations effectuées jusqu'à la veille de la date de début du relévé
-	 			releve.setMontantSoldeDebutReleveEnCentimes(operationService.rechercherSolde(compte, dateDebutReleve.minus(1L, ChronoUnit.DAYS)));
+				// opérations réelles effectuées jusqu'à la veille de la date de début du relévé
+	 			releve.setMontantSoldeDebutReleveEnCentimes(soldeService.rechercherSolde(compte, dateDebutReleve.minus(1L, ChronoUnit.DAYS)));
 			}
 			
-			releve.setMontantSoldeFinReleveEnCentimes(operationService.rechercherSolde(compte, dateFin));
-			releve.setOperationsRecette(operationService.rechercherOperationRecetteParCompteIdEntreDateDebutEtDateFin(compte.getId(), dateDebutReleve, dateFin));
-			releve.setOperationsDepense(operationService.rechercherOperationDepenseParCompteIdEntreDateDebutEtDateFin(compte.getId(), dateDebutReleve, dateFin));
+			releve.setMontantSoldeFinReleveEnCentimes(soldeService.rechercherSolde(compte, dateFin));
+			
+			Operation operationVirtuelle = soldeService.rechercherOperationVirtuelle(compteInterne, dateDebutReleve, dateFin);
+			
+			List<Operation> operationsRecette = operationService.rechercherOperationsRecetteParCompteIdEntreDateDebutEtDateFin(
+					compte.getId(), 
+					dateDebutReleve, 
+					dateFin);
+			if ( operationVirtuelle.getTypeOperation() == TypeOperation.VIRTUELLE_PLUS ) {
+				operationsRecette.add(operationVirtuelle);
+			}
+			releve.setOperationsRecette(operationsRecette);
+			
+			List<Operation> operationsDepense = operationService.rechercherOperationsDepenseParCompteIdEntreDateDebutEtDateFin(
+					compte.getId(), 
+					dateDebutReleve, 
+					dateFin);
+			if ( operationVirtuelle.getTypeOperation() == TypeOperation.VIRTUELLE_MOINS ) {
+				operationsDepense.add(operationVirtuelle);
+			}
+			releve.setOperationsDepense(operationsDepense);
 
-			operationService.ajouterOperationVirtuelleRecetteEntreDateDebutEtDateFin(releve.getOperationsRecette(), compte.getId(), dateDebutReleve, dateFin);
-			operationService.ajouterOperationVirtuellesDepenseEntreDateDebutEtDateFin(releve.getOperationsDepense(), compte.getId(), dateDebutReleve, dateFin);
 		}
 		else {
 			
 			// Ce n'est pas un compte interne -> on prend les opérations antérieures à la date de début comme solde initial
-			
-			releve.setMontantSoldeDebutReleveEnCentimes(operationService.rechercherSolde(compte, dateDebut.minus(1L, ChronoUnit.DAYS)));
-			releve.setMontantSoldeFinReleveEnCentimes(operationService.rechercherSolde(compte, dateFin));
-			releve.setOperationsRecette(operationService.rechercherOperationRecetteParCompteIdEntreDateDebutEtDateFin(compte.getId(), dateDebut, dateFin));
-			releve.setOperationsDepense(operationService.rechercherOperationDepenseParCompteIdEntreDateDebutEtDateFin(compte.getId(), dateDebut, dateFin));
+
+			releve.setMontantSoldeDebutReleveEnCentimes(soldeService.rechercherSolde(compte, dateDebut.minus(1L, ChronoUnit.DAYS)));
+			releve.setMontantSoldeFinReleveEnCentimes(soldeService.rechercherSolde(compte, dateFin));
+			releve.setOperationsRecette(operationService.rechercherOperationsRecetteParCompteIdEntreDateDebutEtDateFin(compte.getId(), dateDebut, dateFin));
+			releve.setOperationsDepense(operationService.rechercherOperationsDepenseParCompteIdEntreDateDebutEtDateFin(compte.getId(), dateDebut, dateFin));
 		}
 
 		Long montantOperationsRecetteEnCentimes = 0L;
@@ -127,26 +149,11 @@ public class RapportService {
 		historique.setCompteInterne(compteInterne);
 		historique.setPlusMoinsValues(new ArrayList<PlusMoinsValue>());
 		
-		if ( dateDebutHistorique == null 
-				|| dateDebutHistorique.isBefore(compteInterne.getDateSoldeInitial()) ) {
-			dateDebutHistorique = compteInterne.getDateSoldeInitial();
-		}
-		if ( dateFinHistorique == null ) {
-			dateFinHistorique = LocalDate.now();
-		}
-		
-		if ( dateFinHistorique.isBefore(dateDebutHistorique) ) {
-			throw new ControllerException(
-					RapportControleErreur.DATE_FIN_AVANT_DATE_DEBUT, 
-					dateFinHistorique, 
-					dateDebutHistorique);
-		}
-		
 		if ( typePeriode != null ) {
 			LocalDate dateDebutPeriode = DateEtPeriodeUtils.recadrerDateDebutPeriode(typePeriode, dateDebutHistorique);
 			while ( ! dateDebutPeriode.isAfter(dateFinHistorique) ) {
 				LocalDate dateFinPeriode = DateEtPeriodeUtils.rechercherDateFinPeriode(typePeriode, dateDebutPeriode);
-				historique.getPlusMoinsValues().add(rechercherPlusMoinsValue(compteInterne, dateDebutPeriode, dateFinPeriode));
+				historique.getPlusMoinsValues().add(plusMoinsValueService.rechercherPlusMoinsValue(compteInterne, dateDebutPeriode, dateFinPeriode));
 				dateDebutPeriode = DateEtPeriodeUtils.rechercherDebutPeriodeSuivante(typePeriode, dateDebutPeriode);
 			}
 			Collections.sort(
@@ -154,7 +161,7 @@ public class RapportService {
 					(o1, o2) -> { return o1.getDateDebutEvaluation().compareTo(o2.getDateDebutEvaluation());});
 		}
 		else {
-			historique.getPlusMoinsValues().add(rechercherPlusMoinsValue(compteInterne, dateDebutHistorique, dateFinHistorique));
+			historique.getPlusMoinsValues().add(plusMoinsValueService.rechercherPlusMoinsValue(compteInterne, dateDebutHistorique, dateFinHistorique));
 		}
 	
 		return historique;
@@ -190,10 +197,7 @@ public class RapportService {
 			}
 			
 			if ( dateFinEvaluation.isBefore(dateDebutEvaluation) ) {
-				throw new ControllerException(
-						RapportControleErreur.DATE_FIN_AVANT_DATE_DEBUT, 
-						dateFinEvaluation, 
-						dateDebutEvaluation);
+				continue;
 			}
 			
 			if ( typePeriode != null ) {
@@ -201,7 +205,7 @@ public class RapportService {
 				dateFinEvaluation = DateEtPeriodeUtils.rechercherDateFinPeriode(typePeriode, dateDebutEvaluation);
 			}
 			
-			PlusMoinsValue plusMoinsValue = rechercherPlusMoinsValue(
+			PlusMoinsValue plusMoinsValue = plusMoinsValueService.rechercherPlusMoinsValue(
 					compteInterne, 
 					dateDebutEvaluation, 
 					dateFinEvaluation);
@@ -219,73 +223,25 @@ public class RapportService {
 		return etats;
 	}
 	
-	private PlusMoinsValue rechercherPlusMoinsValue (
-			CompteInterne compteInterne,
-			LocalDate dateDebutEvaluation,
-			LocalDate dateFinEvaluation) throws ServiceException {
-	
-		Long montantSoldeAvantDebutEvaluationEnCentimes = operationService.rechercherSolde(compteInterne, dateDebutEvaluation.minus(1, ChronoUnit.DAYS));
+	public ListeResumeCompteInterne rechercherListeResumeCompteInterne(LocalDate dateSolde) throws ServiceException {
+		
+		ListeResumeCompteInterne liste = new ListeResumeCompteInterne();
+		
+		for ( TypeFonctionnement typeFonctionnement : TypeFonctionnement.values() ) {
 
-		// Calcul de la somme des opérations virtuelles de réévaluation enregistrées dans la période
-		Long montantReevaluationEnCentimes = 0L;
-		List<Operation> operationsVirtuelles = new ArrayList<Operation>();
-		operationService.ajouterOperationVirtuelleRecetteEntreDateDebutEtDateFin(operationsVirtuelles, compteInterne.getId(), dateDebutEvaluation, dateFinEvaluation);
-		operationService.ajouterOperationVirtuellesDepenseEntreDateDebutEtDateFin(operationsVirtuelles, compteInterne.getId(), dateDebutEvaluation, dateFinEvaluation);
-		for ( Operation operation : operationsVirtuelles ) {
-			if ( operation.getTypeOperation() == TypeOperation.PLUS_SOLDE ) {
-				montantReevaluationEnCentimes += operation.getMontantEnCentimes();
-			}
-			else if ( operation.getTypeOperation() == TypeOperation.MOINS_SOLDE ) {
-				montantReevaluationEnCentimes -= operation.getMontantEnCentimes();
+			for ( CompteInterne compteInterne : compteInterneService.rechercherParTypeFonctionnement(typeFonctionnement)) {
+				
+				if ( compteInterne.getDateCloture() == null || !compteInterne.getDateCloture().isBefore(dateSolde) ) {
+					ResumeCompteInterne resume = new ResumeCompteInterne();
+					resume.setCompteInterne(compteInterne);
+					resume.setSolde(soldeService.rechercherSolde(compteInterne, dateSolde));
+					liste.getMap().get(typeFonctionnement).add(resume);
+				}
 			}
 		}
 		
-		// Calcul de la sommes des opérations effectuées dans la période et réparties entre mouvements
-		// (achat / vente) et rémunérations (frais / gains) 
-		Long montantMouvementsEnCentimes = 0L;
-		Long montantRemunerationEnCentimes = 0L;
-		List<Operation> operationsRecette = operationService.rechercherOperationRecetteParCompteIdEntreDateDebutEtDateFin(compteInterne.getId(), dateDebutEvaluation, dateFinEvaluation);
-		for ( Operation operation : operationsRecette ) {
-			if ( operation.getTypeOperation() == TypeOperation.GAIN ) {
-				montantRemunerationEnCentimes += operation.getMontantEnCentimes();
-			}
-			else {
-				montantMouvementsEnCentimes += operation.getMontantEnCentimes();
-			}
-		}
-		List<Operation> operationsDepense = operationService.rechercherOperationDepenseParCompteIdEntreDateDebutEtDateFin(compteInterne.getId(), dateDebutEvaluation, dateFinEvaluation);
-		for ( Operation operation : operationsDepense ) {
-			if ( operation.getTypeOperation() == TypeOperation.FRAIS ) {
-				montantRemunerationEnCentimes -= operation.getMontantEnCentimes();
-			}
-			else {
-				montantMouvementsEnCentimes -= operation.getMontantEnCentimes();
-			}
-		}
-		
-		Long montantSoldeFinalEnCentimes = operationService.rechercherSolde(compteInterne, dateFinEvaluation);
-		
-		Float montantPlusMoinsValueEnPourcentage = null;
-		if ( montantSoldeAvantDebutEvaluationEnCentimes != 0 ) {
-			Long baseCalculEnCentimes = montantSoldeAvantDebutEvaluationEnCentimes 
-					+ montantMouvementsEnCentimes;
-			montantPlusMoinsValueEnPourcentage = (float) (((montantSoldeFinalEnCentimes - baseCalculEnCentimes) * 100.00) / montantSoldeAvantDebutEvaluationEnCentimes);
-		}
-
-		PlusMoinsValue plusMoinsValue = new PlusMoinsValue();
-		plusMoinsValue.setCompteInterne(compteInterne);
-		plusMoinsValue.setDateDebutEvaluation(dateDebutEvaluation);
-		plusMoinsValue.setDateFinEvaluation(dateFinEvaluation);
-		plusMoinsValue.setMontantSoldeInitialEnCentimes(montantSoldeAvantDebutEvaluationEnCentimes);
-		plusMoinsValue.setMontantSoldeFinalEnCentimes(montantSoldeFinalEnCentimes);
-		plusMoinsValue.setMontantReevaluationEnCentimes(montantReevaluationEnCentimes);
-		plusMoinsValue.setMontantsGainsEtFraisEnCentimes(montantRemunerationEnCentimes);
-		plusMoinsValue.setMontantMouvementsEnCentimes(montantMouvementsEnCentimes);
-		plusMoinsValue.setMontantPlusMoinsValueEnPourcentage(montantPlusMoinsValueEnPourcentage);
-		
-		return  plusMoinsValue;
+		return liste;
 	}
-
 //
 //	public EtatAvancementBudget rechercherEtatAvancementBudgetParSousCategorie(
 //			SousCategorie sousCategorie,

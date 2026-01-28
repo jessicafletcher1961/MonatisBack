@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 import fr.colline.monatis.MonatisResponseDto;
 
-public class CompteResponseDto implements Serializable, MonatisResponseDto {
+public abstract class CompteResponseDto implements Serializable, MonatisResponseDto {
 
 	private static final long serialVersionUID = 6926376429549463963L;
 

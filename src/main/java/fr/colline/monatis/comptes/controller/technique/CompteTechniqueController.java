@@ -43,7 +43,7 @@ public class CompteTechniqueController {
 		Sort tri = Sort.by("identifiant");
 		List<CompteTechnique> liste = compteTechniqueService.rechercherTous(tri);
 		for ( CompteTechnique compteTechnique : liste ) {
-			resultat.add(CompteTechniqueResponseDtoMapper.mapperModelToSimpleResponseDto(compteTechnique));
+			resultat.add(CompteTechniqueResponseDtoMapper.mapperModelToBasicResponseDto(compteTechnique));
 		}
 		return resultat;
 	}
@@ -66,7 +66,7 @@ public class CompteTechniqueController {
 		CompteTechnique compteTechnique = new CompteTechnique();
 		compteTechnique = mapperCreationRequestDtoToModel(dto, compteTechnique);
 		compteTechnique = compteTechniqueService.creerCompte(compteTechnique);
-		return CompteTechniqueResponseDtoMapper.mapperModelToDetailedResponseDto(compteTechnique);
+		return CompteTechniqueResponseDtoMapper.mapperModelToSimpleResponseDto(compteTechnique);
 	}
 
 	@PutMapping("/mod/{identifiant}")
@@ -80,7 +80,7 @@ public class CompteTechniqueController {
 				OBLIGATOIRE);
 		compteTechnique = mapperModificationRequestDtoToModel(dto, compteTechnique);
 		compteTechnique = compteTechniqueService.modifierCompte(compteTechnique);
-		return CompteTechniqueResponseDtoMapper.mapperModelToDetailedResponseDto(compteTechnique);
+		return CompteTechniqueResponseDtoMapper.mapperModelToSimpleResponseDto(compteTechnique);
 	}
 
 	@DeleteMapping("/del/{identifiant}")

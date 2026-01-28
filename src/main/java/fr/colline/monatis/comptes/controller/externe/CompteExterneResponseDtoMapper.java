@@ -1,10 +1,11 @@
 package fr.colline.monatis.comptes.controller.externe;
 
+import fr.colline.monatis.comptes.controller.CompteResponseDto;
 import fr.colline.monatis.comptes.model.CompteExterne;
 
 public class CompteExterneResponseDtoMapper {
 
-	public static CompteExterneBasicResponseDto mapperModelToBasicResponseDto(CompteExterne compteExterne) {
+	public static CompteResponseDto mapperModelToBasicResponseDto(CompteExterne compteExterne) {
 
 		CompteExterneBasicResponseDto dto = new CompteExterneBasicResponseDto();
 		
@@ -14,7 +15,7 @@ public class CompteExterneResponseDtoMapper {
 		return dto;
 	}
 
-	public static CompteExterneSimpleResponseDto mapperModelToSimpleResponseDto(CompteExterne compteExterne) {
+	public static CompteResponseDto mapperModelToSimpleResponseDto(CompteExterne compteExterne) {
 
 		CompteExterneSimpleResponseDto dto = new CompteExterneSimpleResponseDto();
 		
@@ -24,7 +25,7 @@ public class CompteExterneResponseDtoMapper {
 		return dto;
 	}
 
-	public static CompteExterneDetailedResponseDto mapperModelToDetailedResponseDto(CompteExterne compteExterne) {
+	public static CompteResponseDto mapperModelToDetailedResponseDto(CompteExterne compteExterne) {
 
 		CompteExterneDetailedResponseDto dto = new CompteExterneDetailedResponseDto();
 		

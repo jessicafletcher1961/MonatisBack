@@ -1,4 +1,4 @@
-package fr.colline.monatis.operations.repository;
+package fr.colline.monatis.evaluations.repository;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -7,7 +7,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import fr.colline.monatis.operations.model.Evaluation;
+import fr.colline.monatis.evaluations.model.Evaluation;
 
 @Repository
 public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {

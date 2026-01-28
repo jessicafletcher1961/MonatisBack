@@ -1,10 +1,11 @@
 package fr.colline.monatis.references.controller.beneficiaire;
 
+import fr.colline.monatis.references.controller.ReferenceResponseDto;
 import fr.colline.monatis.references.model.Beneficiaire;
 
 public class BeneficiaireResponseDtoMapper {
 
-	public static BeneficiaireBasicResponseDto mapperModelToBasicResponseDto(Beneficiaire beneficiaire) {
+	public static ReferenceResponseDto mapperModelToBasicResponseDto(Beneficiaire beneficiaire) {
 		
 		BeneficiaireBasicResponseDto dto = new BeneficiaireBasicResponseDto();
 		
@@ -14,7 +15,7 @@ public class BeneficiaireResponseDtoMapper {
 		return dto;
 	}
 
-	public static BeneficiaireSimpleResponseDto mapperModelToSimpleResponseDto(Beneficiaire beneficiaire) {
+	public static ReferenceResponseDto mapperModelToSimpleResponseDto(Beneficiaire beneficiaire) {
 		
 		BeneficiaireSimpleResponseDto dto = new BeneficiaireSimpleResponseDto();
 		
@@ -24,7 +25,7 @@ public class BeneficiaireResponseDtoMapper {
 		return dto;
 	}
 
-	public static BeneficiaireDetailedResponseDto mapperModelToDetailedResponseDto(Beneficiaire beneficiaire) {
+	public static ReferenceResponseDto mapperModelToDetailedResponseDto(Beneficiaire beneficiaire) {
 		
 		BeneficiaireDetailedResponseDto dto = new BeneficiaireDetailedResponseDto();
 		

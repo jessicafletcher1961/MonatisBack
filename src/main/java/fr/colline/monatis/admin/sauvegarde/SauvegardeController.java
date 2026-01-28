@@ -18,7 +18,7 @@ public class SauvegardeController {
 	@GetMapping("/save")
 	public void getAll() throws ServiceException {
 
-		sauvegardeService.dumpTables();
+//		sauvegardeService.dumpTables();
 		
 	}
 

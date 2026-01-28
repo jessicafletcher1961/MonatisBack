@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import fr.colline.monatis.erreurs.ControllerVerificateurService;
@@ -41,7 +43,7 @@ public class TitulaireController {
 		Sort tri = Sort.by("nom");
 		List<Titulaire> liste = titulaireService.rechercherTous(tri);
 		for ( Titulaire titulaire : liste ) {
-			resultat.add(TitulaireResponseDtoMapper.mapperModelToSimpleResponseDto(titulaire));
+			resultat.add(TitulaireResponseDtoMapper.mapperModelToBasicResponseDto(titulaire));
 		}
 		return resultat;
 	}
@@ -61,7 +63,7 @@ public class TitulaireController {
 		Titulaire titulaire = new Titulaire();
 		titulaire = mapperCreationRequestDtoToModel(dto, titulaire);
 		titulaire = titulaireService.creerReference(titulaire);
-		return TitulaireResponseDtoMapper.mapperModelToDetailedResponseDto(titulaire);
+		return TitulaireResponseDtoMapper.mapperModelToSimpleResponseDto(titulaire);
 	}
 
 	@PutMapping("/mod/{nom}")
@@ -72,10 +74,11 @@ public class TitulaireController {
 		Titulaire titulaire = verificateur.verifierTitulaire(nom, OBLIGATOIRE);
 		titulaire = mapperModificationRequestDtoToModel(dto, titulaire);
 		titulaire = titulaireService.modifierReference(titulaire);
-		return TitulaireResponseDtoMapper.mapperModelToDetailedResponseDto(titulaire);
+		return TitulaireResponseDtoMapper.mapperModelToSimpleResponseDto(titulaire);
 	}
 
 	@DeleteMapping("/del/{nom}")
+	@ResponseStatus(value = HttpStatus.NO_CONTENT)
 	public void supprimerReference(
 			@PathVariable String nom) throws ControllerException, ServiceException {
 

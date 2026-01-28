@@ -11,6 +11,7 @@ public class CompteInterneSimpleResponseDto extends CompteResponseDto implements
 
 	private static final long serialVersionUID = 6648913780237357790L;
 	
+	public LocalDate dateCloture;
 	public TypeFonctionnementDto typeFonctionnement;
 	public LocalDate dateSoldeInitial;
 	public Long montantSoldeInitialEnCentimes;

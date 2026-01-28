@@ -1,4 +1,4 @@
-package fr.colline.monatis.operations.service;
+package fr.colline.monatis.evaluations.service;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -9,10 +9,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import fr.colline.monatis.evaluations.EvaluationFonctionnelleErreur;
+import fr.colline.monatis.evaluations.EvaluationTechniqueErreur;
+import fr.colline.monatis.evaluations.model.Evaluation;
+import fr.colline.monatis.evaluations.repository.EvaluationRepository;
 import fr.colline.monatis.exceptions.ServiceException;
-import fr.colline.monatis.operations.EvaluationTechniqueErreur;
-import fr.colline.monatis.operations.model.Evaluation;
-import fr.colline.monatis.operations.repository.EvaluationRepository;
 
 @Service
 public class EvaluationService {
@@ -213,31 +214,6 @@ public class EvaluationService {
 		supprimer(evaluation);
 	}
 	
-//	public void propagerImpactModificationOperation(Operation operation) throws ServiceException {
-//		
-//		if ( CompteInterne.class.isAssignableFrom(operation.getCompteDepense().getClass()) ) {
-//			
-//			Evaluation prochaineEvaluation = rechercherProchaineParCompteInterneIdDepuisDateCible(
-//					operation.getCompteDepense().getId(),
-//					operation.getDateValeur());
-//			
-//			if ( prochaineEvaluation != null ) {
-//				creerOuModifierOperationPlusMoinsSolde(prochaineEvaluation);
-//			}
-//		}
-//		
-//		if ( CompteInterne.class.isAssignableFrom(operation.getCompteRecette().getClass()) ) {
-//			
-//			Evaluation prochaineEvaluation = rechercherProchaineParCompteInterneIdDepuisDateCible(
-//					operation.getCompteRecette().getId(),
-//					operation.getDateValeur());
-//			
-//			if ( prochaineEvaluation != null ) {
-//				creerOuModifierOperationPlusMoinsSolde(prochaineEvaluation);
-//			}
-//		}
-//	}
-
 	private Evaluation enregistrer(Evaluation evaluation) throws ServiceException {
 
 		try {
@@ -271,11 +247,15 @@ public class EvaluationService {
 
 	private Evaluation controlerEtPreparerPourCreation(Evaluation evaluation) throws ServiceException {
 
+		verifierAbsenceAutreEvaluationMemeJour(evaluation.getCompteInterne().getId(), evaluation.getId(), evaluation.getDateSolde());
+		
 		return evaluation;
 	}
 
 	private Evaluation controlerEtPreparerPourModification(Evaluation evaluation) throws ServiceException {
 
+		verifierAbsenceAutreEvaluationMemeJour(evaluation.getCompteInterne().getId(), evaluation.getId(), evaluation.getDateSolde());
+		
 		return evaluation;
 	}
 
@@ -284,115 +264,21 @@ public class EvaluationService {
 		return evaluation;
 	}
 
-//	private void propagerImpactModificationEvaluation(Evaluation evaluation) throws ServiceException {
-//		
-//		Evaluation prochaineEvaluation = rechercherProchaineParCompteInterneIdDepuisDateCible(
-//				evaluation.getCompteInterne().getId(),
-//				evaluation.getDateSolde().plus(1, ChronoUnit.DAYS));
-//
-//		if ( prochaineEvaluation != null ) {
-//			creerOuModifierOperationPlusMoinsSolde(prochaineEvaluation);
-//		}
-//	}
-//
-//	private Evaluation creerOuModifierOperationPlusMoinsSolde(Evaluation evaluation) throws ServiceException {
-//
-//		if ( evaluation == null ) return null;
-//		
-//		CompteInterne compteInterne = evaluation.getCompteInterne();
-//		Operation operationPlusMoinsSolde = evaluation.getOperationPlusMoinsSolde();
-//		
-//		// Calcul du nouveau montant de l'opération de plus ou moins solde 
-//		Long ancienneValeurOperation;
-//		if ( operationPlusMoinsSolde != null ) {
-//			if ( operationPlusMoinsSolde.getTypeOperation() == TypeOperation.PLUS_SOLDE ) {
-//				ancienneValeurOperation = operationPlusMoinsSolde.getMontantEnCentimes();
-//			}
-//			else {
-//				ancienneValeurOperation = 0 - operationPlusMoinsSolde.getMontantEnCentimes();
-//			}
-//		}
-//		else {
-//			ancienneValeurOperation = 0L;
-//		}
-//		Long soldeActuelEnCentimes = operationService.rechercherSolde(compteInterne, evaluation.getDateSolde()) - ancienneValeurOperation;
-//		Long nouvelleValeurOperation = evaluation.getMontantSoldeEnCentimes() - soldeActuelEnCentimes;
-//		
-//		// Détermination des informations de l'opération de plus ou moins solde
-//		TypeOperation typeOperation;
-//		Compte compteRecette;
-//		Compte compteDepense;
-//		if ( nouvelleValeurOperation >= 0 ) {
-//			typeOperation = TypeOperation.PLUS_SOLDE;
-//			compteRecette = evaluation.getCompteInterne();
-//			compteDepense = evaluation.getCompteTechnique();
-//		}
-//		else {
-//			typeOperation = TypeOperation.MOINS_SOLDE;
-//			compteRecette = evaluation.getCompteTechnique();
-//			compteDepense = evaluation.getCompteInterne();
-//		}
-//		String libelle;
-//		if ( evaluation.getLibelle() == null ) {
-//			if ( evaluation.getCompteInterne().getTypeFonctionnement() == TypeFonctionnement.COURANT ) {
-//				libelle = "Solde du compte '" + compteInterne.getIdentifiant() + "' fixé à la valeur " + evaluation.getMontantSoldeEnCentimes() + " en date du " + evaluation.getDateSolde();
-//			}
-//			else if ( evaluation.getCompteInterne().getTypeFonctionnement() == TypeFonctionnement.EPARGNE ) {
-//				libelle = "Solde du compte '" + compteInterne.getIdentifiant() + "' fixé à la valeur " + evaluation.getMontantSoldeEnCentimes() + " après le versement des intérêts et/ou des dividendes en date du " + evaluation.getDateSolde();
-//			}
-//			else {
-//				libelle = "Valeur estimative du bien '" + compteInterne.getIdentifiant() + "' fixée à " + evaluation.getMontantSoldeEnCentimes() + " en date du " + evaluation.getDateSolde();
-//			}
-//		}
-//		else {
-//			libelle = evaluation.getLibelle();
-//		}
-//
-//		// Création ou mise à jour de l'opération de plus ou moins solde
-//		if ( operationPlusMoinsSolde == null ) {
-//
-//			operationPlusMoinsSolde = new Operation(
-//					null, 
-//					typeOperation,
-//					libelle,
-//					evaluation.getDateSolde(), 
-//					Math.abs(nouvelleValeurOperation), 
-//					compteRecette, 
-//					compteDepense,
-//					new OperationLigne(
-//							0,
-//							libelle,
-//							evaluation.getDateSolde(),
-//							Math.abs(nouvelleValeurOperation),
-//							null));
-//			
-//			operationPlusMoinsSolde = operationService.creerOperation(operationPlusMoinsSolde);
-//		}
-//		else
-//		{
-//			
-//			operationPlusMoinsSolde.setTypeOperation(typeOperation);
-//			operationPlusMoinsSolde.setDateValeur(evaluation.getDateSolde());
-//			operationPlusMoinsSolde.setLibelle(libelle);
-//			operationPlusMoinsSolde.setCompteDepense(compteDepense);
-//			operationPlusMoinsSolde.setCompteRecette(compteRecette);
-//			operationPlusMoinsSolde.setMontantEnCentimes(Math.abs(nouvelleValeurOperation));
-//			
-//			Set<OperationLigne> lignes = new HashSet<OperationLigne>();
-//			lignes.add(new OperationLigne(
-//							0,
-//							libelle,
-//							evaluation.getDateSolde(),
-//							Math.abs(nouvelleValeurOperation),
-//							null));
-//			operationPlusMoinsSolde.changerLignes(lignes);
-//			
-//			operationPlusMoinsSolde = operationService.modifierOperation(operationPlusMoinsSolde);
-//		}
-//
-//		evaluation.setOperationPlusMoinsSolde(operationPlusMoinsSolde);
-//		
-//		return operationPlusMoinsSolde;
-//	}
+	private void verifierAbsenceAutreEvaluationMemeJour(
+			Long compteInterneId,
+			Long evaluationId,
+			LocalDate dateSolde) throws ServiceException {
+
+		Evaluation evaluation = rechercherPremiereParCompteInterneIdDepuisDateCible(compteInterneId, dateSolde);
+		
+		if ( evaluation != null 
+				&& evaluation.getDateSolde().equals(dateSolde) 
+				&& ! evaluation.getId().equals(evaluationId) ) {
+			throw new ServiceException(
+					EvaluationFonctionnelleErreur.UNE_SEULE_EVALUATION_PAR_JOUR_PAR_COMPTE_INTERNE,
+					evaluation.getCle(), 
+					evaluation.getDateSolde());
+		}
+	}
 
 }

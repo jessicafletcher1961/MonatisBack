@@ -1,4 +1,4 @@
-package fr.colline.monatis.operations.model;
+package fr.colline.monatis.evaluations.model;
 
 import java.time.LocalDate;
 

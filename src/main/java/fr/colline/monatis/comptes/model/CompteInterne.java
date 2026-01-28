@@ -31,6 +31,9 @@ public class CompteInterne extends Compte {
 	@Column(nullable = false)
 	private Long montantSoldeInitialEnCentimes;
 
+	@Column(nullable = true)
+	private LocalDate dateCloture;
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "banque_id")
 	private Banque banque;
@@ -66,6 +69,14 @@ public class CompteInterne extends Compte {
 		this.montantSoldeInitialEnCentimes = montantSoldeInitialEnCentimes;
 	}
 
+	public LocalDate getDateCloture() {
+		return dateCloture;
+	}
+
+	public void setDateCloture(LocalDate dateCloture) {
+		this.dateCloture = dateCloture;
+	}
+
 	public Banque getBanque() {
 		return banque;
 	}
@@ -84,6 +95,7 @@ public class CompteInterne extends Compte {
 	public CompteInterne(
 			String identifiant, 
 			String libelle,
+			LocalDate dateCloture,
 			TypeFonctionnement typeFonctionnement,
 			LocalDate dateSoldeInitial,
 			Long montantSoldeInitialEnCentimes,
@@ -91,6 +103,7 @@ public class CompteInterne extends Compte {
 			Titulaire...titulaires) {
 		
 		super(identifiant, libelle);
+		this.dateCloture = dateCloture;
 		this.typeFonctionnement = typeFonctionnement;
 		this.dateSoldeInitial = dateSoldeInitial;
 		this.montantSoldeInitialEnCentimes = montantSoldeInitialEnCentimes;

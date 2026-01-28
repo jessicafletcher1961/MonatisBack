@@ -15,11 +15,11 @@ public class PlusMoinsValueResponseDto implements Serializable {
 	
 	public Float montantSoldeFinalEnEuros;
 
-	public float montantMouvementsEnEuros;
+	public float montantReelEnEuros;
 	
-	public float montantRemunerationEnEuros; 
+	public float montantTechniqueEnEuros; 
 
-	public Float montantReevaluationEnEuros;
+	public Float montantPlusMoinsValueEnEuros;
 	
 	public Float montantPlusMoinsValueEnPourcentage;
 

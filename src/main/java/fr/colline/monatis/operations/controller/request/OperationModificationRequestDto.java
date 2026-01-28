@@ -8,13 +8,15 @@ public class OperationModificationRequestDto implements Serializable {
 
 	private static final long serialVersionUID = -3863830393882191680L;
 	
-	public String codeTypeOperation;
 	public String numero;
 	public String libelle;
+	public String codeTypeOperation;
 	public LocalDate dateValeur;
 	public Long montantEnCentimes;
 	public String identifiantCompteDepense;
 	public String identifiantCompteRecette;
-	public List<OperationLigneRequestDto> lignes;
+	public Boolean pointee; 
+	
+	public List<OperationLigneModificationRequestDto> lignes;
 
 }

@@ -1,10 +1,11 @@
 package fr.colline.monatis.comptes.controller.technique;
 
+import fr.colline.monatis.comptes.controller.CompteResponseDto;
 import fr.colline.monatis.comptes.model.CompteTechnique;
 
 public class CompteTechniqueResponseDtoMapper {
 
-	public static CompteTechniqueBasicResponseDto mapperModelToBasicResponseDto(CompteTechnique compteTechnique) {
+	public static CompteResponseDto mapperModelToBasicResponseDto(CompteTechnique compteTechnique) {
 
 		CompteTechniqueBasicResponseDto dto = new CompteTechniqueBasicResponseDto();
 		
@@ -14,7 +15,7 @@ public class CompteTechniqueResponseDtoMapper {
 		return dto;
 	}
 
-	public static CompteTechniqueSimpleResponseDto mapperModelToSimpleResponseDto(CompteTechnique compteTechnique) {
+	public static CompteResponseDto mapperModelToSimpleResponseDto(CompteTechnique compteTechnique) {
 
 		CompteTechniqueSimpleResponseDto dto = new CompteTechniqueSimpleResponseDto();
 		
@@ -24,7 +25,7 @@ public class CompteTechniqueResponseDtoMapper {
 		return dto;
 	}
 
-	public static CompteTechniqueDetailedResponseDto mapperModelToDetailedResponseDto(CompteTechnique compteTechnique) {
+	public static CompteResponseDto mapperModelToDetailedResponseDto(CompteTechnique compteTechnique) {
 
 		CompteTechniqueDetailedResponseDto dto = new CompteTechniqueDetailedResponseDto();
 		

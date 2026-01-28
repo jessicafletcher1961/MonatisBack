@@ -202,7 +202,7 @@ public abstract class CompteService<T extends Compte> {
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					CompteTechniqueErreur.COMPTAGE_USAGE_PAR_ID,
+					CompteTechniqueErreur.COMPTAGE_USAGE_OPERATION_PAR_ID,
 					getTClass().getSimpleName(),
 					id);
 		}

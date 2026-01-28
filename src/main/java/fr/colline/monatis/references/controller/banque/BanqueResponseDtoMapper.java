@@ -5,11 +5,12 @@ import java.util.Collections;
 
 import fr.colline.monatis.comptes.controller.interne.CompteInterneResponseDtoMapper;
 import fr.colline.monatis.comptes.model.CompteInterne;
+import fr.colline.monatis.references.controller.ReferenceResponseDto;
 import fr.colline.monatis.references.model.Banque;
 
 public class BanqueResponseDtoMapper {
 
-	public static BanqueBasicResponseDto mapperModelToBasicResponseDto(Banque banque) {
+	public static ReferenceResponseDto mapperModelToBasicResponseDto(Banque banque) {
 		
 		BanqueBasicResponseDto dto = new BanqueBasicResponseDto();
 		
@@ -29,7 +30,7 @@ public class BanqueResponseDtoMapper {
 		return dto;
 	}
 
-	public static BanqueSimpleResponseDto mapperModelToSimpleResponseDto(Banque banque) {
+	public static ReferenceResponseDto mapperModelToSimpleResponseDto(Banque banque) {
 		
 		BanqueSimpleResponseDto dto = new BanqueSimpleResponseDto();
 		
@@ -49,7 +50,7 @@ public class BanqueResponseDtoMapper {
 		return dto;
 	}
 
-	public static BanqueDetailedResponseDto mapperModelToDetailedResponseDto(Banque banque) {
+	public static ReferenceResponseDto mapperModelToDetailedResponseDto(Banque banque) {
 		
 		BanqueDetailedResponseDto dto = new BanqueDetailedResponseDto();
 		

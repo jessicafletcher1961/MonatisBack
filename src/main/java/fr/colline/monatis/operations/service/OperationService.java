@@ -1,9 +1,6 @@
 package fr.colline.monatis.operations.service;
 
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -15,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import fr.colline.monatis.comptes.model.Compte;
-import fr.colline.monatis.comptes.model.CompteInterne;
 import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.comptes.service.CompteExterneService;
 import fr.colline.monatis.comptes.service.CompteInterneService;
@@ -24,7 +20,6 @@ import fr.colline.monatis.erreurs.GeneriqueTechniqueErreur;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.operations.OperationFonctionnelleErreur;
 import fr.colline.monatis.operations.OperationTechniqueErreur;
-import fr.colline.monatis.operations.model.Evaluation;
 import fr.colline.monatis.operations.model.Operation;
 import fr.colline.monatis.operations.model.OperationLigne;
 import fr.colline.monatis.operations.model.TypeOperation;
@@ -34,13 +29,16 @@ import fr.colline.monatis.operations.repository.OperationRepository;
 @Service
 public class OperationService {
 
+    private final CompteTechniqueService compteTechniqueService;
+
 	@Autowired private CompteInterneService compteInterneService;
 	@Autowired private CompteExterneService compteExterneService;
-	@Autowired private CompteTechniqueService compteTechniqueService;
-	@Autowired private EvaluationService evaluationService;
-
 	@Autowired private OperationRepository operationRepository;
 	@Autowired private OperationLigneRepository operationLigneRepository;
+
+    OperationService(CompteTechniqueService compteTechniqueService) {
+        this.compteTechniqueService = compteTechniqueService;
+    }
 
 	public Operation rechercherParId(Long id) throws ServiceException {
 
@@ -143,94 +141,17 @@ public class OperationService {
 		}
 	}
 
-	public List<Compte> rechercherComptesCompatiblesEnDepense(TypeOperation typeOperation) throws ServiceException {
-
-		List<Compte> resultat = new ArrayList<>();
-
-		switch(typeOperation) {
-
-		case TRANSFERT:
-		case DEPOT:
-		case ACHAT:
-		case DEPENSE:
-			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.COURANT));
-			break;
-		case RETRAIT:
-			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.EPARGNE));
-			break;
-		case VENTE:
-			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.PATRIMOINE));
-			break;
-		case RECETTE:
-			resultat.addAll(compteExterneService.rechercherTous());
-			break;
-		case GAIN:
-			resultat.addAll(compteTechniqueService.rechercherTous());
-			break;
-		case FRAIS:
-			resultat.addAll(compteInterneService.rechercherTous());
-			break;
-		default:
-			throw new ServiceException(GeneriqueTechniqueErreur.TYPE_NON_GERE,
-					TypeOperation.class.getSimpleName(),
-					typeOperation.getCode(),
-					typeOperation.getLibelle());
-		}
-
-		Collections.sort(resultat, (o1, o2) -> {
-			return o1.getIdentifiant().compareTo(o2.getIdentifiant());
-		});
-
-		return resultat;
-	}
-
-	public Set<Compte> rechercherComptesCompatiblesEnRecette(TypeOperation typeOperation) throws ServiceException {
-
-		Set<Compte> resultat = new HashSet<>();
-
-		switch(typeOperation) {
-
-		case TRANSFERT:
-		case RETRAIT:
-		case VENTE:
-		case RECETTE:
-			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.COURANT));
-			break;
-		case DEPOT:
-			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.EPARGNE));
-			break;
-		case ACHAT:
-			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.PATRIMOINE));
-			break;
-		case DEPENSE:
-			resultat.addAll(compteExterneService.rechercherTous());
-			break;
-		case FRAIS:
-			resultat.addAll(compteTechniqueService.rechercherTous());
-			break;
-		case GAIN:
-			resultat.addAll(compteInterneService.rechercherTous());
-			break;
-		default:
-			throw new ServiceException(GeneriqueTechniqueErreur.TYPE_NON_GERE,
-					TypeOperation.class.getSimpleName(),
-					typeOperation.getCode(),
-					typeOperation.getLibelle());
-		}
-
-		return resultat;
-	}
-
 	/**
 	 * Recherche des opération de dépense du compte indiqué entre date début (incluse)
 	 * et date fin (incluse).</br>
+	 * Comprends les opérations réelles et les opérations techniques.</br>
 	 * Trié par date de valeur de l'opération.
 	 * @param compteId
 	 * @param dateDebut
 	 * @param dateFin
 	 * @return
 	 */
-	public List<Operation> rechercherOperationDepenseParCompteIdEntreDateDebutEtDateFin(
+	public List<Operation> rechercherOperationsDepenseParCompteIdEntreDateDebutEtDateFin(
 			Long compteId,
 			LocalDate dateDebut, 
 			LocalDate dateFin) throws ServiceException {
@@ -255,7 +176,7 @@ public class OperationService {
 	 * @param dateFin
 	 * @return
 	 */
-	public List<Operation> rechercherOperationDepenseParCompteIdJusqueDateFin(Long compteId, LocalDate dateFin) throws ServiceException {
+	public List<Operation> rechercherOperationsDepenseParCompteIdJusqueDateFin(Long compteId, LocalDate dateFin) throws ServiceException {
 
 		try {
 			return operationRepository.findByCompteDepenseIdAndDateValeurLessThanEqualOrderByDateValeur(
@@ -278,7 +199,7 @@ public class OperationService {
 	 * @param dateDebut
 	 * @return
 	 */
-	public List<Operation> rechercherOperationDepenseParCompteIdDepuisDateDebut(Long compteId, LocalDate dateDebut) throws ServiceException {
+	public List<Operation> rechercherOperationsDepenseParCompteIdDepuisDateDebut(Long compteId, LocalDate dateDebut) throws ServiceException {
 
 		try {
 			return operationRepository.findByCompteDepenseIdAndDateValeurGreaterThanEqualOrderByDateValeur(
@@ -297,13 +218,14 @@ public class OperationService {
 	/**
 	 * Recherche des opération de recette du compte indiqué entre date début (incluse)
 	 * et date fin (incluse).</br>
+	 * Comprends les opérations réelles et les opérations techniques.</br>
 	 * Trié par date de valeur de l'opération.
 	 * @param compteId
 	 * @param dateDebut
 	 * @param dateFin
 	 * @return
 	 */
-	public List<Operation> rechercherOperationRecetteParCompteIdEntreDateDebutEtDateFin(
+	public List<Operation> rechercherOperationsRecetteParCompteIdEntreDateDebutEtDateFin(
 			Long compteId,
 			LocalDate dateDebut, 
 			LocalDate dateFin) throws ServiceException {
@@ -328,7 +250,7 @@ public class OperationService {
 	 * @param dateFin
 	 * @return
 	 */
-	public List<Operation> rechercherOperationRecetteParCompteIdJusqueDateFin(Long compteId, LocalDate dateFin) throws ServiceException {
+	public List<Operation> rechercherOperationsRecetteParCompteIdJusqueDateFin(Long compteId, LocalDate dateFin) throws ServiceException {
 
 		try {
 			return operationRepository.findByCompteRecetteIdAndDateValeurLessThanEqualOrderByDateValeur(
@@ -352,7 +274,7 @@ public class OperationService {
 	 * @param dateDebut
 	 * @return
 	 */
-	public List<Operation> rechercherOperationRecetteParCompteIdDepuisDateDebut(Long compteId, LocalDate dateDebut) throws ServiceException {
+	public List<Operation> rechercherOperationsRecetteParCompteIdDepuisDateDebut(Long compteId, LocalDate dateDebut) throws ServiceException {
 
 		try {
 			return operationRepository.findByCompteRecetteIdAndDateValeurGreaterThanEqualOrderByDateValeur(
@@ -368,14 +290,7 @@ public class OperationService {
 		}
 	}
 
-	/**
-	 * Recherche de toutes les opération du compte indiqué.</br>
-	 * Trié par date de valeur de l'opération.
-	 * @param compteId1
-	 * @param compteId2
-	 * @return
-	 */
-	public List<Operation> rechercherOperationParCompteId(Long compteId) throws ServiceException {
+	public List<Operation> rechercherOperationsParCompteId(Long compteId) throws ServiceException {
 
 		try {
 			return operationRepository.findByCompteDepenseIdOrCompteRecetteIdOrderByDateValeur(
@@ -400,7 +315,7 @@ public class OperationService {
 	 * @return
 	 * @throws ServiceException 
 	 */
-	public List<Operation> rechercherOperationParCompteIdEntreDateDebutEtDateFin(Long compteId, LocalDate dateDebut,LocalDate dateFin) throws ServiceException {
+	public List<Operation> rechercherOperationsParCompteIdEntreDateDebutEtDateFin(Long compteId, LocalDate dateDebut,LocalDate dateFin) throws ServiceException {
 		
 		try {
 			return operationRepository.findByCompteDepenseIdOrCompteRecetteIdAndDateValeurBetweenOrderByDateValeur(
@@ -426,7 +341,7 @@ public class OperationService {
 	 * @param dateFin
 	 * @return
 	 */
-	public List<Operation> rechercherOperationParCompteIdJusqueDateFin(Long compteId, LocalDate dateFin) throws ServiceException {
+	public List<Operation> rechercherOperationsParCompteIdJusqueDateFin(Long compteId, LocalDate dateFin) throws ServiceException {
 
 		try {
 			return operationRepository.findByCompteDepenseIdOrCompteRecetteIdAndDateValeurLessThanEqualOrderByDateValeur(
@@ -450,7 +365,7 @@ public class OperationService {
 	 * @param dateDebut
 	 * @return
 	 */
-	public List<Operation> rechercherOperationParCompteIdDepuisDateDebut(Long compteId, LocalDate dateDebut) throws ServiceException {
+	public List<Operation> rechercherOperationsParCompteIdDepuisDateDebut(Long compteId, LocalDate dateDebut) throws ServiceException {
 
 		try {
 			return operationRepository.findByCompteDepenseIdOrCompteRecetteIdAndDateValeurGreaterThanEqualOrderByDateValeur(
@@ -481,227 +396,6 @@ public class OperationService {
 					OperationTechniqueErreur.RECHERCHE_OPERATION_LIGNE_PAR_REFERENCE_ID_JUSQUE_DATE_FIN,
 					sousCategorieId,
 					dateFin);
-		}
-	}
-
-	/**
-	 * Recherche la somme de toutes les opération (recettes - dépense) pour n'importe quel type de compte jusqu'à
-	 * la date de solde indiquée (opérations à cette date incluses).</br>
-	 * S'il s'agit d'un compte interne, seules sont prises en compte les opération ultérieures à la date
-	 * de solde initial (ou le solde enregistré par une évaluation), et le montant du solde initial (ou le solde enregistré par une évaluation) est intégré.</br>
-	 * S'il s'agit du'un compte interne et que la date de solde indiquée est antérieure à la date de solde initial, 
-	 * le solde retourné est à 0.
-	 * @param compte le compte
-	 * @param dateSolde la date du solde recherché
-	 * @return le solde du compte indiqué à la date indiquée
-	 * @throws ServiceException
-	 */
-	public Long rechercherSolde(
-			Compte compte,
-			LocalDate dateSolde) throws ServiceException {
-
-		Long soldeInitial;
-		Long montantTotalRecetteEnCentimes = 0L;
-		Long montantTotalDepenseEnCentimes = 0L;
-
-		if ( CompteInterne.class.isAssignableFrom(compte.getClass()) ) {
-
-			CompteInterne compteInterne = (CompteInterne) compte;
-
-			if ( dateSolde.isBefore(compteInterne.getDateSoldeInitial().minus(1, ChronoUnit.DAYS)) ) {
-				// On doit ignorer les éventuelles opérations antérieures à la date 
-				// du solde initial
-				return compteInterne.getMontantSoldeInitialEnCentimes();
-			}
-
-			if ( dateSolde.equals(compteInterne.getDateSoldeInitial().minus(1, ChronoUnit.DAYS)) ) {
-				// Le solde de la veille de la première journée du compte (date du solde initial) est le
-				// montant de solde initial indiqué au niveau du compte
-				return compteInterne.getMontantSoldeInitialEnCentimes();
-			}
-
-			// La date du solde rechéerchée est égale ou ultérieure à la date de première journée du compte
-			
-			Evaluation derniereEvaluation = evaluationService.rechercherDerniereParCompteInterneIdJusqueDateCible(compteInterne.getId(), dateSolde);
-			if ( derniereEvaluation != null && dateSolde.equals(derniereEvaluation.getDateSolde()) ) {
-				// Le solde au soir de la date recherchée déjà est enregistré dans une évaluation 
-				return derniereEvaluation.getMontantSoldeEnCentimes();
-			}
-
-			LocalDate dateDebut;
-			if ( derniereEvaluation == null || derniereEvaluation.getDateSolde().isBefore(compteInterne.getDateSoldeInitial()) ) {
-				// On reprend toutes les opérations depuis la date de solde initial
-				soldeInitial = compteInterne.getMontantSoldeInitialEnCentimes();
-				dateDebut = compteInterne.getDateSoldeInitial();
-			}
-			else {
-				// On reprend toutes les opérations à partir du lendemain du dernier solde enregistré
-				soldeInitial = derniereEvaluation.getMontantSoldeEnCentimes();
-				dateDebut = derniereEvaluation.getDateSolde().plus(1, ChronoUnit.DAYS);
-			}
-
-			// Calcul du montant des dépenses entre date de début déterminée ci dessus et date solde recherchée
-			List<Operation> operationsDepense = rechercherOperationDepenseParCompteIdEntreDateDebutEtDateFin(
-					compteInterne.getId(),
-					dateDebut,
-					dateSolde);
-			ajouterOperationVirtuellesDepenseEntreDateDebutEtDateFin(
-					operationsDepense, 
-					compteInterne.getId(), 
-					dateDebut, 
-					dateSolde);
-			for ( Operation operation : operationsDepense) {
-				montantTotalDepenseEnCentimes += operation.getMontantEnCentimes();
-			}
-
-			// Calcul du montant des recettes entre date de début déterminée ci dessus et date solde recherchée
-			List<Operation> operationsRecette = rechercherOperationRecetteParCompteIdEntreDateDebutEtDateFin(
-					compteInterne.getId(),
-					dateDebut,
-					dateSolde);
-			ajouterOperationVirtuelleRecetteEntreDateDebutEtDateFin(
-					operationsRecette, 
-					compteInterne.getId(), 
-					dateDebut, 
-					dateSolde);
-			for ( Operation operation : operationsRecette) {
-				montantTotalRecetteEnCentimes += operation.getMontantEnCentimes();
-			}
-		}
-		else {
-
-			soldeInitial = 0L;
-
-			List<Operation> operationsDepense = rechercherOperationDepenseParCompteIdJusqueDateFin(
-					compte.getId(),
-					dateSolde);
-			for ( Operation operation : operationsDepense) {
-				montantTotalDepenseEnCentimes += operation.getMontantEnCentimes();
-			}
-
-			List<Operation> operationsRecette = rechercherOperationRecetteParCompteIdJusqueDateFin(
-					compte.getId(),
-					dateSolde);
-			for ( Operation operation : operationsRecette) {
-				montantTotalRecetteEnCentimes += operation.getMontantEnCentimes();
-			}
-		}
-
-		return soldeInitial
-				+ montantTotalRecetteEnCentimes
-				- montantTotalDepenseEnCentimes;
-	}
-
-	public void ajouterOperationVirtuellesDepenseEntreDateDebutEtDateFin(
-			List<Operation> operations,
-			Long compteId, 
-			LocalDate dateDebut, 
-			LocalDate dateFin) throws ServiceException {
-
-		List<Evaluation> evaluations = evaluationService.rechercherParCompteInterneIdEntreDateDebutEtDateFin(compteId, dateDebut, dateFin);
-		
-		if ( ! evaluations.isEmpty() ) {
-
-			for ( Evaluation evaluation : evaluations ) {
-
-				Long montantSoldeAvantEvaluationEnCentimes = rechercherSolde(evaluation.getCompteInterne(), evaluation.getDateSolde().minus(1, ChronoUnit.DAYS));
-				
-				Long montantOperationsReellesDepenseEnCentimes = 0L;
-				List<Operation> operationsReellesDepense = rechercherOperationDepenseParCompteIdEntreDateDebutEtDateFin(
-						compteId, 
-						evaluation.getDateSolde(), 
-						evaluation.getDateSolde());
-				for ( Operation operation : operationsReellesDepense ) {
-					montantOperationsReellesDepenseEnCentimes += operation.getMontantEnCentimes();
-				}
-				Long montantOperationsReellesRecetteEnCentimes = 0L;
-				List<Operation> operationsReellesRecette = rechercherOperationRecetteParCompteIdEntreDateDebutEtDateFin(
-						compteId, 
-						evaluation.getDateSolde(), 
-						evaluation.getDateSolde());
-				for ( Operation operation : operationsReellesRecette ) {
-					montantOperationsReellesRecetteEnCentimes += operation.getMontantEnCentimes();
-				}
-				
-				Long monantOperationsReellesDuJour = montantOperationsReellesRecetteEnCentimes - montantOperationsReellesDepenseEnCentimes;
-				
-				Long montantOperationVirtuelle = evaluation.getMontantSoldeEnCentimes() - (montantSoldeAvantEvaluationEnCentimes + monantOperationsReellesDuJour);
-				
-				if ( montantOperationVirtuelle < 0) {
-					// Generation d'uns opération de moins solde
-					operations.add(new Operation(
-							"VIRTUEL", 
-							TypeOperation.MOINS_SOLDE,
-							"Operation d'ajustement virtuelle (diminution)",
-							evaluation.getDateSolde(), 
-							0 - montantOperationVirtuelle, 
-							evaluation.getCompteTechnique(),
-							evaluation.getCompteInterne(), 
-							new OperationLigne(
-									0,
-									"Operation d'ajustement virtuelle (diminution)",
-									evaluation.getDateSolde(),
-									0 - montantOperationVirtuelle,
-									null)));
-				}
-			}
-			Collections.sort(operations, (o1, o2) -> {return o1.getDateValeur().compareTo(o2.getDateValeur());});
-		}
-	}
-
-	public void ajouterOperationVirtuelleRecetteEntreDateDebutEtDateFin(
-			List<Operation> operations,
-			Long compteId, 
-			LocalDate dateDebut, 
-			LocalDate dateFin) throws ServiceException {
-
-		List<Evaluation> evaluations = evaluationService.rechercherParCompteInterneIdEntreDateDebutEtDateFin(compteId, dateDebut, dateFin);
-		
-		if ( ! evaluations.isEmpty() ) {
-
-			for ( Evaluation evaluation : evaluations ) {
-
-				Long montantSoldeAvantEvaluationEnCentimes = rechercherSolde(evaluation.getCompteInterne(), evaluation.getDateSolde().minus(1, ChronoUnit.DAYS));
-				
-				Long montantOperationsReellesDepenseEnCentimes = 0L;
-				List<Operation> operationsReellesDepense = rechercherOperationDepenseParCompteIdEntreDateDebutEtDateFin(
-						compteId, 
-						evaluation.getDateSolde(), 
-						evaluation.getDateSolde());
-				for ( Operation operation : operationsReellesDepense ) {
-					montantOperationsReellesDepenseEnCentimes += operation.getMontantEnCentimes();
-				}
-				Long montantOperationsReellesRecetteEnCentimes = 0L;
-				List<Operation> operationsReellesRecette = rechercherOperationRecetteParCompteIdEntreDateDebutEtDateFin(
-						compteId, 
-						evaluation.getDateSolde(), 
-						evaluation.getDateSolde());
-				for ( Operation operation : operationsReellesRecette ) {
-					montantOperationsReellesRecetteEnCentimes += operation.getMontantEnCentimes();
-				}
-				Long monantOperationsReellesDuJour = montantOperationsReellesRecetteEnCentimes - montantOperationsReellesDepenseEnCentimes;
-				
-				Long montantOperationVirtuelle = evaluation.getMontantSoldeEnCentimes() - (montantSoldeAvantEvaluationEnCentimes + monantOperationsReellesDuJour);
-				
-				if ( montantOperationVirtuelle > 0) {
-					// Generation d'uns opération de plus solde
-					operations.add(new Operation(
-							"VIRTUEL", 
-							TypeOperation.PLUS_SOLDE,
-							"Operation d'ajustement virtuelle (augmentation)",
-							evaluation.getDateSolde(), 
-							montantOperationVirtuelle, 
-							evaluation.getCompteTechnique(),
-							evaluation.getCompteInterne(), 
-							new OperationLigne(
-									0,
-									"Operation d'ajustement virtuelle (augmentation)",
-									evaluation.getDateSolde(),
-									montantOperationVirtuelle,
-									null)));
-				}
-			}
-			Collections.sort(operations, (o1, o2) -> {return o1.getDateValeur().compareTo(o2.getDateValeur());});
 		}
 	}
 
@@ -790,7 +484,7 @@ public class OperationService {
 			TypeOperation typeOperation, 
 			Compte compteDepense) throws ServiceException {
 
-		if ( ! rechercherComptesCompatiblesEnDepense(typeOperation).contains(compteDepense) ) {
+		if ( ! determinerComptesCompatiblesEnDepense(typeOperation).contains(compteDepense) ) {
 			throw new ServiceException(
 					OperationFonctionnelleErreur.TYPE_OPERATION_ET_COMPTE_DEPENSE_INCOMPATIBLES,
 					typeOperation.getCode(), 
@@ -802,7 +496,7 @@ public class OperationService {
 			TypeOperation typeOperation, 
 			Compte compteRecette) throws ServiceException {
 
-		if ( ! rechercherComptesCompatiblesEnRecette(typeOperation).contains(compteRecette) ) {
+		if ( ! determinerComptesCompatiblesEnRecette(typeOperation).contains(compteRecette) ) {
 			throw new ServiceException(
 					OperationFonctionnelleErreur.TYPE_OPERATION_ET_COMPTE_RECETTE_INCOMPATIBLES,
 					typeOperation.getCode(), 
@@ -837,4 +531,79 @@ public class OperationService {
 					montantOperationEnCentimes);
 		}
 	}
+
+	private Set<Compte> determinerComptesCompatiblesEnDepense(TypeOperation typeOperation) throws ServiceException {
+
+		Set<Compte> resultat = new HashSet<>();
+
+		switch(typeOperation) {
+
+		case TRANSFERT:
+		case DEPOT:
+		case INVESTISSEMENT:
+		case DEPENSE:
+			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.COURANT));
+			break;
+		case RETRAIT:
+		case LIQUIDATION:
+			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.FINANCIER));
+			break;
+		case VENTE:
+			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.BIEN));
+			break;
+		case RECETTE:
+		case ACHAT:
+			resultat.addAll(compteExterneService.rechercherTous());
+			break;
+		case TECHNIQUE:
+			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.FINANCIER));
+			resultat.addAll(compteTechniqueService.rechercherTous());
+			break;
+		default:
+			throw new ServiceException(GeneriqueTechniqueErreur.TYPE_NON_GERE,
+					TypeOperation.class.getSimpleName(),
+					typeOperation.getCode(),
+					typeOperation.getLibelle());
+		}
+
+		return resultat;
+	}
+
+	private Set<Compte> determinerComptesCompatiblesEnRecette(TypeOperation typeOperation) throws ServiceException {
+
+		Set<Compte> resultat = new HashSet<>();
+
+		switch(typeOperation) {
+
+		case TRANSFERT:
+		case RETRAIT:
+		case LIQUIDATION:
+		case RECETTE:
+			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.COURANT));
+			break;
+		case DEPOT:
+		case INVESTISSEMENT:
+			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.FINANCIER));
+			break;
+		case ACHAT:
+			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.BIEN));
+			break;
+		case DEPENSE:
+		case VENTE:
+			resultat.addAll(compteExterneService.rechercherTous());
+			break;
+		case TECHNIQUE:
+			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.FINANCIER));
+			resultat.addAll(compteTechniqueService.rechercherTous());
+			break;
+		default:
+			throw new ServiceException(GeneriqueTechniqueErreur.TYPE_NON_GERE,
+					TypeOperation.class.getSimpleName(),
+					typeOperation.getCode(),
+					typeOperation.getLibelle());
+		}
+
+		return resultat;
+	}
+
 }

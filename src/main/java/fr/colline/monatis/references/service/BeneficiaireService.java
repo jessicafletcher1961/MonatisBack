@@ -40,7 +40,7 @@ public class BeneficiaireService extends ReferenceService<Beneficiaire>{
 
 		int nombreDetailOperation;
 		try {
-			nombreDetailOperation = beneficiaireRepository.compterOperationDetailParBeneficiaireId(beneficiaire.getId());
+			nombreDetailOperation = beneficiaireRepository.compterOperationLigneParBeneficiaireId(beneficiaire.getId());
 		}
 		catch ( Throwable t ) {
 			throw new ServiceException(
@@ -51,7 +51,7 @@ public class BeneficiaireService extends ReferenceService<Beneficiaire>{
 
 		if ( nombreDetailOperation > 0 ) {
 			throw new ServiceException(
-					ReferenceFonctionnelleErreur.SUPPRESSION_BENEFICIAIRE_AVEC_OPERATION_DETAILS, 
+					ReferenceFonctionnelleErreur.SUPPRESSION_BENEFICIAIRE_AVEC_OPERATION, 
 					beneficiaire.getNom(),
 					nombreDetailOperation);
 		}

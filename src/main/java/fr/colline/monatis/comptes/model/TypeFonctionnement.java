@@ -3,8 +3,8 @@ package fr.colline.monatis.comptes.model;
 public enum TypeFonctionnement {
 
 	COURANT ("COURANT", "Compte servant à payer des dépenses ou à encaisser des recettes et ne donnant pas lieu à des plus ou moins values : compte bancaire, porte monnaie..." ),
-	EPARGNE ("EPARGNE", "Compte d'épargne sur lequel on effectue des dépôts ou des retraits, et donnant lieu à des versements d'intérêts de la part de la banque : livret A... "),
-	PATRIMOINE ("PATRIMOINE", "Compte permettant de suivre le patrimoine du foyer et donnant lieu à des plus ou moins values en fonction de la Bourse ou d'un marché spécifique : comptes-titre, assurances-vie, PEA, habitation principale, collection de timbres, oeuvres d'art..."),
+	FINANCIER ("FINANCIER", "Compte financier de placement/investissement : comptes d'épargne, comptes titre, assurances-vie, PEA, ... "),
+	BIEN ("BIEN", "Compte permettant de suivre la valeur d'un bien du foyer en fonction d'un marché : habitation principale, collection de timbres, collection d'oeuvres d'art, commode Louis XV..."),
 	
 	;
 	

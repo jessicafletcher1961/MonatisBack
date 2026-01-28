@@ -1,4 +1,4 @@
-package fr.colline.monatis.operations.controller;
+package fr.colline.monatis.evaluations.controller;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import fr.colline.monatis.comptes.model.CompteInterne;
@@ -20,14 +22,10 @@ import fr.colline.monatis.comptes.model.TypeCompte;
 import fr.colline.monatis.comptes.service.CompteInterneService;
 import fr.colline.monatis.comptes.service.CompteTechniqueService;
 import fr.colline.monatis.erreurs.ControllerVerificateurService;
+import fr.colline.monatis.evaluations.model.Evaluation;
+import fr.colline.monatis.evaluations.service.EvaluationService;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ServiceException;
-import fr.colline.monatis.operations.controller.request.EvaluationCreationRequestDto;
-import fr.colline.monatis.operations.controller.request.EvaluationModificationRequestDto;
-import fr.colline.monatis.operations.controller.response.EvaluationDetailedResponseDto;
-import fr.colline.monatis.operations.controller.response.EvaluationSimpleResponseDto;
-import fr.colline.monatis.operations.model.Evaluation;
-import fr.colline.monatis.operations.service.EvaluationService;
 import jakarta.transaction.Transactional;
 
 @RestController
@@ -45,15 +43,15 @@ public class EvaluationController {
 	@Autowired private CompteTechniqueService compteTechniqueService;
 	
 	@GetMapping("/all")
-	public List<EvaluationSimpleResponseDto> getAllEvaluation() throws ServiceException, ControllerException {
+	public List<EvaluationResponseDto> getAllEvaluation() throws ServiceException, ControllerException {
 
-		List<EvaluationSimpleResponseDto> resultat = new ArrayList<>();
+		List<EvaluationResponseDto> resultat = new ArrayList<>();
 		
 		List<CompteInterne> comptesInternes = compteInterneService.rechercherTous(Sort.by("identifiant"));
 		for ( CompteInterne compteInterne : comptesInternes ) {
 			List<Evaluation> evaluations = evaluationService.rechercherParCompteInterneId(compteInterne.getId());
 			for ( Evaluation evaluation : evaluations ) {
-				resultat.add(EvaluationResponseDtoMapper.mapperModelToSimpleResponseDto(evaluation));
+				resultat.add(EvaluationResponseDtoMapper.mapperModelToBasicResponseDto(evaluation));
 			}
 		}
 
@@ -61,36 +59,36 @@ public class EvaluationController {
 	}
 
 	@GetMapping("/get/{cle}")
-	public EvaluationDetailedResponseDto getEvaluationParNumero(@PathVariable String cle) throws ControllerException, ServiceException {
+	public EvaluationResponseDto getEvaluationParCle(@PathVariable String cle) throws ControllerException, ServiceException {
 
 		Evaluation evaluation = verificateur.verifierEvaluation(
 				cle, 
 				OBLIGATOIRE);
-
 		return EvaluationResponseDtoMapper.mapperModelToDetailedResponseDto(evaluation);
 	}
 
 	@PostMapping("/new")
-	public EvaluationDetailedResponseDto creerEvaluation(@RequestBody EvaluationCreationRequestDto dto) throws ControllerException, ServiceException {
+	public EvaluationResponseDto creerEvaluation(@RequestBody EvaluationCreationRequestDto dto) throws ControllerException, ServiceException {
 
 		Evaluation evaluation = new Evaluation();
 		evaluation = mapperCreationRequestDtoToModel(dto, evaluation);
 		evaluation = evaluationService.creerEvaluation(evaluation);
-		return EvaluationResponseDtoMapper.mapperModelToDetailedResponseDto(evaluation);
+		return EvaluationResponseDtoMapper.mapperModelToSimpleResponseDto(evaluation);
 	}
 
 	@PutMapping("/mod/{cle}")
-	public EvaluationDetailedResponseDto modifierEvaluation(
+	public EvaluationResponseDto modifierEvaluation(
 			@PathVariable String cle, 
 			@RequestBody EvaluationModificationRequestDto dto) throws ControllerException, ServiceException {
 
 		Evaluation evaluation = verificateur.verifierEvaluation(cle, OBLIGATOIRE);
 		evaluation = mapperModificationRequestDtoToModel(dto, evaluation);
 		evaluation = evaluationService.modifierEvaluation(evaluation);
-		return EvaluationResponseDtoMapper.mapperModelToDetailedResponseDto(evaluation);
+		return EvaluationResponseDtoMapper.mapperModelToSimpleResponseDto(evaluation);
 	}
 
 	@DeleteMapping("/del/{cle}")
+	@ResponseStatus(value = HttpStatus.NO_CONTENT)
 	public void supprimerEvaluation(@PathVariable String cle) throws ControllerException, ServiceException {
 
 		Evaluation evaluation = verificateur.verifierEvaluation(cle, OBLIGATOIRE);
@@ -107,7 +105,7 @@ public class EvaluationController {
 		evaluation.setLibelle(verificateur.verifierLibelle(dto.libelle, FACULTATIF, null));
 		evaluation.setMontantSoldeEnCentimes(verificateur.verifierMontantEnCentimes(dto.montantSoldeEnCentimes, OBLIGATOIRE, null));
 
-		evaluation.setCompteTechnique(compteTechniqueService.rechercherOuCreerCompteTechniqueOperationsReevaluation());
+		evaluation.setCompteTechnique(compteTechniqueService.rechercherOuCreerCompteTechniqueEvaluation());
 
 		return evaluation;
 	}

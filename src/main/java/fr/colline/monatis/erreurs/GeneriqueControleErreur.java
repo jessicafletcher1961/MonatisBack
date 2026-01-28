@@ -15,6 +15,12 @@ public enum GeneriqueControleErreur implements MonatisErreur {
 			"La date est obligatoire"),
 
 	/**
+			"La date '%s' est invalide. Le format attendu est 'YYYY-MM-DD'"),
+	 */
+	DATE_INVALIDE(
+			"La date '%s' est invalide. Le format attendu est 'YYYY-MM-DD'"),
+
+	/**
 			"Le montant est obligatoire"),
 	 */
 	MONTANT_OBLIGATOIRE(

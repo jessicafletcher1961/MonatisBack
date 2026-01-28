@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import fr.colline.monatis.erreurs.ControllerVerificateurService;
@@ -41,7 +43,7 @@ public class BeneficiaireController {
 		Sort tri = Sort.by("nom");
 		List<Beneficiaire> liste = beneficiaireService.rechercherTous(tri);
 		for ( Beneficiaire beneficiaire : liste ) {
-			resultat.add(BeneficiaireResponseDtoMapper.mapperModelToSimpleResponseDto(beneficiaire));
+			resultat.add(BeneficiaireResponseDtoMapper.mapperModelToBasicResponseDto(beneficiaire));
 		}
 		return resultat;
 	}
@@ -59,7 +61,7 @@ public class BeneficiaireController {
 		Beneficiaire beneficiaire = new Beneficiaire();
 		beneficiaire = mapperCreationRequestDtoToModel(dto, beneficiaire);
 		beneficiaire = beneficiaireService.creerReference(beneficiaire);
-		return BeneficiaireResponseDtoMapper.mapperModelToDetailedResponseDto(beneficiaire);
+		return BeneficiaireResponseDtoMapper.mapperModelToSimpleResponseDto(beneficiaire);
 	}
 
 	@PutMapping("/mod/{nom}")
@@ -68,10 +70,11 @@ public class BeneficiaireController {
 		Beneficiaire beneficiaire = verificateur.verifierBeneficiaire(nom, OBLIGATOIRE);
 		beneficiaire = mapperModificationRequestDtoToModel(dto, beneficiaire);
 		beneficiaire = beneficiaireService.modifierReference(beneficiaire);
-		return BeneficiaireResponseDtoMapper.mapperModelToDetailedResponseDto(beneficiaire);
+		return BeneficiaireResponseDtoMapper.mapperModelToSimpleResponseDto(beneficiaire);
 	}
 
 	@DeleteMapping("/del/{nom}")
+	@ResponseStatus(value = HttpStatus.NO_CONTENT)
 	public void supprimerReference(@PathVariable String nom) throws ControllerException, ServiceException {
 
 		Beneficiaire beneficiaire = verificateur.verifierBeneficiaire(nom, OBLIGATOIRE);

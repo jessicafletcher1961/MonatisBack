@@ -1,4 +1,4 @@
-package fr.colline.monatis.operations;
+package fr.colline.monatis.evaluations;
 
 import fr.colline.monatis.erreurs.MonatisErreur;
 import fr.colline.monatis.erreurs.TypeDomaine;

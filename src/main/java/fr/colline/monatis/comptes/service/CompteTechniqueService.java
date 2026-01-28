@@ -13,10 +13,6 @@ import fr.colline.monatis.exceptions.ServiceException;
 @Service
 public class CompteTechniqueService extends CompteService<CompteTechnique> {
 
-	private final String IDENTIFIANT_OPERATIONS_REEVALUATIONS = "TECH-OPERATIONS-REEVALUATIONS"; 
-	private final String IDENTIFIANT_OPERATIONS_REMUNERATION_ET_FRAIS = "TECH-OPERATIONS-REMUNERATION";
-	private final String LIBELLE_COMPTE_REEVALUATION_SOLDE = "Contreparties pour les opérations virtuelles, comme l'enregistrement des plus-values, de moins values ou d'ajustement des soldes";
-	
 	@Autowired private CompteTechniqueRepository compteTechniqueRepository;
 	@Autowired private CompteGeneriqueService compteGeneriqueService;
 	
@@ -30,21 +26,21 @@ public class CompteTechniqueService extends CompteService<CompteTechnique> {
 		return compteTechniqueRepository;
 	}
 
-	public CompteTechnique rechercherOuCreerCompteTechniqueOperationsReevaluation() throws ServiceException {
-		return rechercherOuCreerCompteTechnique(IDENTIFIANT_OPERATIONS_REEVALUATIONS);
+	public CompteTechnique rechercherOuCreerCompteTechniqueEvaluation() throws ServiceException {
+		return rechercherOuCreerCompteTechnique("TECH-EVALUATIONS", "Contrepartie des opérations virtuelles");
 	}
 
-	public CompteTechnique rechercherOuCreerCompteTechniqueOperationsRemunerationEtFrais() throws ServiceException {
-		return rechercherOuCreerCompteTechnique(IDENTIFIANT_OPERATIONS_REMUNERATION_ET_FRAIS);
+	public CompteTechnique rechercherOuCreerCompteTechniqueFrais() throws ServiceException {
+		return rechercherOuCreerCompteTechnique("TECH-FRAIS", "Contrepartie des opérations de frais prélevés directement sur un compte par le gestionnaire de ce compte (agios, frais divers...)");
 	}
 
-	private CompteTechnique rechercherOuCreerCompteTechnique(String identifiantCompteTechnique) throws ServiceException {
+	public CompteTechnique rechercherOuCreerCompteTechniqueRemuneration() throws ServiceException {
+		return rechercherOuCreerCompteTechnique("TECH-REMUNERATION", "Contrepartie des rémunérations directement versées sur un compte financier par le gestionnaire de ce compte (dividendes, intérêts...)");
+	}
 
-		if ( identifiantCompteTechnique == null ) {
-			identifiantCompteTechnique = IDENTIFIANT_OPERATIONS_REEVALUATIONS;
-		}
-		
-		Compte compte = compteGeneriqueService.rechercherParIdentifiant(identifiantCompteTechnique);
+	private CompteTechnique rechercherOuCreerCompteTechnique(String identifiant, String libelle) throws ServiceException {
+
+		Compte compte = compteGeneriqueService.rechercherParIdentifiant(identifiant);
 		if ( compte != null ) {
 			if ( CompteTechnique.class.isAssignableFrom(compte.getClass()) ) {
 				// Un compte technique avec cet identifiant existe déjà
@@ -62,8 +58,8 @@ public class CompteTechniqueService extends CompteService<CompteTechnique> {
 			// Création du compte technique
 			CompteTechnique compteTechnique = new CompteTechnique();
 			
-			compteTechnique.setIdentifiant(identifiantCompteTechnique);
-			compteTechnique.setLibelle(LIBELLE_COMPTE_REEVALUATION_SOLDE);
+			compteTechnique.setIdentifiant(identifiant);
+			compteTechnique.setLibelle(libelle);
 			
 			return creerCompte(compteTechnique);
 		}

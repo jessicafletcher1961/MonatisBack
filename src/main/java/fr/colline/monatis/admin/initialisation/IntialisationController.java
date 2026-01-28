@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import fr.colline.monatis.admin.initialisation.basic.InitialisationBasicService;
-import fr.colline.monatis.admin.initialisation.danis.InitialisationDanisService;
 import fr.colline.monatis.exceptions.ServiceException;
 import jakarta.transaction.Transactional;
 
@@ -17,7 +16,7 @@ import jakarta.transaction.Transactional;
 @Transactional
 public class IntialisationController {
 
-	@Autowired InitialisationDanisService initialisationService;
+	@Autowired InitialisationBasicService initialisationService;
 	
 	@GetMapping("/delete/all")
 	@ResponseStatus(HttpStatus.NO_CONTENT)

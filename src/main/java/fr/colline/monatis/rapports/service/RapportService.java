@@ -20,7 +20,6 @@ import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.operations.model.Operation;
 import fr.colline.monatis.operations.model.TypeOperation;
 import fr.colline.monatis.operations.service.OperationService;
-import fr.colline.monatis.rapports.RapportControleErreur;
 import fr.colline.monatis.rapports.model.EtatPlusMoinsValues;
 import fr.colline.monatis.rapports.model.HistoriquePlusMoinsValues;
 import fr.colline.monatis.rapports.model.ListeResumeCompteInterne;
@@ -168,41 +167,25 @@ public class RapportService {
 	}
 
 	public List<EtatPlusMoinsValues> rechercherEtatsPlusMoinsValue(
-			LocalDate dateDebutEtat,
-			LocalDate dateFinEtat,
-			TypePeriode typePeriode) throws ServiceException, ControllerException {
+			TypePeriode typePeriode,
+			LocalDate dateCible) throws ServiceException, ControllerException {
 
 		List<EtatPlusMoinsValues> etats = new ArrayList<>();
 		
-		if ( dateFinEtat == null ) {
-			dateFinEtat = LocalDate.now();
-		}
-		
-		LocalDate dateDebutEvaluation;
-		LocalDate dateFinEvaluation;
+		LocalDate dateDebutEvaluation = DateEtPeriodeUtils.recadrerDateDebutPeriode(typePeriode, dateCible);
+		LocalDate dateFinEvaluation = DateEtPeriodeUtils.rechercherDateFinPeriode(typePeriode, dateDebutEvaluation);
 		
 		Sort tri = Sort.by("typeFonctionnement", "identifiant");
 		List<CompteInterne> comptesInternes = compteInterneService.rechercherTous(tri);
 		for ( CompteInterne compteInterne : comptesInternes ) {
 
-			dateDebutEvaluation = dateDebutEtat;
-			if ( dateDebutEvaluation == null 
-					|| dateDebutEvaluation.isBefore(compteInterne.getDateSoldeInitial()) ) {
-				dateDebutEvaluation = compteInterne.getDateSoldeInitial();
-			}
-			
-			dateFinEvaluation = dateFinEtat;
-			if ( dateFinEvaluation == null ) {
-				dateFinEvaluation = LocalDate.now();
-			}
-			
-			if ( dateFinEvaluation.isBefore(dateDebutEvaluation) ) {
+			if ( compteInterne.getDateCloture() != null 
+					&& compteInterne.getDateCloture().isBefore(dateDebutEvaluation) ) {
 				continue;
 			}
-			
-			if ( typePeriode != null ) {
-				dateDebutEvaluation = DateEtPeriodeUtils.recadrerDateDebutPeriode(typePeriode, dateFinEvaluation);
-				dateFinEvaluation = DateEtPeriodeUtils.rechercherDateFinPeriode(typePeriode, dateDebutEvaluation);
+
+			if ( compteInterne.getDateSoldeInitial().isAfter(dateFinEvaluation) ) {
+				continue;
 			}
 			
 			PlusMoinsValue plusMoinsValue = plusMoinsValueService.rechercherPlusMoinsValue(
@@ -210,12 +193,10 @@ public class RapportService {
 					dateDebutEvaluation, 
 					dateFinEvaluation);
 
-			if ( plusMoinsValue.getMontantPlusMoinsValueEnPourcentage() != null ) {
-
+			if ( plusMoinsValue.getMontantPlusMoinsValueEnCentimes() != 0 ) {
 				EtatPlusMoinsValues etat = new EtatPlusMoinsValues();
 				etat.setCompteInterne(compteInterne);
 				etat.setPlusMoinsValue(plusMoinsValue);
-				
 				etats.add(etat);
 			}
 		}
@@ -230,13 +211,16 @@ public class RapportService {
 		for ( TypeFonctionnement typeFonctionnement : TypeFonctionnement.values() ) {
 
 			for ( CompteInterne compteInterne : compteInterneService.rechercherParTypeFonctionnement(typeFonctionnement)) {
-				
-				if ( compteInterne.getDateCloture() == null || !compteInterne.getDateCloture().isBefore(dateSolde) ) {
-					ResumeCompteInterne resume = new ResumeCompteInterne();
-					resume.setCompteInterne(compteInterne);
-					resume.setSolde(soldeService.rechercherSolde(compteInterne, dateSolde));
-					liste.getMap().get(typeFonctionnement).add(resume);
+			
+				if ( compteInterne.getDateSoldeInitial().isAfter(dateSolde) ) {
+					continue;
 				}
+
+				ResumeCompteInterne resume = new ResumeCompteInterne();
+				resume.setCompteInterne(compteInterne);
+				resume.setMontantSoldeEnCentimes(soldeService.rechercherSolde(compteInterne, dateSolde));
+				resume.setDateSolde(dateSolde); 
+				liste.getMap().get(typeFonctionnement).add(resume);
 			}
 		}
 		

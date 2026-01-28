@@ -21,6 +21,7 @@ import fr.colline.monatis.erreurs.ControllerVerificateurService;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.rapports.RapportControleErreur;
+import fr.colline.monatis.rapports.controller.liste_resume_comptes_interne.ListeCompteInterneRequestDto;
 import fr.colline.monatis.rapports.controller.liste_resume_comptes_interne.ListeResumeCompteInterneParTypeFonctionnementResponseDto;
 import fr.colline.monatis.rapports.controller.plus_moins_values.EtatPlusMoinsValueRequestDto;
 import fr.colline.monatis.rapports.controller.plus_moins_values.EtatPlusMoinsValueResponseDto;
@@ -125,13 +126,12 @@ public class RapportController {
 	public List<EtatPlusMoinsValueResponseDto> getEtatPlusMoinsValue(
 			@RequestBody EtatPlusMoinsValueRequestDto requestDto) throws ControllerException, ServiceException {
 
-		TypePeriode typePeriode = verificateur.verifierTypePeriode(requestDto.codeTypePeriode, FACULTATIF, null);
+		TypePeriode typePeriode = verificateur.verifierTypePeriode(requestDto.codeTypePeriode, OBLIGATOIRE, null);
 		LocalDate dateCible = verificateur.verifierDate(requestDto.dateCible, FACULTATIF, LocalDate.now());
 		
 		List<EtatPlusMoinsValues> etats = rapportService.rechercherEtatsPlusMoinsValue(
-				null,
-				dateCible,
-				typePeriode);
+				typePeriode,
+				dateCible);
 		
 		List<EtatPlusMoinsValueResponseDto> dto = new ArrayList<EtatPlusMoinsValueResponseDto>();
 		for ( EtatPlusMoinsValues etat : etats ) {
@@ -143,9 +143,9 @@ public class RapportController {
 
 	@GetMapping("/resumes_comptes_internes")
 	public List<ListeResumeCompteInterneParTypeFonctionnementResponseDto> getListeResumeCompteInterne(
-			@RequestBody(required = false) LocalDate dateCible) throws ControllerException, ServiceException {
+			@RequestBody ListeCompteInterneRequestDto requestDto) throws ControllerException, ServiceException {
 		
-		dateCible = verificateur.verifierDate(dateCible, FACULTATIF, LocalDate.now());
+		LocalDate dateCible = verificateur.verifierDate(requestDto.dateCible, FACULTATIF, LocalDate.now());
 		
 		ListeResumeCompteInterne model = rapportService.rechercherListeResumeCompteInterne(dateCible);
 		

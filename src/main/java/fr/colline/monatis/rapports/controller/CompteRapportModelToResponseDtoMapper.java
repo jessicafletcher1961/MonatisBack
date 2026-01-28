@@ -221,7 +221,8 @@ public class CompteRapportModelToResponseDtoMapper {
 		ResumeCompteInterneResponseDto dto = new ResumeCompteInterneResponseDto();
 		
 		dto.compteInterne = CompteInterneResponseDtoMapper.mapperModelToBasicResponseDto(resumeCompteInterne.getCompteInterne());
-		dto.soldeEnEuros = (float) (resumeCompteInterne.getSolde() / 100.00);
+		dto.dateSolde = resumeCompteInterne.getDateSolde();
+		dto.montantSoldeEnEuros = (float) (resumeCompteInterne.getMontantSoldeEnCentimes() / 100.00);
 		
 		return dto;
 	}

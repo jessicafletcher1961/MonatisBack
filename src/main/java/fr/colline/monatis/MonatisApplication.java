@@ -9,4 +9,5 @@ public class MonatisApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(MonatisApplication.class, args);
 	}
+
 }

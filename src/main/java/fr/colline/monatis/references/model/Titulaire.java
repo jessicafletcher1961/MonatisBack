@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import fr.colline.monatis.comptes.model.CompteInterne;
-import fr.colline.monatis.model.references.Reference;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToMany;
@@ -25,10 +24,15 @@ public class Titulaire extends Reference {
 		this.comptesInternes = comptesInternes;
 	}
 
+	@Override
+	public TypeReference getTypeReference() {
+		return TypeReference.TITULAIRE;
+	}
+
 	public Titulaire() {}
 	
-	public Titulaire(String nom, String commentaire) {
+	public Titulaire(String nom, String libelle) {
 		
-		super(nom, commentaire);
+		super(nom, libelle);
 	}
 }

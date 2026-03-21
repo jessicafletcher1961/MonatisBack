@@ -1,0 +1,17 @@
+package fr.colline.monatis.rapports.controller.depense_recette;
+
+import java.io.Serializable;
+import java.time.LocalDate;
+
+public class DepenseRecetteCategoriePeriodeResponseDto implements Serializable {
+
+	private static final long serialVersionUID = 6901185027433215917L;
+	
+	public LocalDate dateDebutPeriode;
+	public LocalDate dateFinPeriode;
+	
+	public double montantRecetteEnEuros;
+	public double montantDepenseEnEuros;
+	public double soldeDepenseRecetteEnEuros;
+
+}

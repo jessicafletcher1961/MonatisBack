@@ -3,13 +3,12 @@ package fr.colline.monatis.references.model;
 import java.util.HashSet;
 import java.util.Set;
 
-import fr.colline.monatis.model.references.Reference;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
 
 @Entity
-public class Categorie extends Reference{
+public class Categorie extends Reference {
 
 	@OneToMany(
 			mappedBy = "categorie",
@@ -20,14 +19,14 @@ public class Categorie extends Reference{
 		return sousCategories;
 	}
 
-	public void setSousCategories(Set<SousCategorie> listeSousCategorie) {
-		this.sousCategories = listeSousCategorie;
+	@Override
+	public TypeReference getTypeReference() {
+		return TypeReference.CATEGORIE;
 	}
 
 	public Categorie() {}
 	
-	public Categorie(String nom, String commentaire) {
-
-		super(nom, commentaire);
+	public Categorie(String nom, String libelle) {
+		super(nom, libelle);
 	}
 }

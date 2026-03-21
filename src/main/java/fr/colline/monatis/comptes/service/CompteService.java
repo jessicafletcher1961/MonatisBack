@@ -4,65 +4,54 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
+import fr.colline.monatis.comptes.CompteFonctionnelleErreur;
+import fr.colline.monatis.comptes.CompteTechniqueErreur;
 import fr.colline.monatis.comptes.model.Compte;
 import fr.colline.monatis.comptes.repository.CompteRepository;
 import fr.colline.monatis.exceptions.ServiceException;
-import fr.colline.monatis.exceptions.erreurs.ErreurFonctionnelle;
-import fr.colline.monatis.exceptions.erreurs.ErreurProgrammation;
-import fr.colline.monatis.exceptions.erreurs.ErreurTechnique;
-import jakarta.annotation.Nullable;
 
+@Service
 public abstract class CompteService<T extends Compte> {
+	
+	public T rechercherParId(Long id) throws ServiceException {
 
-	public T rechercherParId(Long compteId) throws ServiceException {
-
-		if ( compteId == null ) {
-			throw new ServiceException(
-					ErreurProgrammation.ID_NULL,
-					getTClass().getSimpleName());
-		}
+		Assert.notNull(id, () -> "L'ID pour la recherche d'un compte de type '" + getTClass().getSimpleName() + "' est obligatoire");
 
 		try {
-			Optional<T> optional = getRepository().findById(compteId);
+			Optional<T> optional = getRepository().findById(id);
 			return optional.isEmpty() ? null : optional.get();
 		}
 		catch (Throwable t) {
 			throw new ServiceException(
 					t,
-					ErreurTechnique.TECH_RECHERCHE_COMPTE_PAR_ID,
-					compteId,
-					getTClass().getSimpleName() );
+					CompteTechniqueErreur.RECHERCHE_PAR_ID,
+					getTClass().getSimpleName(),
+					id );
 		}
 	}
 
-	public boolean isExistantParId(Long compteId) throws ServiceException {
+	public boolean isExistantParId(Long id) throws ServiceException {
 
-		if ( compteId == null ) {
-			throw new ServiceException(
-					ErreurProgrammation.ID_NULL,
-					getTClass().getSimpleName());
-		}
+		Assert.notNull(id, () -> "L'ID pour la vérification de l'existence d'un compte de type '" + getTClass().getSimpleName() + "' est obligatoire");
 
 		try {
-			return this.getRepository().existsById(compteId);
+			return this.getRepository().existsById(id);
 		}
 		catch (Throwable t) {
 			throw new ServiceException(
 					t,
-					ErreurTechnique.TECH_EXISTANCE_COMPTE_PAR_ID,
-					compteId,
-					getTClass().getSimpleName() );
+					CompteTechniqueErreur.EXISTENCE_PAR_ID,
+					getTClass().getSimpleName(),
+					id);
 		}
 	}
 
 	public T rechercherParIdentifiant(String identifiant) throws ServiceException {
 
-		if ( identifiant == null || identifiant.isBlank() ) {
-			throw new ServiceException(
-					ErreurProgrammation.IDENTIFIANT_NULL,
-					getTClass().getSimpleName());
-		}
+		Assert.notNull(identifiant, () -> "L'IDENTIFIANT pour la recherche d'un compte de type '" + getTClass().getSimpleName() + "' est obligatoire");
 		
 		try {
 			Optional<T> optional = getRepository().findByIdentifiant(identifiant);
@@ -71,7 +60,7 @@ public abstract class CompteService<T extends Compte> {
 		catch (Throwable t) {
 			throw new ServiceException(
 					t,
-					ErreurTechnique.TECH_RECHERCHE_COMPTE_PAR_IDENTIFIANT,
+					CompteTechniqueErreur.RECHERCHE_PAR_IDENTIFIANT_FONCTIONNEL,
 					getTClass().getSimpleName(),
 					identifiant);
 		}
@@ -79,11 +68,7 @@ public abstract class CompteService<T extends Compte> {
 
 	public boolean isExistantParIdentifiant(String identifiant) throws ServiceException {
 
-		if ( identifiant == null || identifiant.isBlank() ) {
-			throw new ServiceException(
-					ErreurProgrammation.IDENTIFIANT_NULL,
-					getTClass().getSimpleName());
-		}
+		Assert.notNull(identifiant, () -> "L'IDENTIFIANT pour la vérification de l'existence d'un compte de type '" + getTClass().getSimpleName() + "' est obligatoire");
 		
 		try {
 			return this.getRepository().existsByIdentifiant(identifiant);
@@ -91,9 +76,9 @@ public abstract class CompteService<T extends Compte> {
 		catch (Throwable t) {
 			throw new ServiceException(
 					t,
-					ErreurTechnique.TECH_EXISTANCE_COMPTE_PAR_IDENTIFIANT,
+					CompteTechniqueErreur.EXISTENCE_PAR_IDENTIFIANT_FONCTIONNEL,
 					getTClass().getSimpleName(),
-					identifiant );
+					identifiant);
 		}
 	}
 
@@ -105,18 +90,14 @@ public abstract class CompteService<T extends Compte> {
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					ErreurTechnique.TECH_RECHERCHE_COMPTE_TOUS,
+					CompteTechniqueErreur.RECHERCHE_TOUS,
 					getTClass().getSimpleName());
 		}
 	}
 
 	public List<T> rechercherTous(Sort tri) throws ServiceException {
 
-		if ( tri == null ) {
-			throw new ServiceException(
-					ErreurProgrammation.TRI_NULL,
-					getTClass().getSimpleName());
-		}
+		Assert.notNull(tri, () -> "Le TRI pour la recherche de tous les comptes de type '" + getTClass().getSimpleName() + "' est obligatoire");
 
 		try {
 			return getRepository().findAll(tri);
@@ -124,7 +105,7 @@ public abstract class CompteService<T extends Compte> {
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					ErreurTechnique.TECH_RECHERCHE_COMPTE_TOUS,
+					CompteTechniqueErreur.RECHERCHE_TOUS,
 					getTClass().getSimpleName());
 		}
 	}
@@ -137,18 +118,14 @@ public abstract class CompteService<T extends Compte> {
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					ErreurTechnique.TECH_SUPPRESSION_COMPTE_TOUS,
+					CompteTechniqueErreur.SUPPRESSION_TOUS,
 					getTClass().getSimpleName());
 		}
 	}
 
 	public final T creerCompte(T compte) throws ServiceException {
 
-		if ( compte == null ) {
-			throw new ServiceException(
-					ErreurProgrammation.COMPTE_NULL,
-					getTClass().getSimpleName());
-		}
+		Assert.notNull(compte, () -> "Le COMPTE à créer de type '" + getTClass().getSimpleName() + "' est obligatoire");
 
 		compte = controlerEtPreparerPourCreation(compte);
 
@@ -157,57 +134,53 @@ public abstract class CompteService<T extends Compte> {
 
 	public final T modifierCompte(T compte) throws ServiceException {
 
-		if ( compte == null ) {
-			throw new ServiceException(
-					ErreurProgrammation.COMPTE_NULL,
-					getTClass().getSimpleName());
-		}
+		Assert.notNull(compte, () -> "Le COMPTE à modifier de type '" + getTClass().getSimpleName() + "' est obligatoire");
 
 		compte = controlerEtPreparerPourModification(compte);
 
 		return enregistrer(compte);
 	}
 
-	public final void supprimerCompte(Long compteId) throws ServiceException {
+	public final void supprimerCompte(T compte) throws ServiceException {
 
-		if ( compteId == null ) {
-			throw new ServiceException(
-					ErreurProgrammation.ID_NULL,
-					getTClass().getSimpleName());
-		}
+		Assert.notNull(compte, () -> "Le COMPTE à supprimer de type '" + getTClass().getSimpleName() + "' est obligatoire");
 
-		T compte = controlerEtPreparerPourSuppression(compteId);
+		compte = controlerEtPreparerPourSuppression(compte);
 
 		supprimer(compte);
 	}
 
-	protected T enregistrer(T compte) throws ServiceException {
+	protected T controlerEtPreparerPourCreation(T compte) throws ServiceException {
 
-		if ( compte == null ) {
-			throw new ServiceException(
-					ErreurProgrammation.COMPTE_NULL,
-					getTClass().getSimpleName());
-		}
+		return compte;
+	}
+	
+	protected T controlerEtPreparerPourModification(T compte) throws ServiceException {
+
+		return compte;
+	}
+
+	protected T controlerEtPreparerPourSuppression(T compte) throws ServiceException {
+
+		verifierAbsenceOperationAssociee(compte.getId());
 		
+		return compte;
+	}
+
+	private T enregistrer(T compte) throws ServiceException {
+
 		try {
 			return getRepository().save(compte);
 		}
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					ErreurTechnique.TECH_ENREGISTREMENT_COMPTE,
-					getTClass().getSimpleName(),
+					CompteTechniqueErreur.ENREGISTREMENT,
 					compte.getIdentifiant());
 		}
 	}
 
-	protected void supprimer(T compte) throws ServiceException {
-
-		if ( compte == null ) {
-			throw new ServiceException(
-					ErreurProgrammation.COMPTE_NULL,
-					getTClass().getSimpleName());
-		}
+	private void supprimer(T compte) throws ServiceException {
 
 		try {
 			this.getRepository().delete(compte);
@@ -215,135 +188,33 @@ public abstract class CompteService<T extends Compte> {
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					ErreurTechnique.TECH_SUPPRESSION_COMPTE,
-					getTClass().getSimpleName(),
+					CompteTechniqueErreur.SUPPRESSION,
 					compte.getIdentifiant());
 		}
 	}
-
-	protected T controlerEtPreparerPourCreation(T compte) throws ServiceException {
-
-		if ( compte == null ) {
-			throw new ServiceException(
-					ErreurProgrammation.COMPTE_NULL,
-					getTClass().getSimpleName());
-		}
-		
-		verifierCompteNonEnregistre(compte.getId());
-		verifierIdentifiantValideEtUnique(compte.getId(), compte.getIdentifiant());
-		
-		return compte;
-	}
 	
-	protected T controlerEtPreparerPourModification(T compte) throws ServiceException {
-
-		if ( compte == null ) {
-			throw new ServiceException(
-					ErreurProgrammation.COMPTE_NULL,
-					getTClass().getSimpleName());
-		}
-
-		verifierCompteEnregistre(compte.getId());
-		verifierIdentifiantValideEtUnique(compte.getId(), compte.getIdentifiant());
-
-		return compte;
-	}
-
-	protected T controlerEtPreparerPourSuppression(Long compteId) throws ServiceException {
-
-		if ( compteId == null ) {
-			throw new ServiceException(
-					ErreurProgrammation.ID_NULL,
-					getTClass().getSimpleName());
-		}
-
-		verifierCompteEnregistre(compteId);
-		verifierAbsenceOperationAssociee(compteId);
-		
-		return rechercherParId(compteId);
-	}
-
-	private void verifierCompteEnregistre(Long compteId) throws ServiceException {
-
-		if ( compteId == null || ! isExistantParId(compteId) ) {
-			throw new ServiceException (
-					ErreurFonctionnelle.COMPTE_NON_ENREGISTRE_PAR_ID,
-					getTClass().getSimpleName(),
-					compteId);
-		}
-	}
-	
-	private void verifierCompteNonEnregistre(Long compteId) throws ServiceException {
-		
-		if ( compteId != null && isExistantParId(compteId) ) {
-			throw new ServiceException (
-					ErreurFonctionnelle.COMPTE_DEJA_ENREGISTRE_PAR_ID,
-					compteId,
-					getTClass().getSimpleName());
-		}
-	}
-
-	private void verifierIdentifiantValideEtUnique(
-			@Nullable Long compteId,
-			String compteIdentifiant) 
-					throws ServiceException {
-
-		if ( compteIdentifiant == null || compteIdentifiant.isBlank() ) {
-			throw new ServiceException (
-					ErreurFonctionnelle.COMPTE_IDENTIFIANT_INVALIDE,
-					getTClass().getSimpleName());
-		}
-
-		boolean isIdentifiantCreeOuModifie;
-		boolean isIdentifiantDejaUtilise;
-		
-		if ( compteId == null ) {
-			isIdentifiantCreeOuModifie = true;
-			isIdentifiantDejaUtilise = isExistantParIdentifiant(compteIdentifiant);
-		}
-		else {
-			try {
-				isIdentifiantCreeOuModifie = ! getRepository().existsByIdentifiantAndId(compteIdentifiant, compteId);
-				isIdentifiantDejaUtilise = getRepository().existsByIdentifiantAndIdNot(compteIdentifiant, compteId); 
-			}
-			catch ( Throwable t ) {
-				throw new ServiceException (
-						t,
-						ErreurTechnique.TECH_EXISTANCE_COMPTE_PAR_IDENTIFIANT,
-						compteIdentifiant);
-			}
-		}
-		
-		if ( isIdentifiantCreeOuModifie && isIdentifiantDejaUtilise )
-		{
-			throw new ServiceException (
-					ErreurFonctionnelle.COMPTE_IDENTIFIANT_DEJA_UTILISE,
-					getTClass().getSimpleName(),
-					compteIdentifiant);
-		}
-	}
-	
-	private void verifierAbsenceOperationAssociee(Long compteId) throws ServiceException {
+	private void verifierAbsenceOperationAssociee(Long id) throws ServiceException {
 	
 		int nombreOperationAssociee;
 		try {
-			nombreOperationAssociee = getRepository().countOperationByCompteId(compteId);
+			nombreOperationAssociee = getRepository().compterOperationByCompteId(id);
 		}
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					ErreurTechnique.TECH_RECHERCHE_NOMBRE_OPERATION_PAR_COMPTE_ID,
-					compteId);
+					CompteTechniqueErreur.COMPTAGE_USAGE_OPERATION_PAR_ID,
+					getTClass().getSimpleName(),
+					id);
 		}
 		
 		if ( nombreOperationAssociee > 0 ) {
 			throw new ServiceException (
-					ErreurFonctionnelle.COMPTE_SUPPRESSION_AVEC_OPERATION,
-					compteId,
+					CompteFonctionnelleErreur.SUPPRESSION_COMPTE_AVEC_OPERATION,
+					id,
 					nombreOperationAssociee);
 		}
 	}
 	
-	protected abstract Class<T> getTClass();
-	protected abstract CompteRepository<T> getRepository();
+	public abstract Class<T> getTClass();
+	public abstract CompteRepository<T> getRepository();
 }

@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 
+import fr.colline.monatis.exceptions.ControllerVerificateurService;
+
 @Configuration
 public class LocaleConfig {
 
@@ -17,18 +19,24 @@ public class LocaleConfig {
         return resolver;
     }
 
-    @Bean(name = "messagesErreurs")
-    public ResourceBundleMessageSource messagesErreurs() {
+    @Bean(name = "verificateur")
+    public ControllerVerificateurService verificateur() {
+    	final ControllerVerificateurService verificateur = new ControllerVerificateurService();
+    	return verificateur;
+    }
+    
+    @Bean(name = "bundleErreurs")
+    public ResourceBundleMessageSource bundleErreurs() {
     	final ResourceBundleMessageSource source = new ResourceBundleMessageSource();
     	source.setBasename("internationalization/erreurs");
     	source.setDefaultEncoding("UTF-8");    	
     	return source;
     }
 
-    @Bean(name = "messagesInformations")
-    public ResourceBundleMessageSource messagesInformations() {
+    @Bean(name = "bundleMessages")
+    public ResourceBundleMessageSource bundleMessages() {
     	final ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-    	source.setBasename("internationalization/informations");
+    	source.setBasename("internationalization/messages");
     	source.setDefaultEncoding("UTF-8");    	
     	return source;
     }

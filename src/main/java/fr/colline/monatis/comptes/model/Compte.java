@@ -12,14 +12,14 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.SequenceGenerator;
 
 @Entity
-@Inheritance(strategy = InheritanceType.JOINED)
+@Inheritance(strategy=InheritanceType.JOINED)
 public abstract class Compte {
 
 	@Id
 	@GeneratedValue(generator = "gen_seq_compte", strategy = GenerationType.SEQUENCE)
 	@SequenceGenerator(name = "gen_seq_compte", sequenceName = "seq_compte", allocationSize = 1)
 	private Long id;
-
+	
 	@Column(length = 30, nullable = false, unique = true)
 	private String identifiant;
 	
@@ -46,23 +46,20 @@ public abstract class Compte {
 		return libelle;
 	}
 
-	public void setLibelle(String commentaire) {
-		this.libelle = commentaire;
-	}
-
-	public Compte() {}
-	
-	public Compte(
-			String identifiant, 
-			String libelle) {
-		
-		this.identifiant = identifiant;
+	public void setLibelle(String libelle) {
 		this.libelle = libelle;
 	}
 	
+	public Compte() {}
+	
+	public Compte(String identifiant, String libelle) {
+		this.identifiant = identifiant;
+		this.libelle = libelle;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(libelle, id, identifiant);
+		return Objects.hash(id, identifiant, libelle);
 	}
 
 	@Override
@@ -74,8 +71,10 @@ public abstract class Compte {
 		if (getClass() != obj.getClass())
 			return false;
 		Compte other = (Compte) obj;
-		return Objects.equals(libelle, other.libelle) 
-				&& Objects.equals(id, other.id)
-				&& Objects.equals(identifiant, other.identifiant);
+		return Objects.equals(id, other.id) 
+				&& Objects.equals(identifiant, other.identifiant)
+				&& Objects.equals(libelle, other.libelle);
 	}
+	
+	public abstract TypeCompte getTypeCompte();
 }

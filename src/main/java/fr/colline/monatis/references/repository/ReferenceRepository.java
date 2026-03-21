@@ -5,20 +5,17 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import fr.colline.monatis.model.references.Reference;
+import fr.colline.monatis.references.model.Reference;
 
-@Repository 
-public abstract interface ReferenceRepository <T extends Reference> extends JpaRepository <T, Long>{
+@Repository
+public abstract interface ReferenceRepository<T extends Reference> extends JpaRepository<T, Long> {
 
-	public Optional<T> findById(Long id);
+	Optional<T> findById(Long referenceId);
 	
-	public boolean existsById(Long id);	
-	
-	public Optional<T> findByNom(String nom);
-	
-	public boolean existsByNom(String nom);
+	boolean existsById(Long referenceId);
 
-	public boolean existsByNomAndId(String referenceNom, Long referenceId);
+	Optional<T> findByNom(String nom);
 
-	public boolean existsByNomAndIdNot(String referenceNom, Long referenceId);
+	boolean existsByNom(String nom);
+
 }

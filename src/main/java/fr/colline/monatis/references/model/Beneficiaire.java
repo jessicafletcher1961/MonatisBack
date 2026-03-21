@@ -1,15 +1,19 @@
 package fr.colline.monatis.references.model;
 
-import fr.colline.monatis.model.references.Reference;
 import jakarta.persistence.Entity;
 
 @Entity
 public class Beneficiaire extends Reference {
 
+	@Override
+	public TypeReference getTypeReference() {
+		return TypeReference.BENEFICIAIRE;
+	}
+
 	public Beneficiaire() {}
 	
-	public Beneficiaire(String nom, String commentaire) {
+	public Beneficiaire(String nom, String libelle) {
 		
-		super(nom, commentaire);
+		super(nom, libelle);
 	}
 }

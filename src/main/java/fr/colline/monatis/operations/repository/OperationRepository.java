@@ -1,8 +1,7 @@
 package fr.colline.monatis.operations.repository;
 
-import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -20,21 +19,7 @@ public interface OperationRepository extends JpaRepository<Operation, Long> {
 
 	public boolean existsByNumero(String numero);
 
-	public int countByCompteDepenseId(Long compteId);
-
-	public int countByCompteRecetteId(Long compteId);
-
-	public boolean existsByNumeroAndId(String numero, Long id);
-
-	public boolean existsByNumeroAndIdNot(String numero, Long id);
-
-	public List<Operation> findByCompteDepenseIdAndDateValeurBetween(
-			Long compteId, 
-			ZonedDateTime dateDebut,
-			ZonedDateTime dateFin);
-
-	public List<Operation> findByCompteRecetteIdAndDateValeurBetween(
-			Long compteId, 
-			ZonedDateTime dateDebut,
-			ZonedDateTime dateFin);
+	public Stream<Operation> findByCompteDepenseIdOrCompteRecetteIdOrderByDateValeur(
+			Long compteDepenseId, 
+			Long compteRecetteId);
 }

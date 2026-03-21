@@ -1,56 +1,35 @@
 package fr.colline.monatis.exceptions;
 
-import fr.colline.monatis.exceptions.erreurs.TypeErreur;
-import fr.colline.monatis.exceptions.interfaces.MonatisErreurInterface;
-import fr.colline.monatis.exceptions.interfaces.MonatisExceptionInterface;
+public class ControllerException extends Exception implements MonatisException {
 
-public class ControllerException 
-extends Exception
-implements MonatisExceptionInterface {
+	private static final long serialVersionUID = 7854587918226619571L;
 
-	private static final long serialVersionUID = -6274042649774721255L;
-
-	private MonatisErreurInterface erreur;
-
+	private MonatisErreur erreur;
+	
 	private Object[] values;
-
-	@Override 
-	public MonatisErreurInterface getErreur() {
+	
+	@Override
+	public MonatisErreur getErreur() {
 		return erreur;
 	}
-	
+
 	@Override
 	public Object[] getValues() {
 		return values;
 	}
 
-	@Override
-	public TypeErreur getType() {
-		return erreur.getType();
-	}
-
-	@Override
-	public String getCode() {
-		return erreur.getCode();
-	}
-
-	public ControllerException(
-			MonatisErreurInterface erreur,
-			Object...values) {
+	public ControllerException(MonatisErreur erreur, Object...values) {
 		
-		super(erreur.getMessage(values));
-
+		super(String.format(erreur.getPattern(), values));
+		
 		this.erreur = erreur;
 		this.values = values;
 	}
 	
-	public ControllerException(
-			Throwable t,
-			MonatisErreurInterface erreur,
-			Object...values) {
+	public ControllerException(Throwable t, MonatisErreur erreur, Object...values) {
 		
-		super(erreur.getMessage(values), t);
-
+		super(String.format(erreur.getPattern(), values), t);
+		
 		this.erreur = erreur;
 		this.values = values;
 	}

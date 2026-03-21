@@ -7,10 +7,10 @@ import org.springframework.stereotype.Repository;
 import fr.colline.monatis.references.model.Beneficiaire;
 
 @Repository
-public interface BeneficiaireRepository extends ReferenceRepository <Beneficiaire> {
+public interface BeneficiaireRepository extends ReferenceRepository<Beneficiaire> {
 
 	@Query(nativeQuery = true,
-			value = "select count(1) from public.detail_operation_beneficiaire where beneficiaire_id = :id")
-	public int compterDetailOperationParBeneficiaireId(@Param("id") Long beneficiaireId);	
+			value = "select count(1) from public.operation_ligne_beneficiaire where beneficiaire_id = :id")
+	public int compterOperationLigneParBeneficiaireId(@Param("id") Long beneficiaireId);	
+
 }
-	

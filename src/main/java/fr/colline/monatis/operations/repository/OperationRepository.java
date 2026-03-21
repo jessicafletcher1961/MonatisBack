@@ -1,6 +1,6 @@
 package fr.colline.monatis.operations.repository;
 
-import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,49 +20,21 @@ public interface OperationRepository extends JpaRepository<Operation, Long> {
 
 	public boolean existsByNumero(String numero);
 
-	public List<Operation> findByCompteDepenseIdAndDateValeurBetweenOrderByDateValeur(
+	public int countByCompteDepenseId(Long compteId);
+
+	public int countByCompteRecetteId(Long compteId);
+
+	public boolean existsByNumeroAndId(String numero, Long id);
+
+	public boolean existsByNumeroAndIdNot(String numero, Long id);
+
+	public List<Operation> findByCompteDepenseIdAndDateValeurBetween(
 			Long compteId, 
-			LocalDate dateDebut,
-			LocalDate dateFin);
+			ZonedDateTime dateDebut,
+			ZonedDateTime dateFin);
 
-	public List<Operation> findByCompteDepenseIdAndDateValeurLessThanEqualOrderByDateValeur(
+	public List<Operation> findByCompteRecetteIdAndDateValeurBetween(
 			Long compteId, 
-			LocalDate dateFin);
-
-	public List<Operation> findByCompteDepenseIdAndDateValeurGreaterThanEqualOrderByDateValeur(
-			Long compteId,
-			LocalDate dateDebut);
-
-	public List<Operation> findByCompteRecetteIdAndDateValeurBetweenOrderByDateValeur(
-			Long compteId, 
-			LocalDate dateDebut,
-			LocalDate dateFin);
-
-	public List<Operation> findByCompteRecetteIdAndDateValeurLessThanEqualOrderByDateValeur(
-			Long compteId, 
-			LocalDate dateFin);
-
-	public List<Operation> findByCompteRecetteIdAndDateValeurGreaterThanEqualOrderByDateValeur(
-			Long compteId,
-			LocalDate dateDebut);
-
-	public List<Operation> findByCompteDepenseIdOrCompteRecetteIdOrderByDateValeur(
-			Long compteId1, 
-			Long compteId2);
-
-	public List<Operation> findByCompteDepenseIdOrCompteRecetteIdAndDateValeurBetweenOrderByDateValeur(
-			Long compteId1,
-			Long compteId2, 
-			LocalDate dateDebut, 
-			LocalDate dateFin);
-
-	public List<Operation> findByCompteDepenseIdOrCompteRecetteIdAndDateValeurLessThanEqualOrderByDateValeur(
-			Long compteId1,
-			Long compteId2,
-			LocalDate dateFin);
-	
-	public List<Operation> findByCompteDepenseIdOrCompteRecetteIdAndDateValeurGreaterThanEqualOrderByDateValeur(
-			Long compteId1,
-			Long compteId2,
-			LocalDate dateDebut);
+			ZonedDateTime dateDebut,
+			ZonedDateTime dateFin);
 }

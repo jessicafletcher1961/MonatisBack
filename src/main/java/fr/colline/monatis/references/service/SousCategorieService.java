@@ -4,31 +4,34 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import fr.colline.monatis.exceptions.ServiceException;
-import fr.colline.monatis.references.ReferenceFonctionnelleErreur;
-import fr.colline.monatis.references.ReferenceTechniqueErreur;
+import fr.colline.monatis.exceptions.erreurs.ErreurFonctionnelle;
+import fr.colline.monatis.exceptions.erreurs.ErreurTechnique;
 import fr.colline.monatis.references.model.SousCategorie;
+import fr.colline.monatis.references.repository.ReferenceRepository;
 import fr.colline.monatis.references.repository.SousCategorieRepository;
 
-@Service
+@Service 
 public class SousCategorieService extends ReferenceService<SousCategorie> {
 
-	@Autowired private SousCategorieRepository sousCategorieRepository;
+	@Autowired private SousCategorieRepository repository;
 
 	@Override
-	public Class<SousCategorie> getTClass() {
+	protected ReferenceRepository<SousCategorie> getRepository() {
+
+		return repository;
+	}
+
+	@Override
+	protected Class<SousCategorie> getTClass() {
+
 		return SousCategorie.class;
 	}
 
 	@Override
-	public SousCategorieRepository getRepository() {
-		return sousCategorieRepository;
-	}
-
-	@Override
-	protected SousCategorie controlerEtPreparerPourSuppression(SousCategorie sousCategorie) 
+	protected SousCategorie controlerEtPreparerPourSuppression(Long sousCategorieId) 
 			throws ServiceException {
 
-		sousCategorie = super.controlerEtPreparerPourSuppression(sousCategorie);
+		SousCategorie sousCategorie = super.controlerEtPreparerPourSuppression(sousCategorieId);
 
 		verifierAbsenceDetailOperationAssocie(sousCategorie);
 
@@ -39,22 +42,20 @@ public class SousCategorieService extends ReferenceService<SousCategorie> {
 
 		int nombreDetailOperationAssocie;
 		try {
-			nombreDetailOperationAssocie = sousCategorieRepository.compterOperationLigneParSousCategorieId(sousCategorie.getId());
+			nombreDetailOperationAssocie = repository.countDetailOperationParSousCategorieId(sousCategorie.getId());
 		}
 		catch ( Throwable t ) {
 			throw new ServiceException(
 					t,
-					ReferenceTechniqueErreur.COMPTAGE_USAGE_PAR_ID,
-					SousCategorie.class.getSimpleName(),
+					ErreurTechnique.TECH_RECHERCHE_NOMBRE_DETAIL_OPERATION_PAR_SOUS_CATEGORIE_ID,
 					sousCategorie.getId());
 		}
 
 		if ( nombreDetailOperationAssocie > 0 ) {
 			throw new ServiceException(
-					ReferenceFonctionnelleErreur.SUPPRESSION_SOUS_CATEGORIE_AVEC_OPERATION, 
+					ErreurFonctionnelle.SOUS_CATEGORIE_SUPPRESSION_AVEC_DETAIL_OPERATION, 
 					sousCategorie.getNom(),
 					nombreDetailOperationAssocie);
 		}
 	}
-
 }

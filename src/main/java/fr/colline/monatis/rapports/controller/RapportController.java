@@ -1,162 +1,87 @@
 package fr.colline.monatis.rapports.controller;
 
-import java.io.IOException;
-import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import fr.colline.monatis.budgets.model.TypePeriode;
-import fr.colline.monatis.comptes.model.Compte;
 import fr.colline.monatis.comptes.model.CompteInterne;
-import fr.colline.monatis.comptes.model.TypeCompte;
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
-import fr.colline.monatis.erreurs.ControllerVerificateurService;
+import fr.colline.monatis.comptes.service.CompteInterneService;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ServiceException;
-import fr.colline.monatis.rapports.RapportControleErreur;
-import fr.colline.monatis.rapports.controller.liste_resume_comptes_interne.ListeCompteInterneRequestDto;
-import fr.colline.monatis.rapports.controller.liste_resume_comptes_interne.ListeResumeCompteInterneParTypeFonctionnementResponseDto;
-import fr.colline.monatis.rapports.controller.plus_moins_values.EtatPlusMoinsValueRequestDto;
-import fr.colline.monatis.rapports.controller.plus_moins_values.EtatPlusMoinsValueResponseDto;
-import fr.colline.monatis.rapports.controller.plus_moins_values.HistoriquePlusMoinsValueRequestDto;
-import fr.colline.monatis.rapports.controller.plus_moins_values.HistoriquePlusMoinsValueResponseDto;
-import fr.colline.monatis.rapports.controller.releve_compte.ReleveCompteRequestDto;
-import fr.colline.monatis.rapports.controller.releve_compte.ReleveCompteResponseDto;
-import fr.colline.monatis.rapports.model.EtatPlusMoinsValues;
-import fr.colline.monatis.rapports.model.HistoriquePlusMoinsValues;
-import fr.colline.monatis.rapports.model.ListeResumeCompteInterne;
-import fr.colline.monatis.rapports.model.ReleveCompte;
+import fr.colline.monatis.exceptions.erreurs.ErreurControle;
+import fr.colline.monatis.rapports.controller.dto.RapportCompteInterneBasicResponseDto;
+import fr.colline.monatis.rapports.controller.dto.RapportCompteInterneDetailedResponseDto;
+import fr.colline.monatis.rapports.controller.mapper.RapportCompteInterneDtoMapper;
 import fr.colline.monatis.rapports.service.RapportService;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.transaction.Transactional;
 
 @RestController
 @RequestMapping("/monatis/rapports")
 @Transactional
 public class RapportController {
 
-	private final boolean OBLIGATOIRE = true;
-	private final boolean FACULTATIF = false;
-
-	@Autowired private ControllerVerificateurService verificateur; 
 	@Autowired private RapportService rapportService;
 
-	@GetMapping("/releve_compte")
-	public ReleveCompteResponseDto getReleveCompte(
-			@RequestBody ReleveCompteRequestDto requestDto) throws ControllerException, ServiceException {
+	@Autowired private CompteInterneService compteInterneService;
 
-		Compte compte = verificateur.verifierCompte(requestDto.identifiantCompte, OBLIGATOIRE);
-		LocalDate dateDebut = verificateur.verifierDate(requestDto.dateDebut, OBLIGATOIRE, null);
-		LocalDate dateFin = verificateur.verifierDate(requestDto.dateFin, FACULTATIF, LocalDate.now());
+	@GetMapping("/comptes/interne/all")
+	public List<RapportCompteInterneBasicResponseDto> getAllRapportsCompteInterne(
+			@RequestParam(name = "dateDebut", required = false) ZonedDateTime paramDateDebut,
+			@RequestParam(name = "dateFin", required = false) ZonedDateTime paramDateFin)
+					throws ServiceException {
 
-		if ( dateFin.isBefore(dateDebut) ) {
+		List<RapportCompteInterneBasicResponseDto> resultat = new ArrayList<>();
+
+		ZonedDateTime dateFin = paramDateFin == null ? ZonedDateTime.now() : paramDateFin;
+
+		Sort tri = Sort.by("identifiant");
+		List<CompteInterne> liste = compteInterneService.rechercherTous(tri);
+		for ( CompteInterne compteInterne : liste ) {
+			ZonedDateTime dateDebut = paramDateDebut == null ? compteInterne.getDateSoldeInitial() : paramDateDebut;
+			resultat.add(RapportCompteInterneDtoMapper.modelToBasicResponseDto(
+					rapportService.calculerRapportCompteInterne(
+							compteInterne,
+							dateDebut,
+							dateFin)));
+		}
+
+		return resultat;
+	}
+
+	@GetMapping("/comptes/interne/get/{identifiant}")
+	public RapportCompteInterneDetailedResponseDto getRapportCompte(
+			@PathVariable (name = "identifiant") String identifiant,
+			@RequestParam(name = "dateDebut", required = false) ZonedDateTime paramDateDebut,
+			@RequestParam(name = "dateFin", required = false) ZonedDateTime paramDateFin)
+					throws ControllerException, ServiceException {
+
+		if ( identifiant == null || identifiant.isBlank() ) {
 			throw new ControllerException(
-					RapportControleErreur.DATE_FIN_AVANT_DATE_DEBUT, 
-					dateFin,
-					dateDebut);
+					ErreurControle.PATH_VARIABLE_IDENTIFIANT_OBLIGATOIRE);
 		}
 
-		ReleveCompte releve = rapportService.rechercherReleveCompte(compte, dateDebut, dateFin);
-		
-		return CompteRapportModelToResponseDtoMapper.mapperReleveCompte(releve);
-	}
-
-	@GetMapping(value = "/releve_compte/pdf", produces = "application/pdf")
-	public void getReleveComptePdf(
-			HttpServletResponse response,
-			@RequestBody ReleveCompteRequestDto requestDto) throws ControllerException, ServiceException, IOException {
-
-		Compte compte = verificateur.verifierCompte(requestDto.identifiantCompte, OBLIGATOIRE);
-		LocalDate dateDebut = verificateur.verifierDate(requestDto.dateDebut, OBLIGATOIRE, null);
-		LocalDate dateFin = verificateur.verifierDate(requestDto.dateFin, FACULTATIF, LocalDate.now());
-
-		if ( dateFin.isBefore(dateDebut) ) {
+		CompteInterne compteInterne = compteInterneService.rechercherParIdentifiant(identifiant);
+		if ( compteInterne == null ) {
 			throw new ControllerException(
-					RapportControleErreur.DATE_FIN_AVANT_DATE_DEBUT, 
-					dateFin,
-					dateDebut);
+					ErreurControle.COMPTE_INTERNE_NON_TROUVE_PAR_IDENTIFIANT,
+					identifiant);
 		}
 
-		ReleveCompte releve = rapportService.rechercherReleveCompte(compte, dateDebut, dateFin);
-		
-		CompteRapportModelToResponseDtoMapper.mapperReleveCompteToPdf(releve, response.getOutputStream());
+		ZonedDateTime dateFin = paramDateFin == null ? ZonedDateTime.now() : paramDateFin;
+		ZonedDateTime dateDebut = paramDateDebut == null ? compteInterne.getDateSoldeInitial() : paramDateDebut;
+
+		return RapportCompteInterneDtoMapper.modelToDetailedResponseDto(
+				rapportService.calculerRapportCompteInterne(
+						compteInterne,
+						dateDebut,
+						dateFin));
 	}
-
-	@GetMapping("/plus_moins_value/historique")
-	public HistoriquePlusMoinsValueResponseDto getHistoriquePlusMoinsValue(
-			@RequestBody HistoriquePlusMoinsValueRequestDto requestDto) throws ControllerException, ServiceException {
-
-		Compte compte = verificateur.verifierCompte(requestDto.identifiantCompte, OBLIGATOIRE);
-		if ( ! CompteInterne.class.isAssignableFrom(compte.getClass()) ) {
-			throw new ControllerException(
-					RapportControleErreur.RECHERCHE_EVALUATION_SUR_COMPTE_PAS_INTERNE,
-					TypeCompte.INTERNE.getCode(),
-					compte.getIdentifiant(),	
-					compte.getTypeCompte().getCode());
-		}
-		CompteInterne compteInterne = (CompteInterne) compte;
-		TypePeriode typePeriode = verificateur.verifierTypePeriode(requestDto.codeTypePeriode, FACULTATIF, null);
-		LocalDate dateDebut = verificateur.verifierDate(requestDto.dateDebut, FACULTATIF, compteInterne.getDateSoldeInitial());
-		LocalDate dateFin = verificateur.verifierDate(requestDto.dateFin, FACULTATIF, LocalDate.now());
-		
-		if ( dateFin.isBefore(dateDebut) ) {
-			throw new ControllerException(
-					RapportControleErreur.DATE_FIN_AVANT_DATE_DEBUT, 
-					dateFin, 
-					dateDebut);
-		}
-
-		HistoriquePlusMoinsValues historique = rapportService.rechercherHistoriquePlusMoinsValue(
-				compteInterne, 
-				dateDebut,
-				dateFin,
-				typePeriode);
-		
-		return CompteRapportModelToResponseDtoMapper.mapperHistoriquePlusMoinsValue(historique);
-	}
-
-	@GetMapping("/plus_moins_value/etat")
-	public List<EtatPlusMoinsValueResponseDto> getEtatPlusMoinsValue(
-			@RequestBody EtatPlusMoinsValueRequestDto requestDto) throws ControllerException, ServiceException {
-
-		TypePeriode typePeriode = verificateur.verifierTypePeriode(requestDto.codeTypePeriode, OBLIGATOIRE, null);
-		LocalDate dateCible = verificateur.verifierDate(requestDto.dateCible, FACULTATIF, LocalDate.now());
-		
-		List<EtatPlusMoinsValues> etats = rapportService.rechercherEtatsPlusMoinsValue(
-				typePeriode,
-				dateCible);
-		
-		List<EtatPlusMoinsValueResponseDto> dto = new ArrayList<EtatPlusMoinsValueResponseDto>();
-		for ( EtatPlusMoinsValues etat : etats ) {
-			dto.add(CompteRapportModelToResponseDtoMapper.mapperEtatPlusMoinsValue(etat));
-		}
-		
-		return dto;
-	}
-
-	@GetMapping("/resumes_comptes_internes")
-	public List<ListeResumeCompteInterneParTypeFonctionnementResponseDto> getListeResumeCompteInterne(
-			@RequestBody ListeCompteInterneRequestDto requestDto) throws ControllerException, ServiceException {
-		
-		LocalDate dateCible = verificateur.verifierDate(requestDto.dateCible, FACULTATIF, LocalDate.now());
-		
-		ListeResumeCompteInterne model = rapportService.rechercherListeResumeCompteInterne(dateCible);
-		
-		List<ListeResumeCompteInterneParTypeFonctionnementResponseDto> dto = new ArrayList<ListeResumeCompteInterneParTypeFonctionnementResponseDto>();
-		
-		for ( TypeFonctionnement typeFonctionnement : model.getMap().keySet() ) {
-			dto.add(CompteRapportModelToResponseDtoMapper.mapperResumeCompteInterne(typeFonctionnement, model.getMap().get(typeFonctionnement)));
-		}
-		Collections.sort(dto, (d1,d2) -> {return d1.typeFonctionnement.code.compareTo(d2.typeFonctionnement.code);});
-		
-		return dto;
-	}
-
 }

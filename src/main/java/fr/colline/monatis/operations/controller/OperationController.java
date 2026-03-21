@@ -1,6 +1,7 @@
 package fr.colline.monatis.operations.controller;
 
-import java.time.LocalDate;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -8,7 +9,6 @@ import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,23 +16,32 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import fr.colline.monatis.erreurs.ControllerVerificateurService;
+import fr.colline.monatis.comptes.model.Compte;
+import fr.colline.monatis.comptes.model.CompteInterne;
+import fr.colline.monatis.comptes.model.TypeCompteInterne;
+import fr.colline.monatis.comptes.service.CompteInterneService;
+import fr.colline.monatis.comptes.service.CompteTousTypesService;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ServiceException;
-import fr.colline.monatis.operations.OperationControleErreur;
-import fr.colline.monatis.operations.controller.request.OperationCreationRequestDto;
-import fr.colline.monatis.operations.controller.request.OperationLigneModificationRequestDto;
-import fr.colline.monatis.operations.controller.request.OperationModificationRequestDto;
-import fr.colline.monatis.operations.controller.request.OperationRequestDto;
-import fr.colline.monatis.operations.controller.response.OperationResponseDto;
+import fr.colline.monatis.exceptions.erreurs.ErreurControle;
+import fr.colline.monatis.operations.controller.dto.request.DetailOperationRequestDto;
+import fr.colline.monatis.operations.controller.dto.request.OperationCreationRequestDto;
+import fr.colline.monatis.operations.controller.dto.request.OperationModificationRequestDto;
+import fr.colline.monatis.operations.controller.dto.request.OperationSoldeRequestDto;
+import fr.colline.monatis.operations.controller.dto.response.OperationBasicResponseDto;
+import fr.colline.monatis.operations.controller.dto.response.OperationDetailedResponseDto;
+import fr.colline.monatis.operations.controller.mapper.OperationDtoMapper;
+import fr.colline.monatis.operations.model.DetailOperation;
 import fr.colline.monatis.operations.model.Operation;
-import fr.colline.monatis.operations.model.OperationLigne;
 import fr.colline.monatis.operations.model.TypeOperation;
 import fr.colline.monatis.operations.service.OperationService;
 import fr.colline.monatis.references.model.Beneficiaire;
+import fr.colline.monatis.references.model.SousCategorie;
+import fr.colline.monatis.references.service.BeneficiaireService;
+import fr.colline.monatis.references.service.SousCategorieService;
 import jakarta.transaction.Transactional;
 
 @RestController
@@ -40,560 +49,502 @@ import jakarta.transaction.Transactional;
 @Transactional
 public class OperationController {
 
-	private final boolean OBLIGATOIRE = true;
-	private final boolean FACULTATIF = false;
-
-	@Autowired private ControllerVerificateurService verificateur; 
 	@Autowired private OperationService operationService;
 
-	@GetMapping("/all")
-	public List<OperationResponseDto> getAllOperation() throws ServiceException, ControllerException {
+	@Autowired private CompteTousTypesService compteTousTypesService;
+	@Autowired private SousCategorieService sousCategorieService;
+	@Autowired private BeneficiaireService beneficiaireService;
 
-		List<OperationResponseDto> resultat = new ArrayList<>();
+	@Autowired private CompteInterneService compteInterneService;
+
+	@GetMapping("/all")
+	public List<OperationBasicResponseDto> getAllOperation() 
+			throws ServiceException {
+
+		List<OperationBasicResponseDto> resultat = new ArrayList<>();
 		Sort tri = Sort.by("dateValeur");
-		List<Operation> liste = operationService.rechercherTous(tri);
+		List<Operation> liste;
+		liste = operationService.rechercherTous(tri);
 		for ( Operation operation : liste ) {
-			resultat.add(OperationResponseDtoMapper.mapperModelToBasicResponseDto(operation));
+			resultat.add(OperationDtoMapper.modelToBasicResponseDto(operation));
 		}
 		return resultat;
 	}
 
 	@GetMapping("/get/{numero}")
-	public OperationResponseDto getOperationParNumero(@PathVariable String numero) throws ControllerException, ServiceException {
+	public OperationDetailedResponseDto getOperationParNumero(
+			@PathVariable(name = "numero") String numero) throws ControllerException {
 
-		Operation operation = verificateur.verifierOperation(
-				numero, 
-				OBLIGATOIRE);
-		return OperationResponseDtoMapper.mapperModelToDetailedResponseDto(operation);
+		if ( numero == null || numero.isBlank() ) {
+			throw new ControllerException(
+					ErreurControle.PATH_VARIABLE_NUMERO_OBLIGATOIRE);
+		}
+
+		try {
+			Operation operation = operationService.rechercherParNumero(numero);
+			if ( operation == null ) {
+				throw new ControllerException(
+						ErreurControle.OPERATION_NON_TROUVEE_PAR_NUMERO,
+						numero);
+			}
+			return OperationDtoMapper.modelToDetailedResponseDto(operation);
+		} 
+		catch (Throwable t) {
+			throw new ControllerException(
+					t,
+					ErreurControle.OPERATION_CONSULTATION_PROBLEME);
+		}
 	}
 
 	@PostMapping("/new")
-	public OperationResponseDto creerOperation(@RequestBody OperationCreationRequestDto dto) throws ControllerException, ServiceException {
+	public OperationDetailedResponseDto creerOperation(
+			@RequestBody OperationCreationRequestDto dto) throws ControllerException {
 
-		Operation operation = new Operation();
-		operation = mapperCreationRequestDtoToModel(dto, operation);
-		operation = operationService.creerOperation(operation);
-		return OperationResponseDtoMapper.mapperModelToSimpleResponseDto(operation);
+		try {
+			Operation operation = new Operation();
+			operation = creationRequestDtoToModel(operation, dto);
+			operation = operationService.creerOperation(operation);
+			return OperationDtoMapper.modelToDetailedResponseDto(operation);
+		} 
+		catch (Throwable t) {
+			throw new ControllerException(
+					t,
+					ErreurControle.OPERATION_CREATION_PROBLEME);
+		}
 	}
 
 	@PutMapping("/mod/{numero}")
-	public OperationResponseDto modifierOperation(
-			@PathVariable String numero, 
-			@RequestBody OperationModificationRequestDto dto) throws ControllerException, ServiceException {
+	public OperationDetailedResponseDto modifierOperation(
+			@PathVariable(name = "numero") String numero,
+			@RequestBody OperationModificationRequestDto dto) throws ControllerException {
 
-		Operation operation = verificateur.verifierOperation(numero, OBLIGATOIRE);
-		operation = mapperModificationRequestDtoToModel(dto, operation);
-		operation = operationService.modifierOperation(operation);
-		return OperationResponseDtoMapper.mapperModelToSimpleResponseDto(operation);
+		if ( numero == null || numero.isBlank() ) {
+			throw new ControllerException(
+					ErreurControle.PATH_VARIABLE_NUMERO_OBLIGATOIRE);
+		}
+
+		try {
+			Operation operation = operationService.rechercherParNumero(numero);
+			if ( operation == null ) {
+				throw new ControllerException(
+						ErreurControle.OPERATION_NON_TROUVEE_PAR_NUMERO,
+						numero);
+			}
+			operation = modificationRequestDtoToModel(operation, dto);
+			operation = operationService.modifierOperation(operation);
+			return OperationDtoMapper.modelToDetailedResponseDto(operation);
+		} 
+		catch (Throwable t) {
+			throw new ControllerException(
+					t,
+					ErreurControle.OPERATION_MODIFICATION_PROBLEME,
+					numero);
+		}
 	}
 
 	@DeleteMapping("/del/{numero}")
-	@ResponseStatus(value = HttpStatus.NO_CONTENT)
-	public void supprimerOperation(@PathVariable String numero) throws ControllerException, ServiceException {
+	public void supprimerOperation(
+			@PathVariable(name = "numero") String numero) throws ControllerException {
 
-		Operation operation = verificateur.verifierOperation(numero, OBLIGATOIRE);
-		operationService.supprimerOperation(operation);
-	}
+		if ( numero == null || numero.isBlank() ) {
+			throw new ControllerException(
+					ErreurControle.PATH_VARIABLE_NUMERO_OBLIGATOIRE);
+		}
 
-	@PostMapping("/transfert")
-	public OperationResponseDto effectuerTransfert(@RequestBody OperationRequestDto requestDto) throws ControllerException, ServiceException {
-
-		OperationResponseDto operationTransfert = creerOperationTransfert(
-				requestDto.numero, 
-				requestDto.libelle, 
-				requestDto.dateValeur,
-				requestDto.montantEnCentimes, 
-				requestDto.identifiantCompteCourantRecette, 
-				requestDto.identifiantCompteCourantDepense);
-		
-		return operationTransfert;
-	}
-
-	@PostMapping("/depense")
-	public OperationResponseDto effectuerDepense(@RequestBody OperationRequestDto requestDto) throws ControllerException, ServiceException {
-
-		OperationResponseDto operationDepense = creerOperationDepense(
-				requestDto.numero,
-				requestDto.libelle,
-				requestDto.dateValeur,
-				requestDto.montantEnCentimes,
-				requestDto.identifiantCompteExterne,
-				requestDto.identifiantCompteCourant,
-				requestDto.nomSousCategorie,
-				requestDto.nomsBeneficiaires);
-
-		return operationDepense;
-	}
-
-	@PostMapping("/recette")
-	public OperationResponseDto effectuerRecette(@RequestBody OperationRequestDto requestDto) throws ControllerException, ServiceException {
-
-		OperationResponseDto operationRecette = creerOperationRecette(
-				requestDto.numero,
-				requestDto.libelle,
-				requestDto.dateValeur,
-				requestDto.montantEnCentimes,
-				requestDto.identifiantCompteExterne,
-				requestDto.identifiantCompteCourant,
-				requestDto.nomSousCategorie,
-				requestDto.nomsBeneficiaires);
-
-		return operationRecette;
-	}
-
-	@PostMapping("/vente")
-	public OperationResponseDto effectuerVente(@RequestBody OperationRequestDto requestDto) throws ControllerException, ServiceException {
-
-		// On fait un versement au vendeur
-		creerOperationRecette(
-				null,
-				requestDto.libelle,
-				requestDto.dateValeur,
-				requestDto.montantEnCentimes,
-				requestDto.identifiantCompteExterne,
-				requestDto.identifiantCompteCourant,
-				requestDto.nomSousCategorie,
-				requestDto.nomsBeneficiaires);
-		
-		// Le vendeur fournit le bien
-		OperationResponseDto operationVente = creerOperationVente(
-				requestDto.numero,
-				requestDto.libelle,
-				requestDto.dateValeur,
-				requestDto.montantEnCentimes,
-				requestDto.identifiantCompteBien,
-				requestDto.identifiantCompteExterne);
-		
-		return operationVente;
-	}
-
-	@PostMapping("/achat")
-	public OperationResponseDto effectuerAchat(@RequestBody OperationRequestDto requestDto) throws ControllerException, ServiceException {
-
-		creerOperationDepense(
-				null,
-				requestDto.libelle,
-				requestDto.dateValeur,
-				requestDto.montantEnCentimes,
-				requestDto.identifiantCompteExterne,
-				requestDto.identifiantCompteCourant,
-				requestDto.nomSousCategorie,
-				requestDto.nomsBeneficiaires);
-		
-		OperationResponseDto operationAchat = creerOperationAchat(
-				requestDto.numero,
-				requestDto.libelle,
-				requestDto.dateValeur,
-				requestDto.montantEnCentimes,
-				requestDto.identifiantCompteBien,
-				requestDto.identifiantCompteExterne);
-		
-		return operationAchat;
-	}
-
-	@PostMapping("/retrait")
-	public OperationResponseDto effectuerRetrait(@RequestBody OperationRequestDto requestDto) throws ControllerException, ServiceException {
-
-		OperationResponseDto operationRetrait = creerOperationRetrait(
-				requestDto.numero, 
-				requestDto.libelle, 
-				requestDto.dateValeur,
-				requestDto.montantEnCentimes, 
-				requestDto.identifiantCompteFinancier, 
-				requestDto.identifiantCompteCourant);
-		
-		return operationRetrait;
+		try {
+			Operation operation = operationService.rechercherParNumero(numero);
+			if ( operation == null ) {
+				throw new ControllerException(
+						ErreurControle.OPERATION_NON_TROUVEE_PAR_NUMERO,
+						numero);
+			}
+			operationService.supprimerOperation(operation.getId());
+		} 
+		catch (Throwable t) {
+			throw new ControllerException(
+					t,
+					ErreurControle.OPERATION_SUPPRESSION_PROBLEME);
+		}
 	}
 	
-	@PostMapping("/liquidation")
-	public OperationResponseDto effectuerLiquidation(@RequestBody OperationRequestDto requestDto) throws ControllerException, ServiceException {
-
-		OperationResponseDto operationLiquidation = creerOperationLiquidation(
-				requestDto.numero, 
-				requestDto.libelle, 
-				requestDto.dateValeur,
-				requestDto.montantEnCentimes, 
-				requestDto.identifiantCompteFinancier, 
-				requestDto.identifiantCompteCourant);
+	@PostMapping("/ajustement/{identifiant}")
+	public OperationDetailedResponseDto ajusterCompteInterne(
+			@PathVariable(name = "identifiant") String identifiantCompteAjustable,
+			@RequestBody OperationSoldeRequestDto dto) throws ControllerException {
 		
-		return operationLiquidation;
+		if ( identifiantCompteAjustable.isBlank() ) {
+			throw new ControllerException(
+					ErreurControle.PATH_VARIABLE_IDENTIFIANT_OBLIGATOIRE);
+		}
+		if ( dto.montantSoldeEnCentimes == null ) {
+			throw new ControllerException(
+					ErreurControle.OPERATION_AJUSTEMENT_COMPTE_SOLDE_OBLIGATOIRE,
+					identifiantCompteAjustable);
+		}
+
+		if ( dto.identifiantCompteContrepartie == null 
+				|| dto.identifiantCompteContrepartie.isBlank() ) {
+			dto.identifiantCompteContrepartie = "AJUSTEMENT";
+		}
+		if ( dto.dateValeur == null ) {
+			dto.dateValeur = ZonedDateTime.now();
+		}
+		
+		CompteInterne compteAjustable;
+		CompteInterne compteAjustement;
+		try {
+			compteAjustable = compteInterneService.rechercherParIdentifiant(identifiantCompteAjustable);
+			if ( compteAjustable == null ) {
+				throw new ControllerException(
+						ErreurControle.COMPTE_INTERNE_NON_TROUVE_PAR_IDENTIFIANT,
+						identifiantCompteAjustable);
+			}
+			compteAjustement = compteInterneService.rechercherParIdentifiant(dto.identifiantCompteContrepartie);
+			if ( compteAjustement == null ) {
+				compteAjustement = new CompteInterne();
+				compteAjustement.setIdentifiant(dto.identifiantCompteContrepartie);
+				compteAjustement.setLibelle(TypeCompteInterne.CONTREPARTIE.getLibelle());
+				compteAjustement.setTypeCompteInterne(TypeCompteInterne.CONTREPARTIE);
+				compteAjustement.setDateSoldeInitial(dto.dateValeur);
+				compteAjustement.setMontantSoldeInitialEnCentimes(0L);
+				compteAjustement = compteInterneService.creerCompte(compteAjustement);
+			}
+			
+			Operation operation = operationService.creerOperationAjustement(
+					compteAjustable,
+					compteAjustement,
+					dto.dateValeur,
+					dto.montantSoldeEnCentimes);
+			
+			return OperationDtoMapper.modelToDetailedResponseDto(operation); 
+		}
+		catch (Throwable t) {
+			throw new ControllerException(
+					t,
+					ErreurControle.OPERATION_AJUSTEMENT_PROBLEME,
+					identifiantCompteAjustable);
+		}
+	}
+
+	@PostMapping("/actualisation/{identifiant}")
+	public OperationDetailedResponseDto actualiserCompteInterne(
+			@PathVariable(name = "identifiant") String identifiantCompteActualisable,
+			@RequestBody OperationSoldeRequestDto dto) throws ControllerException {
+		
+		if ( identifiantCompteActualisable == null || identifiantCompteActualisable.isBlank() ) {
+			throw new ControllerException(
+					ErreurControle.PATH_VARIABLE_IDENTIFIANT_OBLIGATOIRE);
+		}
+		if ( dto.montantSoldeEnCentimes == null ) {
+			throw new ControllerException(
+					ErreurControle.OPERATION_ACTUALISATION_COMPTE_SOLDE_OBLIGATOIRE,
+					identifiantCompteActualisable);
+		}
+
+		if ( dto.identifiantCompteContrepartie == null 
+				|| dto.identifiantCompteContrepartie.isBlank() ) {
+			dto.identifiantCompteContrepartie = "ACTUALISATION";
+		}
+		if ( dto.dateValeur == null ) {
+			dto.dateValeur = ZonedDateTime.now();
+		}
+		
+		try {
+			CompteInterne compteActualisable = compteInterneService.rechercherParIdentifiant(identifiantCompteActualisable);
+			if ( compteActualisable == null ) {
+				throw new ControllerException(
+						ErreurControle.COMPTE_INTERNE_NON_TROUVE_PAR_IDENTIFIANT,
+						identifiantCompteActualisable);
+			}
+			
+			CompteInterne compteActualisation = compteInterneService.rechercherParIdentifiant(dto.identifiantCompteContrepartie);
+			if ( compteActualisation == null ) {
+				compteActualisation = new CompteInterne();
+				compteActualisation.setIdentifiant(dto.identifiantCompteContrepartie);
+				compteActualisation.setLibelle(TypeCompteInterne.CONTREPARTIE.getLibelle());
+				compteActualisation.setTypeCompteInterne(TypeCompteInterne.CONTREPARTIE);
+				compteActualisation.setDateSoldeInitial(ZonedDateTime.now());
+				compteActualisation.setMontantSoldeInitialEnCentimes(0L);
+				compteActualisation = compteInterneService.creerCompte(compteActualisation);
+			}
+			
+			Operation operation = operationService.creerOperationActualisation(
+					compteActualisable,
+					compteActualisation,
+					dto.dateValeur,
+					dto.montantSoldeEnCentimes);
+			
+			return OperationDtoMapper.modelToDetailedResponseDto(operation); 
+		}
+		catch (Throwable t) {
+			throw new ControllerException(
+					t,
+					ErreurControle.OPERATION_ACTUALISATION_PROBLEME,
+					identifiantCompteActualisable);
+		}
+	}
+
+	@GetMapping("/pmval/{identifiant}")
+	public double getPlusValue(
+			@PathVariable(name = "identifiant") String compteInvestissementIdentifiant,
+			@RequestParam(name = "dateValeur", required = false) ZonedDateTime dateValeur,
+			@RequestParam(name = "valeur") Long valeur) throws ControllerException, ServiceException {
+	
+		if ( compteInvestissementIdentifiant == null 
+				|| compteInvestissementIdentifiant.isBlank() ) {
+			throw new ControllerException(
+					ErreurControle.PATH_VARIABLE_IDENTIFIANT_OBLIGATOIRE);
+		}
+		if ( valeur == null ) {
+			throw new ControllerException(
+					ErreurControle.OPERATION_ACTUALISATION_COMPTE_SOLDE_OBLIGATOIRE,
+					compteInvestissementIdentifiant);
+		}
+
+		CompteInterne compte = compteInterneService.rechercherParIdentifiant(compteInvestissementIdentifiant);
+		if ( compte == null ) {
+			throw new ControllerException(
+					ErreurControle.COMPTE_INTERNE_NON_TROUVE_PAR_IDENTIFIANT,
+					compteInvestissementIdentifiant);
+		}
+		if ( dateValeur == null ) {
+			dateValeur = ZonedDateTime.now();
+		}
+
+		return operationService.rechercherPourcentagePlusOuMoinsValue(
+				compte, 
+				dateValeur,
+				valeur);
 	}
 	
-	@PostMapping("/depot")
-	public OperationResponseDto effectuerDepot(@RequestBody OperationRequestDto requestDto) throws ControllerException, ServiceException {
-
-		OperationResponseDto operationDepot = creerOperationDepot(
-				requestDto.numero, 
-				requestDto.libelle, 
-				requestDto.dateValeur,
-				requestDto.montantEnCentimes, 
-				requestDto.identifiantCompteFinancier, 
-				requestDto.identifiantCompteCourant);
-		
-		return operationDepot;
-	}
-	
-	@PostMapping("/investissement")
-	public OperationResponseDto effectuerInvestissement(@RequestBody OperationRequestDto requestDto) throws ControllerException, ServiceException {
-
-
-		OperationResponseDto operationInvestissement = creerOperationInvestissement(
-				requestDto.numero, 
-				requestDto.libelle, 
-				requestDto.dateValeur,
-				requestDto.montantEnCentimes, 
-				requestDto.identifiantCompteFinancier, 
-				requestDto.identifiantCompteCourant);
-		
-		return operationInvestissement;
-	}
-	
-	private OperationResponseDto creerOperationDepense(
-			String numero,
-			String libelle,
-			LocalDate dateValeur,
-			Long montantEnCentimes,
-			String identifiantCompteExterne,
-			String identifiantCompteCourant,
-			String nomSousCategorie,
-			List<String> nomsBeneficiaires) throws ControllerException, ServiceException {
-		
-		OperationCreationRequestDto dto = new OperationCreationRequestDto();
-		
-		dto.numero = numero;
-		dto.libelle = libelle;
-		dto.codeTypeOperation = TypeOperation.DEPENSE.getCode();
-		dto.dateValeur = dateValeur;
-		dto.montantEnCentimes = montantEnCentimes;
-		dto.identifiantCompteDepense = identifiantCompteCourant;
-		dto.identifiantCompteRecette = identifiantCompteExterne;
-		dto.nomSousCategorie = nomSousCategorie;
-		dto.nomsBeneficiaires = nomsBeneficiaires;
-		
-		return creerOperation(dto);
-	}
-
-	private OperationResponseDto creerOperationRecette(
-			String numero, 
-			String libelle, 
-			LocalDate dateValeur,
-			Long montantEnCentimes, 
-			String identifiantCompteExterne, 
-			String identifiantCompteCourant,
-			String nomSousCategorie, 
-			List<String> nomsBeneficiaires) throws ControllerException, ServiceException {
-		
-		OperationCreationRequestDto dto = new OperationCreationRequestDto();
-		
-		dto.numero = numero;
-		dto.libelle = libelle;
-		dto.codeTypeOperation = TypeOperation.RECETTE.getCode();
-		dto.dateValeur = dateValeur;
-		dto.montantEnCentimes = montantEnCentimes;
-		dto.identifiantCompteDepense = identifiantCompteExterne;
-		dto.identifiantCompteRecette = identifiantCompteCourant;
-		dto.nomSousCategorie = nomSousCategorie;
-		dto.nomsBeneficiaires = nomsBeneficiaires;
-		
-		return creerOperation(dto);
-	}
-
-	private OperationResponseDto creerOperationTransfert(
-			String numero, 
-			String libelle, 
-			LocalDate dateValeur,
-			Long montantEnCentimes, 
-			String identifiantCompteCourantRecette, 
-			String identifiantCompteCourantDepense) throws ControllerException, ServiceException {
-		
-		OperationCreationRequestDto dto = new OperationCreationRequestDto();
-		
-		dto.numero = numero;
-		dto.libelle = libelle;
-		dto.codeTypeOperation = TypeOperation.TRANSFERT.getCode();
-		dto.dateValeur = dateValeur;
-		dto.montantEnCentimes = montantEnCentimes;
-		dto.identifiantCompteDepense = identifiantCompteCourantDepense;
-		dto.identifiantCompteRecette = identifiantCompteCourantRecette;
-		dto.nomSousCategorie = null;
-		dto.nomsBeneficiaires = null;
-		
-		return creerOperation(dto);
-	}
-
-	private OperationResponseDto creerOperationAchat(
-			String numero,
-			String libelle,
-			LocalDate dateValeur,
-			Long montantEnCentimes,
-			String identifiantComptePatrimoine,
-			String identifiantCompteExterne) throws ControllerException, ServiceException {
-		
-		OperationCreationRequestDto dto = new OperationCreationRequestDto();
-		
-		dto.numero = numero;
-		dto.libelle = libelle;
-		dto.codeTypeOperation = TypeOperation.ACHAT.getCode();
-		dto.dateValeur = dateValeur;
-		dto.montantEnCentimes = montantEnCentimes;
-		dto.identifiantCompteDepense = identifiantCompteExterne;
-		dto.identifiantCompteRecette = identifiantComptePatrimoine;
-		dto.nomSousCategorie = null;
-		dto.nomsBeneficiaires = null;
-		
-		return creerOperation(dto);
-	}
-
-	private OperationResponseDto creerOperationVente(
-			String numero,
-			String libelle, 
-			LocalDate dateValeur, 
-			Long montantEnCentimes,
-			String identifiantComptePatrimoine, 
-			String identifiantCompteExterne) throws ControllerException, ServiceException {
-		
-		OperationCreationRequestDto dto = new OperationCreationRequestDto();
-		
-		dto.numero = numero;
-		dto.libelle = libelle;
-		dto.codeTypeOperation = TypeOperation.VENTE.getCode();
-		dto.dateValeur = dateValeur;
-		dto.montantEnCentimes = montantEnCentimes;
-		dto.identifiantCompteDepense = identifiantComptePatrimoine;
-		dto.identifiantCompteRecette = identifiantCompteExterne;
-		dto.nomSousCategorie = null;
-		dto.nomsBeneficiaires = null;
-		
-		return creerOperation(dto);
-	}
-
-	private OperationResponseDto creerOperationDepot(
-			String numero,
-			String libelle,
-			LocalDate dateValeur,
-			Long montantEnCentimes,
-			String identifiantCompteEpargne,
-			String identifiantCompteCourant) throws ControllerException, ServiceException {
-		
-		OperationCreationRequestDto dto = new OperationCreationRequestDto();
-		
-		dto.numero = numero;
-		dto.libelle = libelle;
-		dto.codeTypeOperation = TypeOperation.DEPOT.getCode();
-		dto.dateValeur = dateValeur;
-		dto.montantEnCentimes = montantEnCentimes;
-		dto.identifiantCompteDepense = identifiantCompteCourant;
-		dto.identifiantCompteRecette = identifiantCompteEpargne;
-		dto.nomSousCategorie = null;
-		dto.nomsBeneficiaires = null;
-		
-		return creerOperation(dto);
-	}
-
-	private OperationResponseDto creerOperationInvestissement(
-			String numero,
-			String libelle,
-			LocalDate dateValeur,
-			Long montantEnCentimes,
-			String identifiantCompteEpargne,
-			String identifiantCompteCourant) throws ControllerException, ServiceException {
-		
-		OperationCreationRequestDto dto = new OperationCreationRequestDto();
-		
-		dto.numero = numero;
-		dto.libelle = libelle;
-		dto.codeTypeOperation = TypeOperation.INVESTISSEMENT.getCode();
-		dto.dateValeur = dateValeur;
-		dto.montantEnCentimes = montantEnCentimes;
-		dto.identifiantCompteDepense = identifiantCompteCourant;
-		dto.identifiantCompteRecette = identifiantCompteEpargne;
-		dto.nomSousCategorie = null;
-		dto.nomsBeneficiaires = null;
-		
-		return creerOperation(dto);
-	}
-
-	private OperationResponseDto creerOperationRetrait(
-			String numero,
-			String libelle,
-			LocalDate dateValeur,
-			Long montantEnCentimes,
-			String identifiantCompteEpargne,
-			String identifiantCompteCourant) throws ControllerException, ServiceException {
-		
-		OperationCreationRequestDto dto = new OperationCreationRequestDto();
-		
-		dto.numero = numero;
-		dto.libelle = libelle;
-		dto.codeTypeOperation = TypeOperation.RETRAIT.getCode();
-		dto.dateValeur = dateValeur;
-		dto.montantEnCentimes = montantEnCentimes;
-		dto.identifiantCompteDepense = identifiantCompteEpargne;
-		dto.identifiantCompteRecette = identifiantCompteCourant;
-		dto.nomSousCategorie = null;
-		dto.nomsBeneficiaires = null;
-		
-		return creerOperation(dto);
-	}
-
-	private OperationResponseDto creerOperationLiquidation(
-			String numero,
-			String libelle,
-			LocalDate dateValeur,
-			Long montantEnCentimes,
-			String identifiantCompteEpargne,
-			String identifiantCompteCourant) throws ControllerException, ServiceException {
-		
-		OperationCreationRequestDto dto = new OperationCreationRequestDto();
-		
-		dto.numero = numero;
-		dto.libelle = libelle;
-		dto.codeTypeOperation = TypeOperation.LIQUIDATION.getCode();
-		dto.dateValeur = dateValeur;
-		dto.montantEnCentimes = montantEnCentimes;
-		dto.identifiantCompteDepense = identifiantCompteEpargne;
-		dto.identifiantCompteRecette = identifiantCompteCourant;
-		dto.nomSousCategorie = null;
-		dto.nomsBeneficiaires = null;
-		
-		return creerOperation(dto);
-	}
-	
-	private Operation mapperCreationRequestDtoToModel(
-			OperationCreationRequestDto dto, 
-			Operation operation) throws ControllerException, ServiceException {
+	private Operation creationRequestDtoToModel(
+			Operation operation, 
+			OperationCreationRequestDto dto) throws ControllerException, ServiceException {
 
 		// Préparation nouvelle opération
 		//
-		operation.setNumero(verificateur.verifierNumeroValideEtUnique(dto.numero, operation.getId(), FACULTATIF));
-		operation.setLibelle(verificateur.verifierLibelle(dto.libelle, FACULTATIF, null));
-		operation.setTypeOperation(verificateur.verifierTypeOperation(dto.codeTypeOperation, OBLIGATOIRE, null));
-		operation.setDateValeur(verificateur.verifierDate(dto.dateValeur, FACULTATIF, LocalDate.now()));
-		operation.setMontantEnCentimes(verificateur.verifierMontantEnCentimes(dto.montantEnCentimes, OBLIGATOIRE, null));
-		operation.setCompteDepense(verificateur.verifierCompte(dto.identifiantCompteDepense, OBLIGATOIRE));
-		operation.setCompteRecette(verificateur.verifierCompte(dto.identifiantCompteRecette, OBLIGATOIRE));
-		operation.setPointee(Boolean.FALSE);
+		operation.setTypeOperation(verifierTypeOperation(dto.codeTypeOperation));
+		operation.setNumero(verifierNumero(dto.numero));
+		operation.setLibelle(verifierLibelle(dto.libelle));
+		operation.setDateValeur(verifierDate(dto.dateValeur));
+		operation.setMontantTotalEnCentimes(verifierMontantEnCentimes(dto.montantTotalEnCentimes));
+		operation.setCompteDepense(verifierCompteDepenseEnregistre(dto.identifiantCompteDepense));
+		operation.setCompteRecette(verifierCompteRecetteEnregistre(dto.identifiantCompteRecette));
 
 		// Préparation de la première ligne de détail
 		//
-		OperationLigne ligne = new OperationLigne();
-		
-		ligne.setOperation(operation);
-		operation.getLignes().add(ligne);
+		DetailOperation detailOperation = new DetailOperation();
+		detailOperation.setSequence(0);
+		detailOperation.setLibelle(operation.getLibelle());
+		detailOperation.setDateComptabilisation(operation.getDateValeur());
+		detailOperation.setMontantDetailEnCentimes(operation.getMontantTotalEnCentimes());
+		detailOperation.setSousCategorie(verifierSousCategorieEnregistree(dto.nomSousCategorie));
+		detailOperation.setBeneficiaires(verifierBeneficiairesEnregistres(dto.nomsBeneficiaires));
+		detailOperation.setOperation(operation);
 
-		ligne.setNumeroLigne(0);
-		ligne.setLibelle(operation.getLibelle());
-		ligne.setDateComptabilisation(operation.getDateValeur());
-		ligne.setMontantEnCentimes(operation.getMontantEnCentimes());
-		ligne.setSousCategorie(verificateur.verifierSousCategorie(dto.nomSousCategorie, FACULTATIF));
-		Set<Beneficiaire> beneficiaires = new HashSet<>();
-		if ( dto.nomsBeneficiaires != null ) {
-			for ( String nomBeneficiaire : dto.nomsBeneficiaires ) {
-				beneficiaires.add(verificateur.verifierBeneficiaire(nomBeneficiaire, OBLIGATOIRE));
-			}
-		}
-		ligne.changerBeneficiaires(beneficiaires);
+		operation.getDetailsOperation().add(detailOperation);
 
 		return operation;
 	}
 
-	private Operation mapperModificationRequestDtoToModel(
-			OperationModificationRequestDto dto, 
-			Operation operation) throws ControllerException, ServiceException {
+	private Operation modificationRequestDtoToModel(
+			Operation operation, 
+			OperationModificationRequestDto dto) throws ControllerException, ServiceException {
 
 		// Modification de l'opération
 		//
-		if ( dto.numero != null ) operation.setNumero(verificateur.verifierNumeroValideEtUnique(dto.numero, operation.getId(), OBLIGATOIRE));
-		if ( dto.codeTypeOperation != null ) operation.setTypeOperation(verificateur.verifierTypeOperation(dto.codeTypeOperation, OBLIGATOIRE, null));
-		if ( dto.libelle != null ) operation.setLibelle(verificateur.verifierLibelle(dto.libelle, FACULTATIF, null));
-		if ( dto.dateValeur != null ) operation.setDateValeur(verificateur.verifierDate(dto.dateValeur, FACULTATIF, LocalDate.now()));
-		if ( dto.montantEnCentimes != null ) operation.setMontantEnCentimes(verificateur.verifierMontantEnCentimes(dto.montantEnCentimes, OBLIGATOIRE, null));
-		if ( dto.identifiantCompteDepense != null ) operation.setCompteDepense(verificateur.verifierCompte(dto.identifiantCompteDepense, OBLIGATOIRE));
-		if ( dto.identifiantCompteRecette != null ) operation.setCompteRecette(verificateur.verifierCompte(dto.identifiantCompteRecette, OBLIGATOIRE));
-		if ( dto.pointee != null ) operation.setPointee(dto.pointee);
-		if ( dto.lignes != null && !dto.lignes.isEmpty() ) {
-			operation = mapperModificationRequestDtoToModel(operation, dto.lignes);
-		}
+		if ( dto.codeTypeOperation != null ) operation.setTypeOperation(verifierTypeOperation(dto.codeTypeOperation));
+		if ( dto.numero != null ) operation.setNumero(verifierNumero(dto.numero));
+		if ( dto.libelle != null ) operation.setLibelle(verifierLibelle(dto.libelle));
+		if ( dto.dateValeur != null ) operation.setDateValeur(verifierDate(dto.dateValeur));
+		if ( dto.montantTotalEnCentimes != null ) operation.setMontantTotalEnCentimes(verifierMontantEnCentimes(dto.montantTotalEnCentimes));
+		if ( dto.identifiantCompteDepense != null ) operation.setCompteDepense(verifierCompteDepenseEnregistre(dto.identifiantCompteDepense));
+		if ( dto.identifiantCompteRecette != null ) operation.setCompteRecette(verifierCompteRecetteEnregistre(dto.identifiantCompteRecette));
+		
+		if ( dto.detailsOperation != null ) operation.setDetailsOperation(modificationRequestDtoToModel(operation, dto.detailsOperation));
 
 		return operation;
 	}
 
-	private Operation mapperModificationRequestDtoToModel(
+	private Set<DetailOperation> modificationRequestDtoToModel(
 			Operation operation, 
-			List<OperationLigneModificationRequestDto> listeDto) throws ControllerException, ServiceException {
+			List<DetailOperationRequestDto> listeDto) throws ControllerException, ServiceException {
 
-		int dernierNumeroLigne = rechercherDernierNumeroLigne(operation.getLignes());
+		Set<DetailOperation> detailsOperation = new HashSet<>();
 
-		Set<OperationLigne> nouvellesLignes = new HashSet<>();
-		
-		for ( OperationLigneModificationRequestDto dto : listeDto ) {
-			OperationLigne ligne;
-			if ( dto.numeroLigne == null ) {
-				// Nouvelle ligne d'opération à créer
-				ligne = new OperationLigne();
-				ligne.setOperation(operation);
-				ligne.setNumeroLigne(++dernierNumeroLigne);
-				ligne.setDateComptabilisation(verificateur.verifierDate(dto.dateComptabilisation, FACULTATIF, operation.getDateValeur()));
-				ligne.setLibelle(verificateur.verifierLibelle(dto.libelle, FACULTATIF, operation.getLibelle()));
-				ligne.setMontantEnCentimes(verificateur.verifierMontantEnCentimes(dto.montantEnCentimes, OBLIGATOIRE, null));
-				ligne.setSousCategorie((verificateur.verifierSousCategorie(dto.nomSousCategorie, FACULTATIF)));
-				Set<Beneficiaire> beneficiaires = new HashSet<>();
-				if ( dto.nomsBeneficiaires != null ) {
-					for ( String nomBeneficiaire : dto.nomsBeneficiaires ) {
-						beneficiaires.add(verificateur.verifierBeneficiaire(nomBeneficiaire, OBLIGATOIRE));
-					}
-				}
-				ligne.changerBeneficiaires(beneficiaires);
+		int dernierNumeroSequence = rechercherDerniereSequence(operation.getDetailsOperation());
+
+		for ( DetailOperationRequestDto dto : listeDto ) {
+			DetailOperation detailOperation;
+			if ( dto.sequence == null ) {
+				// Nouveau détail
+				detailOperation = new DetailOperation();
+				detailOperation.setSequence(++dernierNumeroSequence);
+				detailOperation.setOperation(operation);
 			}
 			else {
-				// Ligne existante : on va la chercher et on la modifie (ou pas)
-				ligne = rechercherParNumeroLigne(operation.getLignes(), dto.numeroLigne);
-				if ( ligne == null ) {
+				// Détail existant
+				detailOperation = rechercherParSequence(operation.getDetailsOperation(), dto.sequence);
+				if ( detailOperation == null ) {
 					throw new ControllerException(
-							OperationControleErreur.NON_TROUVE_PAR_NUMERO_LIGNE,
+							ErreurControle.DETAIL_OPERATION_NON_TROUVE_PAR_SEQUENCE,
 							operation.getNumero(),
-							dto.numeroLigne);
-				}
-				
-				if ( dto.libelle != null ) ligne.setLibelle(verificateur.verifierLibelle(dto.libelle, FACULTATIF, null));
-				if ( dto.dateComptabilisation != null ) ligne.setDateComptabilisation(verificateur.verifierDate(dto.dateComptabilisation, FACULTATIF, operation.getDateValeur()));
-				if ( dto.montantEnCentimes != null ) ligne.setMontantEnCentimes(verificateur.verifierMontantEnCentimes(dto.montantEnCentimes, OBLIGATOIRE, null));
-				if ( dto.nomSousCategorie != null ) ligne.setSousCategorie(verificateur.verifierSousCategorie(dto.nomSousCategorie, FACULTATIF));
-				if ( dto.nomsBeneficiaires != null ) {
-					Set<Beneficiaire> beneficiaires = new HashSet<>();
-					for ( String nomBeneficiaire : dto.nomsBeneficiaires ) {
-						beneficiaires.add(verificateur.verifierBeneficiaire(nomBeneficiaire, OBLIGATOIRE));
-					}
-					ligne.changerBeneficiaires(beneficiaires);
+							dto.sequence);
 				}
 			}
-			nouvellesLignes.add(ligne);
+			if ( dto.libelle != null ) detailOperation.setLibelle(verifierLibelle(dto.libelle));
+			if ( dto.dateComptabilisation != null ) detailOperation.setDateComptabilisation(verifierDate(dto.dateComptabilisation));
+			if ( dto.montantDetailEnCentimes != null ) detailOperation.setMontantDetailEnCentimes(verifierMontantEnCentimes(dto.montantDetailEnCentimes));
+			if ( dto.nomSousCategorie != null ) detailOperation.setSousCategorie(verifierSousCategorieEnregistree(dto.nomSousCategorie));
+			if ( dto.nomsBeneficiaires != null ) detailOperation.setBeneficiaires(verifierBeneficiairesEnregistres(dto.nomsBeneficiaires));
+
+			detailsOperation.add(detailOperation);
 		}
 
-		// Mise à jour de l'opération avec l'enregistrement des nouvelles lignes et la suppression des anciennes lignes 
-		// non reprises dans la liste des dto
-		operation.changerLignes(nouvellesLignes);
+		return detailsOperation;
+	}
+
+	private String verifierNumero(String numero) {
+
+		if ( numero == null || numero.isBlank() ) {
+			numero = null;
+		}
+		return numero;
+	}
+
+	private String verifierLibelle(String libelle) {
+
+		if ( libelle == null || libelle.isBlank() ) {
+			libelle = null;
+		}
+		return libelle;
+	}
+
+	private TypeOperation verifierTypeOperation(
+			String codeTypeOperation) throws ControllerException {
+
+		if ( codeTypeOperation == null || codeTypeOperation.isBlank() ) {
+			throw new ControllerException(
+					ErreurControle.OPERATION_TYPE_OPERATION_OBLIGATOIRE);
+		}
+
+		TypeOperation typeOperation = TypeOperation.findByCode(codeTypeOperation);
+		if ( typeOperation == null ) {
+			throw new ControllerException(
+					ErreurControle.TYPE_OPERATION_NON_TROUVE_PAR_CODE,
+					codeTypeOperation);
+		}
+		return typeOperation;
+	}
+
+	private ZonedDateTime verifierDate(ZonedDateTime date) {
+
+		if( date == null ) {
+			return ZonedDateTime.from(Instant.now());
+		}
+		return date;
+	}
+
+	private Long verifierMontantEnCentimes(Long montantEnCentimes) throws ControllerException {
+
+		if ( montantEnCentimes == null || montantEnCentimes.longValue() == 0 ) {
+			throw new ControllerException(
+					ErreurControle.OPERATION_MONTANT_OBLIGATOIRE);
+		}
+		return montantEnCentimes;
+	}
+
+	private Compte verifierCompteDepenseEnregistre(String identifiantCompteDepense) 
+			throws ControllerException, ServiceException {
+
+		if ( identifiantCompteDepense == null || identifiantCompteDepense.isBlank() ) {
+			throw new ControllerException(
+					ErreurControle.OPERATION_COMPTE_DEPENSE_OBLIGATOIRE);
+		}
+
+		Compte compte = compteTousTypesService.rechercherParIdentifiant(identifiantCompteDepense);
+		if ( compte == null ) {
+			throw new ControllerException(
+					ErreurControle.COMPTE_NON_TROUVE_PAR_IDENTIFIANT, 
+					identifiantCompteDepense);
+		}
 		
-		return operation;
+		return compte;
 	}
 
-	private int rechercherDernierNumeroLigne(Set<OperationLigne> lignes) {
+	private Compte verifierCompteRecetteEnregistre(String identifiantCompteRecette) 
+			throws ControllerException, ServiceException {
 
-		int numeroLigne = 0;
-		for ( OperationLigne ligne : lignes ) {
-			numeroLigne = Math.max(numeroLigne, ligne.getNumeroLigne());
+		if ( identifiantCompteRecette == null || identifiantCompteRecette.isBlank() ) {
+			throw new ControllerException(
+					ErreurControle.OPERATION_COMPTE_RECETTE_OBLIGATOIRE);
 		}
-		return numeroLigne;
+
+		Compte compte = compteTousTypesService.rechercherParIdentifiant(identifiantCompteRecette);
+		if ( compte == null ) {
+			throw new ControllerException(
+					ErreurControle.COMPTE_NON_TROUVE_PAR_IDENTIFIANT, 
+					identifiantCompteRecette);
+		}
+		
+		return compte;
 	}
 
-	private OperationLigne rechercherParNumeroLigne(Set<OperationLigne> lignes, int numeroLigne) {
+	private SousCategorie verifierSousCategorieEnregistree(
+			String nomSousCategorie) throws ControllerException, ServiceException {
+
+		if ( nomSousCategorie == null || nomSousCategorie.isBlank() ) {
+			return null;
+		}
+
+		SousCategorie sousCategorie = sousCategorieService.rechercherParNom(nomSousCategorie);
+		if ( sousCategorie == null ) {
+			throw new ControllerException(
+					ErreurControle.SOUS_CATEGORIE_NON_TROUVEE_PAR_NOM, 
+					nomSousCategorie);
+		}
+		
+		return sousCategorie;
+	}
+
+	private Set<Beneficiaire> verifierBeneficiairesEnregistres(
+			List<String> nomsBeneficiaires) throws ControllerException, ServiceException {
+
+		Set<Beneficiaire> beneficiaires = new HashSet<>();
+
+		if ( nomsBeneficiaires == null ) {
+			return beneficiaires;
+		}
+
+		for ( String nomBeneficiaire : nomsBeneficiaires ) {
+				Beneficiaire beneficiaire = beneficiaireService.rechercherParNom(nomBeneficiaire);
+				if ( beneficiaire == null ) {
+					throw new ControllerException(
+							ErreurControle.BENEFICIAIRE_NON_TROUVE_PAR_NOM, 
+							nomBeneficiaire);
+				}
+				beneficiaires.add(beneficiaire);
+		} 
+
+		return beneficiaires;
+	}
+
+	private int rechercherDerniereSequence(Set<DetailOperation> detailsOperation) {
+
+		int derniereSequence = 0;
+		for ( DetailOperation detailOperation : detailsOperation ) {
+			derniereSequence = Math.max(derniereSequence, detailOperation.getSequence());
+		}
+		return derniereSequence;
+	}
+
+	private DetailOperation rechercherParSequence(Set<DetailOperation> detailsOperation, int sequence) {
 	
-		for ( OperationLigne ligne : lignes ) {
-			if ( ligne.getNumeroLigne() == numeroLigne ) {
-				return ligne;
+		for ( DetailOperation detailOperation : detailsOperation ) {
+			if ( detailOperation.getSequence() == sequence ) {
+				return detailOperation;
 			}
 		}
 		return null;
 	}
-
 }

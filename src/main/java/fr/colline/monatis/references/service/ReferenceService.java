@@ -4,53 +4,64 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 
 import fr.colline.monatis.exceptions.ServiceException;
-import fr.colline.monatis.references.ReferenceTechniqueErreur;
-import fr.colline.monatis.references.model.Reference;
+import fr.colline.monatis.exceptions.erreurs.ErreurFonctionnelle;
+import fr.colline.monatis.exceptions.erreurs.ErreurProgrammation;
+import fr.colline.monatis.exceptions.erreurs.ErreurTechnique;
+import fr.colline.monatis.model.references.Reference;
 import fr.colline.monatis.references.repository.ReferenceRepository;
 
-@Service
 public abstract class ReferenceService<T extends Reference> {
-	
-	public T rechercherParId(Long id) throws ServiceException {
 
-		Assert.notNull(id,() -> "L'ID pour la recherche d'une référence de type '" + getTClass().getSimpleName() + "' est obligatoire");
+	public T rechercherParId(Long referenceId) throws ServiceException {
+
+		if ( referenceId == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.ID_NULL,
+					getTClass().getSimpleName());
+		}
 
 		try {
-			Optional<T> optional = getRepository().findById(id);
+			Optional<T> optional = getRepository().findById(referenceId);
 			return optional.isEmpty() ? null : optional.get();
 		}
 		catch (Throwable t) {
 			throw new ServiceException(
 					t,
-					ReferenceTechniqueErreur.RECHERCHE_PAR_ID,
+					ErreurTechnique.TECH_RECHERCHE_REFERENCE_PAR_ID,
 					getTClass().getSimpleName(),
-					id );
+					referenceId );
 		}
 	}
 
-	public boolean isExistantParId(Long id) throws ServiceException {
+	public boolean isExistantParId(Long referenceId) throws ServiceException {
 
-		Assert.notNull(id,() -> "L'ID pour la vérification de l'existence d'une référence de type '" + getTClass().getSimpleName() + "' est obligatoire");
+		if ( referenceId == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.ID_NULL,
+					getTClass().getSimpleName());
+		}
 
 		try {
-			return getRepository().existsById(id);
+			return getRepository().existsById(referenceId);
 		}
 		catch (Throwable t) {
 			throw new ServiceException(
 					t,
-					ReferenceTechniqueErreur.EXISTENCE_PAR_ID,
+					ErreurTechnique.TECH_EXISTANCE_REFERENCE_PAR_ID,
 					getTClass().getSimpleName(),
-					id );
+					referenceId );
 		}
 	}
 
 	public T rechercherParNom(String nom) throws ServiceException {
 
-		Assert.notNull(nom,() -> "Le NOM pour la recherche d'une référence de type '" + getTClass().getSimpleName() + "' est obligatoire");
+		if ( nom == null || nom.isBlank() ) {
+			throw new ServiceException(
+					ErreurProgrammation.NOM_NULL,
+					getTClass().getSimpleName());
+		}
 
 		try {
 			Optional<T> optional = getRepository().findByNom(nom);
@@ -59,7 +70,7 @@ public abstract class ReferenceService<T extends Reference> {
 		catch (Throwable t) {
 			throw new ServiceException(
 					t,
-					ReferenceTechniqueErreur.RECHERCHE_PAR_NOM,
+					ErreurTechnique.TECH_RECHERCHE_REFERENCE_PAR_NOM,
 					getTClass().getSimpleName(),
 					nom);
 		}
@@ -67,7 +78,11 @@ public abstract class ReferenceService<T extends Reference> {
 	
 	public boolean isExistantParNom(String nom) throws ServiceException {
 
-		Assert.notNull(nom,() -> "Le NOM pour la vérification de l'existence d'une référence de type '" + getTClass().getSimpleName() + "' est obligatoire");
+		if ( nom == null || nom.isBlank() ) {
+			throw new ServiceException(
+					ErreurProgrammation.NOM_NULL,
+					getTClass().getSimpleName());
+		}
 
 		try {
 			return getRepository().existsByNom(nom);
@@ -75,7 +90,7 @@ public abstract class ReferenceService<T extends Reference> {
 		catch (Throwable t) {
 			throw new ServiceException(
 					t,
-					ReferenceTechniqueErreur.EXISTENCE_PAR_NOM,
+					ErreurTechnique.TECH_EXISTANCE_REFERENCE_PAR_NOM,
 					getTClass().getSimpleName(),
 					nom);
 		}
@@ -89,14 +104,18 @@ public abstract class ReferenceService<T extends Reference> {
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					ReferenceTechniqueErreur.RECHERCHE_TOUS,
+					ErreurTechnique.TECH_RECHERCHE_REFERENCE_TOUS,
 					getTClass().getSimpleName());
 		}
 	}
 
 	public List<T> rechercherTous(Sort tri) throws ServiceException {
 
-		Assert.notNull(tri,() -> "Le TRI pour la recherche des références de type '" + getTClass().getSimpleName() + "' est obligatoire");
+		if ( tri == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.TRI_NULL,
+					getTClass().getSimpleName());
+		}
 
 		try {
 			return getRepository().findAll(tri);
@@ -104,7 +123,7 @@ public abstract class ReferenceService<T extends Reference> {
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					ReferenceTechniqueErreur.RECHERCHE_TOUS,
+					ErreurTechnique.TECH_RECHERCHE_REFERENCE_TOUS,
 					getTClass().getSimpleName());
 		}
 	}
@@ -117,14 +136,18 @@ public abstract class ReferenceService<T extends Reference> {
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					ReferenceTechniqueErreur.SUPPRESSION_TOUS,
+					ErreurTechnique.TECH_SUPPRESSION_REFERENCE_TOUS,
 					getTClass().getSimpleName());
 		}
 	}
 
 	public final T creerReference(T reference) throws ServiceException {
 
-		Assert.notNull(reference,() -> "La REFERENCE à créer de type '" + getTClass().getSimpleName() + "' est obligatoire");
+		if ( reference == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.REFERENCE_NULL,
+					getTClass().getSimpleName());
+		}
 
 		reference = controlerEtPreparerPourCreation(reference);
 
@@ -133,38 +156,37 @@ public abstract class ReferenceService<T extends Reference> {
 
 	public final T modifierReference(T reference) throws ServiceException {
 
-		Assert.notNull(reference,() -> "La REFERENCE à modifier de type '" + getTClass().getSimpleName() + "' est obligatoire");
+		if ( reference == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.REFERENCE_NULL,
+					getTClass().getSimpleName());
+		}
 
 		reference = controlerEtPreparerPourModification(reference);
 		
 		return enregistrer(reference);
 	}
 
-	public final void supprimerReference(T reference) throws ServiceException {
+	public final void supprimerReference(Long referenceId) throws ServiceException {
 
-		Assert.notNull(reference,() -> "La REFERENCE à supprimer de type '" + getTClass().getSimpleName() + "' est obligatoire");
+		if ( referenceId == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.ID_NULL,
+					getTClass().getSimpleName());
+		}
 
-		reference = controlerEtPreparerPourSuppression(reference);
+		T reference = controlerEtPreparerPourSuppression(referenceId);
 
 		supprimer(reference);
 	}
 
-	protected T controlerEtPreparerPourCreation(T reference) throws ServiceException {
+	protected T enregistrer(T reference) throws ServiceException {
 
-		return reference;
-	}
-
-	protected T controlerEtPreparerPourModification(T reference) throws ServiceException {
-
-		return reference;
-	}
-
-	protected T controlerEtPreparerPourSuppression(T reference) throws ServiceException {
-
-		return reference;
-	}
-
-	private T enregistrer(T reference) throws ServiceException {
+		if ( reference == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.REFERENCE_NULL,
+					getTClass().getSimpleName());
+		}
 
 		try {
 			return this.getRepository().save(reference);
@@ -172,13 +194,19 @@ public abstract class ReferenceService<T extends Reference> {
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					ReferenceTechniqueErreur.ENREGISTREMENT,
+					ErreurTechnique.TECH_ENREGISTREMENT_REFERENCE,
 					getTClass().getSimpleName(),
 					reference.getNom());
 		}
 	}
 
-	private void supprimer(T reference) throws ServiceException {
+	protected void supprimer(T reference) throws ServiceException {
+
+		if ( reference == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.REFERENCE_NULL,
+					getTClass().getSimpleName());
+		}
 
 		try {
 			this.getRepository().delete(reference);
@@ -186,12 +214,113 @@ public abstract class ReferenceService<T extends Reference> {
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					ReferenceTechniqueErreur.SUPPRESSION,
+					ErreurTechnique.TECH_SUPPRESSION_REFERENCE,
 					getTClass().getSimpleName(),
 					reference.getNom());
 		}
 	}
 
-	public abstract Class<T> getTClass();
-	public abstract ReferenceRepository<T> getRepository();
+	protected T controlerEtPreparerPourCreation(T reference) throws ServiceException {
+
+		if ( reference == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.REFERENCE_NULL,
+					getTClass().getSimpleName());
+		}
+
+		verifierReferenceNonEnregistree(reference.getId());
+		verifierNomValideEtUnique(reference.getId(), reference.getNom());
+		
+		return reference;
+	}
+
+	protected T controlerEtPreparerPourModification(T reference) throws ServiceException {
+
+		if ( reference == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.REFERENCE_NULL,
+					getTClass().getSimpleName());
+		}
+
+		verifierReferenceEnregistree(reference.getId());
+		verifierNomValideEtUnique(reference.getId(), reference.getNom());
+		
+		return reference;
+	}
+
+	protected T controlerEtPreparerPourSuppression(Long referenceId) throws ServiceException {
+
+		if ( referenceId == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.ID_NULL,
+					getTClass().getSimpleName());
+		}
+
+		verifierReferenceEnregistree(referenceId);
+
+		return rechercherParId(referenceId);
+	}
+
+	private void verifierReferenceEnregistree(Long referenceId) throws ServiceException {
+		
+		if ( referenceId == null || ! isExistantParId(referenceId) ) {
+			throw new ServiceException (
+					ErreurFonctionnelle.REFERENCE_NON_ENREGISTREE_PAR_ID,
+					getTClass().getSimpleName(),
+					referenceId);
+		}
+	}
+
+	private void verifierReferenceNonEnregistree(Long referenceId) throws ServiceException {
+	
+		if ( referenceId != null && isExistantParId(referenceId) ) {
+			throw new ServiceException (
+					ErreurFonctionnelle.REFERENCE_DEJA_ENREGISTREE_PAR_ID,
+					getTClass().getSimpleName(),
+					referenceId);
+		}
+	}
+	
+	private void verifierNomValideEtUnique(
+			Long referenceId, 
+			String referenceNom) throws ServiceException {
+
+		if ( referenceNom == null || referenceNom.isBlank() ) {
+			throw new ServiceException (
+					ErreurFonctionnelle.REFERENCE_NOM_INVALIDE,
+					getTClass().getSimpleName());
+		}
+		
+		boolean isNomCreeOuModifie;
+		boolean isNomDejaUtilise;
+		
+		if ( referenceId == null ) {
+			// En cours création
+			isNomCreeOuModifie = true;
+			isNomDejaUtilise = isExistantParNom(referenceNom);
+		}
+		else {
+			try {
+				// En cours modification
+				isNomCreeOuModifie = ! getRepository().existsByNomAndId(referenceNom, referenceId);
+				isNomDejaUtilise = getRepository().existsByNomAndIdNot(referenceNom, referenceId);
+			}
+			catch ( Throwable t ) {
+				throw new ServiceException (
+						t,
+						ErreurTechnique.TECH_EXISTANCE_REFERENCE_PAR_NOM,
+						referenceNom);
+			}
+		}
+
+		if ( isNomCreeOuModifie && isNomDejaUtilise ) {
+			throw new ServiceException (
+					ErreurFonctionnelle.REFERENCE_NOM_DEJA_UTILISE,
+					getTClass().getSimpleName(),
+					referenceNom);
+		}
+	}
+	
+	protected abstract Class<T> getTClass();
+	protected abstract ReferenceRepository<T> getRepository();
 }

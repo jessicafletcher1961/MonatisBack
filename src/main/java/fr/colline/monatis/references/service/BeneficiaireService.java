@@ -4,31 +4,34 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import fr.colline.monatis.exceptions.ServiceException;
-import fr.colline.monatis.references.ReferenceFonctionnelleErreur;
-import fr.colline.monatis.references.ReferenceTechniqueErreur;
+import fr.colline.monatis.exceptions.erreurs.ErreurFonctionnelle;
+import fr.colline.monatis.exceptions.erreurs.ErreurTechnique;
 import fr.colline.monatis.references.model.Beneficiaire;
 import fr.colline.monatis.references.repository.BeneficiaireRepository;
+import fr.colline.monatis.references.repository.ReferenceRepository;
 
 @Service
-public class BeneficiaireService extends ReferenceService<Beneficiaire>{
+public class BeneficiaireService extends ReferenceService<Beneficiaire> {
 
-	@Autowired private BeneficiaireRepository beneficiaireRepository;
-
+	@Autowired private BeneficiaireRepository repository;
+	
 	@Override
-	public Class<Beneficiaire> getTClass() {
-		return Beneficiaire.class;
+	protected ReferenceRepository<Beneficiaire> getRepository() {
+
+		return repository;
 	}
 
 	@Override
-	public BeneficiaireRepository getRepository() {
-		return beneficiaireRepository;
+	protected Class<Beneficiaire> getTClass() {
+		
+		return Beneficiaire.class;
 	}
 	
 	@Override
-	protected Beneficiaire controlerEtPreparerPourSuppression(Beneficiaire beneficiaire) 
+	protected Beneficiaire controlerEtPreparerPourSuppression(Long beneficiaireId) 
 			throws ServiceException {
 		
-		beneficiaire = super.controlerEtPreparerPourSuppression(beneficiaire);
+		Beneficiaire beneficiaire = super.controlerEtPreparerPourSuppression(beneficiaireId);
 		
 		verifierAbsenceDetailOperationAssocie(beneficiaire);
 
@@ -40,21 +43,19 @@ public class BeneficiaireService extends ReferenceService<Beneficiaire>{
 
 		int nombreDetailOperation;
 		try {
-			nombreDetailOperation = beneficiaireRepository.compterOperationLigneParBeneficiaireId(beneficiaire.getId());
+			nombreDetailOperation = repository.compterDetailOperationParBeneficiaireId(beneficiaire.getId());
 		}
 		catch ( Throwable t ) {
 			throw new ServiceException(
-					ReferenceTechniqueErreur.COMPTAGE_USAGE_PAR_ID,
-					Beneficiaire.class.getSimpleName(),
+					ErreurTechnique.TECH_RECHERCHE_NOMBRE_DETAIL_OPERATION_PAR_BENEFICIAIRE_ID,
 					beneficiaire.getId());
 		}
 
 		if ( nombreDetailOperation > 0 ) {
 			throw new ServiceException(
-					ReferenceFonctionnelleErreur.SUPPRESSION_BENEFICIAIRE_AVEC_OPERATION, 
+					ErreurFonctionnelle.BENEFICIAIRE_SUPPRESSION_AVEC_DETAIL_OPERATION, 
 					beneficiaire.getNom(),
 					nombreDetailOperation);
 		}
 	}
-
 }

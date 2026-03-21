@@ -1,6 +1,6 @@
 package fr.colline.monatis.operations.service;
 
-import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -9,71 +9,70 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 
 import fr.colline.monatis.comptes.model.Compte;
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
-import fr.colline.monatis.comptes.service.CompteExterneService;
-import fr.colline.monatis.comptes.service.CompteInterneService;
-import fr.colline.monatis.comptes.service.CompteTechniqueService;
-import fr.colline.monatis.erreurs.GeneriqueTechniqueErreur;
+import fr.colline.monatis.comptes.model.CompteInterne;
+import fr.colline.monatis.comptes.model.CompteTiers;
+import fr.colline.monatis.comptes.model.TypeFonctionnementCompte;
 import fr.colline.monatis.exceptions.ServiceException;
-import fr.colline.monatis.operations.OperationFonctionnelleErreur;
-import fr.colline.monatis.operations.OperationTechniqueErreur;
+import fr.colline.monatis.exceptions.erreurs.ErreurFonctionnelle;
+import fr.colline.monatis.exceptions.erreurs.ErreurProgrammation;
+import fr.colline.monatis.exceptions.erreurs.ErreurTechnique;
+import fr.colline.monatis.operations.model.DetailOperation;
 import fr.colline.monatis.operations.model.Operation;
-import fr.colline.monatis.operations.model.OperationLigne;
 import fr.colline.monatis.operations.model.TypeOperation;
-import fr.colline.monatis.operations.repository.OperationLigneRepository;
 import fr.colline.monatis.operations.repository.OperationRepository;
 
 @Service
 public class OperationService {
 
-    private final CompteTechniqueService compteTechniqueService;
-
-	@Autowired private CompteInterneService compteInterneService;
-	@Autowired private CompteExterneService compteExterneService;
 	@Autowired private OperationRepository operationRepository;
-	@Autowired private OperationLigneRepository operationLigneRepository;
 
-    OperationService(CompteTechniqueService compteTechniqueService) {
-        this.compteTechniqueService = compteTechniqueService;
-    }
+	public Operation rechercherParId(Long operationId) throws ServiceException {
 
-	public Operation rechercherParId(Long id) throws ServiceException {
-
-		Assert.notNull(id, () -> "L'ID pour la recherche d'une opération est obligatoire");
+		if ( operationId == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.ID_NULL,
+					Operation.class.getSimpleName());
+		}
 
 		try {
-			Optional<Operation> optional = operationRepository.findById(id);
+			Optional<Operation> optional = operationRepository.findById(operationId);
 			return optional.isEmpty() ? null : optional.get();
 		}
 		catch (Throwable t) {
 			throw new ServiceException(
 					t,
-					OperationTechniqueErreur.RECHERCHE_PAR_ID,
-					id );
+					ErreurTechnique.TECH_RECHERCHE_OPERATION_PAR_ID,
+					operationId );
 		}
 	}
 
-	public boolean isExistantParId(Long id) throws ServiceException {
+	public boolean isExistantParId(Long operationId) throws ServiceException {
 
-		Assert.notNull(id, () -> "L'ID pour la vérification de l'existence d'une opération est obligatoire");
+		if ( operationId == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.ID_NULL,
+					Operation.class.getSimpleName());
+		}
 
 		try {
-			return operationRepository.existsById(id);
+			return operationRepository.existsById(operationId);
 		}
 		catch (Throwable t) {
 			throw new ServiceException(
 					t,
-					OperationTechniqueErreur.EXISTENCE_PAR_ID,
-					id);
+					ErreurTechnique.TECH_EXISTANCE_OPERATION_PAR_ID,
+					operationId);
 		}
 	}
 
 	public Operation rechercherParNumero(String numero) throws ServiceException {
 
-		Assert.notNull(numero, () -> "Le NUMERO pour la recherche d'une opération est obligatoire");
+		if ( numero == null || numero.isBlank() ) {
+			throw new ServiceException(
+					ErreurProgrammation.NUMERO_NULL);
+		}
 
 		try {
 			Optional<Operation> optional = operationRepository.findByNumero(numero);
@@ -82,14 +81,17 @@ public class OperationService {
 		catch (Throwable t) {
 			throw new ServiceException(
 					t,
-					OperationTechniqueErreur.RECHERCHE_PAR_IDENTIFIANT_FONCTIONNEL,
+					ErreurTechnique.TECH_RECHERCHE_OPERATION_PAR_NUMERO,
 					numero);
 		}
 	}
 
 	public boolean isExistantParNumero(String numero) throws ServiceException {
 
-		Assert.notNull(numero, () -> "Le NUMERO pour la vérification de l'existence d'une opération est obligatoire");
+		if ( numero == null || numero.isBlank() ) {
+			throw new ServiceException(
+					ErreurProgrammation.NUMERO_NULL);
+		}
 
 		try {
 			return operationRepository.existsByNumero(numero);
@@ -97,8 +99,7 @@ public class OperationService {
 		catch (Throwable t) {
 			throw new ServiceException(
 					t,
-					OperationTechniqueErreur.EXISTENCE_PAR_IDENTIFIANT_FONCTIONNEL,
-					Operation.class.getSimpleName(),
+					ErreurTechnique.TECH_EXISTANCE_OPERATION_PAR_NUMERO,
 					numero);
 		}
 	}
@@ -111,13 +112,17 @@ public class OperationService {
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					OperationTechniqueErreur.RECHERCHE_TOUS);
+					ErreurTechnique.TECH_RECHERCHE_OPERATION_TOUS);
 		}
 	}
 
 	public List<Operation> rechercherTous(Sort tri) throws ServiceException {
 
-		Assert.notNull(tri, () -> "Le TRI pour la recherche de toutes les opérations est obligatoire");
+		if ( tri == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.TRI_NULL,
+					Operation.class.getSimpleName());
+		}
 
 		try {
 			return operationRepository.findAll(tri);
@@ -125,7 +130,7 @@ public class OperationService {
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					OperationTechniqueErreur.RECHERCHE_TOUS);
+					ErreurTechnique.TECH_RECHERCHE_OPERATION_TOUS);
 		}
 	}
 
@@ -137,271 +142,54 @@ public class OperationService {
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					OperationTechniqueErreur.SUPPRESSION_TOUS);
+					ErreurTechnique.TECH_SUPPRESSION_OPERATION_TOUS);
 		}
 	}
 
-	/**
-	 * Recherche des opération de dépense du compte indiqué entre date début (incluse)
-	 * et date fin (incluse).</br>
-	 * Comprends les opérations réelles et les opérations techniques.</br>
-	 * Trié par date de valeur de l'opération.
-	 * @param compteId
-	 * @param dateDebut
-	 * @param dateFin
-	 * @return
-	 */
-	public List<Operation> rechercherOperationsDepenseParCompteIdEntreDateDebutEtDateFin(
+	public List<Operation> rechercherOperationRecetteParCompteIdEntreDateDebutEtDateFin(
 			Long compteId,
-			LocalDate dateDebut, 
-			LocalDate dateFin) throws ServiceException {
+			ZonedDateTime dateDebut, 
+			ZonedDateTime dateFin) throws ServiceException {
 
 		try {
-			return operationRepository.findByCompteDepenseIdAndDateValeurBetweenOrderByDateValeur(compteId, dateDebut, dateFin);
+			return operationRepository.findByCompteRecetteIdAndDateValeurBetween(
+					compteId, dateDebut, dateFin);
 		}
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					OperationTechniqueErreur.RECHERCHE_OPERATION_DEPENSE_PAR_COMPTE_ID_ENTRE_DATE_DEBUT_ET_DATE_FIN,
+					ErreurTechnique.TECH_RECHERCHE_OPERATION_RECETTE_PAR_COMPTE_ID_ENTRE_DATE_DEBUT_ET_DATE_FIN,
 					compteId,
 					dateDebut,
 					dateFin);
 		}
 	}
 
-	/**
-	 * Recherche des opération de dépense du compte indiqué jusqu'à la date fin (incluse).</br>
-	 * Trié par date de valeur de l'opération.
-	 * @param compteId
-	 * @param dateFin
-	 * @return
-	 */
-	public List<Operation> rechercherOperationsDepenseParCompteIdJusqueDateFin(Long compteId, LocalDate dateFin) throws ServiceException {
-
-		try {
-			return operationRepository.findByCompteDepenseIdAndDateValeurLessThanEqualOrderByDateValeur(
-					compteId, 
-					dateFin);
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					OperationTechniqueErreur.RECHERCHE_OPERATION_DEPENSE_PAR_COMPTE_ID_JUSQUE_DATE_FIN,
-					compteId,
-					dateFin);
-		}
-	}
-
-	/**
-	 * Recherche des opération de dépense du compte indiqué depuis la date de début (incluse).</br>
-	 * Trié par date de valeur de l'opération.
-	 * @param compteId
-	 * @param dateDebut
-	 * @return
-	 */
-	public List<Operation> rechercherOperationsDepenseParCompteIdDepuisDateDebut(Long compteId, LocalDate dateDebut) throws ServiceException {
-
-		try {
-			return operationRepository.findByCompteDepenseIdAndDateValeurGreaterThanEqualOrderByDateValeur(
-					compteId, 
-					dateDebut);
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					OperationTechniqueErreur.RECHERCHE_OPERATION_DEPENSE_PAR_COMPTE_ID_DEPUIS_DATE_DEBUT,
-					compteId,
-					dateDebut);
-		}
-	}
-
-	/**
-	 * Recherche des opération de recette du compte indiqué entre date début (incluse)
-	 * et date fin (incluse).</br>
-	 * Comprends les opérations réelles et les opérations techniques.</br>
-	 * Trié par date de valeur de l'opération.
-	 * @param compteId
-	 * @param dateDebut
-	 * @param dateFin
-	 * @return
-	 */
-	public List<Operation> rechercherOperationsRecetteParCompteIdEntreDateDebutEtDateFin(
+	public List<Operation> rechercherOperationDepenseParCompteIdEntreDateDebutEtDateFin(
 			Long compteId,
-			LocalDate dateDebut, 
-			LocalDate dateFin) throws ServiceException {
-		
+			ZonedDateTime dateDebut, 
+			ZonedDateTime dateFin) throws ServiceException {
+
 		try {
-			return operationRepository.findByCompteRecetteIdAndDateValeurBetweenOrderByDateValeur(compteId, dateDebut, dateFin);
+			return operationRepository.findByCompteDepenseIdAndDateValeurBetween(
+					compteId, dateDebut, dateFin);
 		}
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					OperationTechniqueErreur.RECHERCHE_OPERATION_RECETTE_PAR_COMPTE_ID_ENTRE_DATE_DEBUT_ET_DATE_FIN,
+					ErreurTechnique.TECH_RECHERCHE_OPERATION_DEPENSE_PAR_COMPTE_ID_ENTRE_DATE_DEBUT_ET_DATE_FIN,
 					compteId,
 					dateDebut,
-					dateFin);
-		}
-	}
-
-	/**
-	 * Recherche des opération de recette du compte indiqué jusqu'à la date fin (incluse).</br>
-	 * Trié par date de valeur de l'opération.
-	 * @param compteId
-	 * @param dateFin
-	 * @return
-	 */
-	public List<Operation> rechercherOperationsRecetteParCompteIdJusqueDateFin(Long compteId, LocalDate dateFin) throws ServiceException {
-
-		try {
-			return operationRepository.findByCompteRecetteIdAndDateValeurLessThanEqualOrderByDateValeur(
-					compteId, 
-					dateFin);
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					OperationTechniqueErreur.RECHERCHE_OPERATION_RECETTE_PAR_COMPTE_ID_AVANT_DATE_FIN,
-					compteId,
-					dateFin);
-		}
-
-	}
-
-	/**
-	 * Recherche des opération de recette du compte indiqué depuis la date de début (incluse).</br>
-	 * Trié par date de valeur de l'opération.
-	 * @param compteId
-	 * @param dateDebut
-	 * @return
-	 */
-	public List<Operation> rechercherOperationsRecetteParCompteIdDepuisDateDebut(Long compteId, LocalDate dateDebut) throws ServiceException {
-
-		try {
-			return operationRepository.findByCompteRecetteIdAndDateValeurGreaterThanEqualOrderByDateValeur(
-					compteId, 
-					dateDebut);
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					OperationTechniqueErreur.RECHERCHE_OPERATION_RECETTE_PAR_COMPTE_ID_DEPUIS_DATE_DEBUT,
-					compteId,
-					dateDebut);
-		}
-	}
-
-	public List<Operation> rechercherOperationsParCompteId(Long compteId) throws ServiceException {
-
-		try {
-			return operationRepository.findByCompteDepenseIdOrCompteRecetteIdOrderByDateValeur(
-					compteId, 
-					compteId);
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					OperationTechniqueErreur.RECHERCHE_OPERATION_PAR_COMPTE_ID,
-					compteId);
-		}
-	}
-	
-	/**
-	 * Recherche de toutes les opérations du compte indiqué entre la date de début (incluse)
-	 * et date fin (incluse).</br>
-	 * Trié par date de valeur de l'opération.
-	 * @param compteId
-	 * @param dateDebut
-	 * @param dateFin
-	 * @return
-	 * @throws ServiceException 
-	 */
-	public List<Operation> rechercherOperationsParCompteIdEntreDateDebutEtDateFin(Long compteId, LocalDate dateDebut,LocalDate dateFin) throws ServiceException {
-		
-		try {
-			return operationRepository.findByCompteDepenseIdOrCompteRecetteIdAndDateValeurBetweenOrderByDateValeur(
-					compteId, 
-					compteId,
-					dateDebut,
-					dateFin);
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					OperationTechniqueErreur.RECHERCHE_OPERATION_PAR_COMPTE_ID_ENTRE_DATE_DEBUT_ET_DATE_FIN,
-					compteId,
-					dateDebut,
-					dateFin);
-		}
-	}
-
-	/**
-	 * Recherche de toutes les opération du compte indiqué jusqu'à la date de fin (incluse).</br>
-	 * Trié par date de valeur de l'opération.
-	 * @param compteId
-	 * @param dateFin
-	 * @return
-	 */
-	public List<Operation> rechercherOperationsParCompteIdJusqueDateFin(Long compteId, LocalDate dateFin) throws ServiceException {
-
-		try {
-			return operationRepository.findByCompteDepenseIdOrCompteRecetteIdAndDateValeurLessThanEqualOrderByDateValeur(
-					compteId, 
-					compteId, 
-					dateFin);
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					OperationTechniqueErreur.RECHERCHE_OPERATION_PAR_COMPTE_ID_JUSQUE_DATE_FIN,
-					compteId,
-					dateFin);
-		}
-	}
-
-	/**
-	 * Recherche de toutes les opération du compte indiqué depuis la date de début (incluse).</br>
-	 * Trié par date de valeur de l'opération.
-	 * @param compteId
-	 * @param dateDebut
-	 * @return
-	 */
-	public List<Operation> rechercherOperationsParCompteIdDepuisDateDebut(Long compteId, LocalDate dateDebut) throws ServiceException {
-
-		try {
-			return operationRepository.findByCompteDepenseIdOrCompteRecetteIdAndDateValeurGreaterThanEqualOrderByDateValeur(
-					compteId, 
-					compteId, 
-					dateDebut);
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					OperationTechniqueErreur.RECHERCHE_OPERATION_PAR_COMPTE_ID_DEPUIS_DATE_DEBUT,
-					compteId,
-					dateDebut);
-		}
-	}
-
-	public List<OperationLigne> rechercherOperationsLignesParSousCategorieIdEntreDateDebutEtDateFin(Long sousCategorieId, LocalDate dateDebut, LocalDate dateFin) throws ServiceException {
-
-		try {
-			return operationLigneRepository.findBySousCategorieIdAndDateComptabilisationBetweenOrderByDateComptabilisation(
-					sousCategorieId,
-					dateDebut,
-					dateFin);
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					OperationTechniqueErreur.RECHERCHE_OPERATION_LIGNE_PAR_REFERENCE_ID_JUSQUE_DATE_FIN,
-					sousCategorieId,
 					dateFin);
 		}
 	}
 
 	public Operation creerOperation(Operation operation) throws ServiceException {
 
-		Assert.notNull(operation, () -> "L'OPERATION à créer est obligatoire");
+		if ( operation == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.OPERATION_NULL);
+		}
 
 		operation = controlerEtPreparerPourCreation(operation);
 
@@ -410,23 +198,228 @@ public class OperationService {
 
 	public Operation modifierOperation(Operation operation) throws ServiceException {
 
-		Assert.notNull(operation, () -> "L'OPERATION à modifier est obligatoire");
+		if ( operation == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.OPERATION_NULL);
+		}
 
 		operation = controlerEtPreparerPourModification(operation);
 
 		return enregistrer(operation);
 	}
 
-	public void supprimerOperation(Operation operation) throws ServiceException {
+	public void supprimerOperation(Long operationId) 
+			throws ServiceException {
 
-		Assert.notNull(operation, () -> "L'OPERATION à supprimer est obligatoire");
+		if ( operationId == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.ID_NULL,
+					Operation.class.getSimpleName());
+		}
 
-		operation = controlerEtPreparerPourSuppression(operation);
+		Operation operation = controlerEtPreparerPourSuppression(operationId);
 
 		supprimer(operation);
 	}
+	
+	public Operation creerOperationAjustement(
+			CompteInterne compteAjustable, 
+			CompteInterne compteAjustement,
+			ZonedDateTime dateAjustement,
+			Long soldeApresAjustement) throws ServiceException {
 
+		if ( compteAjustable == null 
+				|| compteAjustement == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.COMPTE_NULL,
+					CompteInterne.class.getSimpleName());
+		}
+		if ( dateAjustement == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.DATE_AJUSTEMENT_NULL);
+		}
+		if ( soldeApresAjustement == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.SOLDE_APRES_AJUSTEMENT_NULL);
+		}
+		
+  		TypeFonctionnementCompte fonctionnementCompte = compteAjustable
+				.getTypeCompteInterne()
+				.getTypeFonctionnementCompte();
+		if ( fonctionnementCompte != TypeFonctionnementCompte.COURANT ) {
+			throw new ServiceException(
+					ErreurFonctionnelle.COMPTE_INTERNE_AJUSTEMENT_INCOMPATIBLE, 
+					compteAjustable.getIdentifiant(),
+					fonctionnementCompte.getLibelle());
+		}
+		
+		Long soldeAvantAjustement = calculerSolde(
+				compteAjustable,
+				dateAjustement);
+		Long montantAjustementEnCentimes = soldeApresAjustement - soldeAvantAjustement;
+
+		TypeOperation typeOperation;
+		Compte compteRecette;
+		Compte compteDepense;
+		String libelle;
+		if ( montantAjustementEnCentimes < 0 ) {
+			compteRecette = compteAjustement;
+			compteDepense = compteAjustable;
+			libelle = String.format(
+					"Diminution par ajustement du solde du compte %s (%s)", 
+					compteDepense.getIdentifiant(),
+					montantAjustementEnCentimes);
+			typeOperation = TypeOperation.MOINS_AJUSTEMENT;
+		}
+		else {
+			compteRecette = compteAjustable;
+			compteDepense = compteAjustement;
+			libelle = String.format(
+					"Augmentation par ajustement du solde du compte %s (+%s)", 
+					compteRecette.getIdentifiant(),
+					montantAjustementEnCentimes);
+			typeOperation = TypeOperation.PLUS_AJUSTEMENT;
+		}
+		
+		Operation operation = new Operation();
+
+		operation.setNumero(null);
+		operation.setMontantTotalEnCentimes(Math.abs(montantAjustementEnCentimes));
+		operation.setCompteRecette(compteRecette);
+		operation.setCompteDepense(compteDepense);
+		operation.setDateValeur(dateAjustement);
+		operation.setLibelle(libelle);
+		operation.setTypeOperation(typeOperation);
+		
+		DetailOperation detailOperation = new DetailOperation();
+		operation.getDetailsOperation().add(detailOperation);
+		detailOperation.setOperation(operation);
+		
+		detailOperation.setSequence(0);
+		detailOperation.setDateComptabilisation(operation.getDateValeur());
+		detailOperation.setLibelle(operation.getLibelle());
+		detailOperation.setMontantDetailEnCentimes(operation.getMontantTotalEnCentimes());
+		
+		return creerOperation(operation);
+	}
+
+	public Operation creerOperationActualisation(
+			CompteInterne compteActualisable, 
+			CompteInterne compteActualisation,
+			ZonedDateTime dateActualisation,
+			Long soldeApresActualisation) throws ServiceException {
+
+		if ( compteActualisable == null 
+				|| compteActualisation == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.COMPTE_NULL,
+					CompteInterne.class.getSimpleName());
+		}
+		if ( dateActualisation == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.DATE_ACTUALISATION_NULL);
+		}
+		if ( soldeApresActualisation == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.SOLDE_APRES_ACTUALISATION_NULL);
+		}
+		
+  		TypeFonctionnementCompte fonctionnementCompte = compteActualisable
+				.getTypeCompteInterne()
+				.getTypeFonctionnementCompte();
+		if ( fonctionnementCompte != TypeFonctionnementCompte.IMMOBILIER
+				&& fonctionnementCompte != TypeFonctionnementCompte.MOBILIER
+				&& fonctionnementCompte != TypeFonctionnementCompte.PLACEMENT ) {
+			throw new ServiceException(
+					ErreurFonctionnelle.COMPTE_INTERNE_ACTUALISATION_INCOMPATIBLE, 
+					compteActualisable.getIdentifiant(),
+					fonctionnementCompte.getLibelle());
+		}
+		
+		Long soldeAvantActualisation = calculerSolde(
+				compteActualisable,
+				dateActualisation);
+		Long montantActualisationEnCentimes = soldeApresActualisation - soldeAvantActualisation;
+
+		TypeOperation typeOperation;
+		Compte compteRecette;
+		Compte compteDepense;
+		String libelle;
+		if ( montantActualisationEnCentimes < 0 ) {
+			compteRecette = compteActualisation;
+			compteDepense = compteActualisable;
+			libelle = String.format(
+					"Enregistrement d'une moins-value de la valeur du compte %s (%s)", 
+					compteDepense.getIdentifiant(),
+					montantActualisationEnCentimes);
+			typeOperation = TypeOperation.MOINS_VALUE;
+		}
+		else {
+			compteRecette = compteActualisable;
+			compteDepense = compteActualisation;
+			libelle = String.format(
+					"Enregistrement d'une plus-value de la valeur du compte %s (+%s)", 
+					compteRecette.getIdentifiant(),
+					montantActualisationEnCentimes);
+			typeOperation = TypeOperation.PLUS_VALUE;
+		}
+		
+		Operation operation = new Operation();
+
+		operation.setNumero(null);
+		operation.setMontantTotalEnCentimes(Math.abs(montantActualisationEnCentimes));
+		operation.setCompteRecette(compteRecette);
+		operation.setCompteDepense(compteDepense);
+		operation.setDateValeur(dateActualisation);
+		operation.setLibelle(libelle);
+		operation.setTypeOperation(typeOperation);
+		
+		DetailOperation detailOperation = new DetailOperation();
+		operation.getDetailsOperation().add(detailOperation);
+		detailOperation.setOperation(operation);
+
+		detailOperation.setSequence(0);
+		detailOperation.setDateComptabilisation(operation.getDateValeur());
+		detailOperation.setLibelle(operation.getLibelle());
+		detailOperation.setMontantDetailEnCentimes(operation.getMontantTotalEnCentimes());
+
+		return creerOperation(operation);
+	}
+
+	public double rechercherPourcentagePlusOuMoinsValue (
+			CompteInterne compteInterne,
+			ZonedDateTime dateValeurActualisee,
+			Long valeurActualisee) throws ServiceException {
+
+		if ( compteInterne == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.COMPTE_NULL,
+					CompteInterne.class.getSimpleName());
+		}
+		if ( dateValeurActualisee == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.DATE_ACTUALISATION_NULL);
+		}
+		if ( valeurActualisee == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.SOLDE_APRES_ACTUALISATION_NULL);
+		}
+
+		Long solde = calculerSolde(
+				compteInterne, 
+				dateValeurActualisee);
+
+		double plusOuMoinsValue = (double) ((valeurActualisee - solde) * 100.0000 / valeurActualisee);
+
+		return plusOuMoinsValue;
+	}
+	
 	private Operation enregistrer(Operation operation) throws ServiceException {
+
+		if ( operation == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.OPERATION_NULL);
+		}
 
 		try {
 			operation = operationRepository.save(operation);
@@ -439,12 +432,17 @@ public class OperationService {
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					OperationTechniqueErreur.ENREGISTREMENT,
+					ErreurTechnique.TECH_ENREGISTREMENT_OPERATION,
 					operation.getNumero());
 		}
 	}
 
 	private void supprimer(Operation operation) throws ServiceException {
+
+		if ( operation == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.OPERATION_NULL);
+		}
 
 		try {
 			operationRepository.delete(operation);
@@ -452,43 +450,177 @@ public class OperationService {
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					OperationTechniqueErreur.SUPPRESSION,
+					ErreurTechnique.TECH_SUPPRESSION_OPERATION,
 					operation.getNumero());
 		}
 	}
 
 	private Operation controlerEtPreparerPourCreation(Operation operation) throws ServiceException {
 
+		if ( operation == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.OPERATION_NULL);
+		}
+
+		verifierOperationNonEnregistree(operation.getId());
+		verifierNumeroValideEtUnique(operation.getId(), operation.getNumero());
 		verifierCompatibiliteEnDepense(operation.getTypeOperation(), operation.getCompteDepense());
 		verifierCompatibiliteEnRecette(operation.getTypeOperation(), operation.getCompteRecette());
-		verifierListeOperationDetail(operation.getLignes(), operation.getMontantEnCentimes());
+		verifierListeDetailOperation(operation);
 
 		return operation;
 	}
 
 	private Operation controlerEtPreparerPourModification(Operation operation) throws ServiceException {
 
+		if ( operation == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.OPERATION_NULL);
+		}
+
+		verifierOperationEnregistree(operation.getId());
+		verifierNumeroValideEtUnique(operation.getId(), operation.getNumero());
 		verifierCompatibiliteEnDepense(operation.getTypeOperation(), operation.getCompteDepense());
 		verifierCompatibiliteEnRecette(operation.getTypeOperation(), operation.getCompteRecette());
-		verifierListeOperationDetail(operation.getLignes(), operation.getMontantEnCentimes());
+		verifierListeDetailOperation(operation);
 
 		return operation;
 	}
 
-	private Operation controlerEtPreparerPourSuppression(Operation operation) throws ServiceException  {
+	private Operation controlerEtPreparerPourSuppression(Long operationId) throws ServiceException  {
 
-		return operation;
+		if ( operationId == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.ID_NULL,
+					Operation.class.getSimpleName());
+		}
+
+		verifierOperationEnregistree(operationId);
+
+		return rechercherParId(operationId);
+	}
+
+	private void verifierOperationEnregistree(Long operationId) throws ServiceException {
+
+		if ( operationId == null || ! isExistantParId(operationId) ) {
+			throw new ServiceException (
+					ErreurFonctionnelle.OPERATION_NON_ENREGISTREE_PAR_ID,
+					operationId );
+		}
+	}
+
+	private void verifierOperationNonEnregistree(Long operationId) throws ServiceException {
+
+		if ( operationId != null && isExistantParId(operationId) ) {
+			throw new ServiceException (
+					ErreurFonctionnelle.OPERATION_DEJA_ENREGISTREE_PAR_ID,
+					operationId);
+		}
+	}
+
+	private void verifierNumeroValideEtUnique(
+			Long operationId,
+			String operationNumero) throws ServiceException {
+
+		if ( operationNumero == null ) {
+			return;
+		}
+		
+		// On ne fait la vérification que si un numéro est spécifié
+		
+		if ( operationNumero.isBlank() ) {
+			throw new ServiceException (
+					ErreurFonctionnelle.OPERATION_NUMERO_INVALIDE);
+		}
+
+		boolean isNumeroCreeOuModifie;
+		boolean isNumeroDejaUtilise;
+
+		if ( operationId == null ) {
+			// En cours création
+			isNumeroCreeOuModifie = true;
+			isNumeroDejaUtilise = isExistantParNumero(operationNumero);
+		}
+		else {
+			// En cours modification
+			try {
+				isNumeroCreeOuModifie = ! operationRepository.existsByNumeroAndId(operationNumero, operationId);
+				isNumeroDejaUtilise = operationRepository.existsByNumeroAndIdNot(operationNumero, operationId);
+			}
+			catch ( Throwable t ) {
+				throw new ServiceException (
+						t,
+						ErreurTechnique.TECH_EXISTANCE_OPERATION_PAR_NUMERO,
+						operationNumero);
+			}
+		}
+
+		if ( isNumeroCreeOuModifie && isNumeroDejaUtilise ) {
+			throw new ServiceException (
+					ErreurFonctionnelle.OPERATION_NUMERO_DEJA_UTILISE,
+					operationNumero);
+		}
 	}
 
 	private void verifierCompatibiliteEnDepense(
 			TypeOperation typeOperation, 
 			Compte compteDepense) throws ServiceException {
 
-		if ( ! determinerComptesCompatiblesEnDepense(typeOperation).contains(compteDepense) ) {
+		if ( CompteTiers.class.isAssignableFrom(compteDepense.getClass()) ) {
+			if ( typeOperation != TypeOperation.RECETTE ) {
+				throw new ServiceException(
+						ErreurFonctionnelle.OPERATION_TYPE_COMPTE_DEPENSE_INCOMPATIBLE,
+						typeOperation.getLibelle(), 
+						TypeFonctionnementCompte.TIERS.getLibelle());
+			}
+		}
+		else if ( CompteInterne.class.isAssignableFrom(compteDepense.getClass()) ) {
+
+			CompteInterne compteInterne = (CompteInterne) compteDepense;
+			TypeFonctionnementCompte typeFonctionnementCompte = compteInterne.getTypeCompteInterne().getTypeFonctionnementCompte();
+			switch (typeFonctionnementCompte) {
+			case COURANT:
+				if ( typeOperation != TypeOperation.TRANSFERT 
+				&& typeOperation != TypeOperation.ACHAT
+				&& typeOperation != TypeOperation.MOINS_AJUSTEMENT
+				&& typeOperation != TypeOperation.DEPENSE) {
+					throw new ServiceException(
+							ErreurFonctionnelle.OPERATION_TYPE_COMPTE_DEPENSE_INCOMPATIBLE,
+							typeOperation.getLibelle(), 
+							typeFonctionnementCompte.getLibelle());
+				}
+				break;
+			case CONTREPARTIE:
+				if ( typeOperation != TypeOperation.PLUS_AJUSTEMENT 
+				&& typeOperation != TypeOperation.PLUS_VALUE ) {
+					throw new ServiceException(
+							ErreurFonctionnelle.OPERATION_TYPE_COMPTE_DEPENSE_INCOMPATIBLE,
+							typeOperation.getLibelle(), 
+							typeFonctionnementCompte.getLibelle());
+				}
+				break;
+			case IMMOBILIER:
+			case MOBILIER:
+			case PLACEMENT:
+				if ( typeOperation != TypeOperation.VENTE 
+				&& typeOperation != TypeOperation.MOINS_VALUE ) {
+					throw new ServiceException(
+							ErreurFonctionnelle.OPERATION_TYPE_COMPTE_DEPENSE_INCOMPATIBLE,
+							typeOperation.getLibelle(), 
+							typeFonctionnementCompte.getLibelle());
+				}
+				break;
+			default:
+				throw new ServiceException(
+						ErreurProgrammation.TYPE_FONCTIONNEMENT_COMPTE_NON_GERE, 
+						typeFonctionnementCompte.getCode(),
+						typeFonctionnementCompte.getLibelle());
+			}
+		}
+		else {
 			throw new ServiceException(
-					OperationFonctionnelleErreur.TYPE_OPERATION_ET_COMPTE_DEPENSE_INCOMPATIBLES,
-					typeOperation.getCode(), 
-					compteDepense.getIdentifiant());
+					ErreurProgrammation.COMPTE_CLASSE_NON_GEREE, 
+					compteDepense.getClass().getSimpleName());
 		}
 	}
 
@@ -496,114 +628,134 @@ public class OperationService {
 			TypeOperation typeOperation, 
 			Compte compteRecette) throws ServiceException {
 
-		if ( ! determinerComptesCompatiblesEnRecette(typeOperation).contains(compteRecette) ) {
-			throw new ServiceException(
-					OperationFonctionnelleErreur.TYPE_OPERATION_ET_COMPTE_RECETTE_INCOMPATIBLES,
-					typeOperation.getCode(), 
-					compteRecette.getIdentifiant());
-		}
-	}
-
-	private void verifierListeOperationDetail(Set<OperationLigne> operationDetails, Long montantOperationEnCentimes) throws ServiceException {
-
-		if ( operationDetails == null || operationDetails.isEmpty() ) {
-			throw new ServiceException(
-					OperationFonctionnelleErreur.OPERATION_AU_MOINS_UN_DETAIL_REQUIS);
-		}
-
-		Set<Integer> numerosDetails = new HashSet<>();
-		Long sommeMontantDetailEnCentimes = 0L;
-		for ( OperationLigne operationDetail : operationDetails ) {
-			
-			if ( numerosDetails.contains(operationDetail.getNumeroLigne()) ) {
+		if ( CompteTiers.class.isAssignableFrom(compteRecette.getClass()) ) {
+			if ( typeOperation != TypeOperation.DEPENSE ) {
 				throw new ServiceException(
-						OperationFonctionnelleErreur.OPERATION_LISTE_DETAIL_NUMERO_DUPLIQUE,
-						operationDetail.getNumeroLigne());
+						ErreurFonctionnelle.OPERATION_TYPE_COMPTE_RECETTE_INCOMPATIBLE,
+						typeOperation.getLibelle(), 
+						TypeFonctionnementCompte.TIERS.getLibelle());
 			}
-			numerosDetails.add(operationDetail.getNumeroLigne());
-			sommeMontantDetailEnCentimes += operationDetail.getMontantEnCentimes();
 		}
+		else if ( CompteInterne.class.isAssignableFrom(compteRecette.getClass()) ) {
 
-		if ( ! sommeMontantDetailEnCentimes.equals(montantOperationEnCentimes) ) {
+			CompteInterne compteInterne = (CompteInterne) compteRecette;
+			TypeFonctionnementCompte typeFonctionnementCompte = compteInterne.getTypeCompteInterne().getTypeFonctionnementCompte();
+			switch (typeFonctionnementCompte) {
+			case COURANT:
+				if ( typeOperation != TypeOperation.TRANSFERT 
+				&& typeOperation != TypeOperation.VENTE
+				&& typeOperation != TypeOperation.PLUS_AJUSTEMENT
+				&& typeOperation != TypeOperation.RECETTE) {
+					throw new ServiceException(
+							ErreurFonctionnelle.OPERATION_TYPE_COMPTE_RECETTE_INCOMPATIBLE,
+							typeOperation.getLibelle(),
+							typeFonctionnementCompte.getLibelle());
+				}
+				break;
+			case CONTREPARTIE:
+				if ( typeOperation != TypeOperation.MOINS_AJUSTEMENT 
+				&& typeOperation != TypeOperation.MOINS_VALUE ) {
+					throw new ServiceException(
+							ErreurFonctionnelle.OPERATION_TYPE_COMPTE_RECETTE_INCOMPATIBLE,
+							typeOperation.getLibelle(),
+							typeFonctionnementCompte.getLibelle());
+				}
+				break;
+			case PLACEMENT:
+			case MOBILIER:
+			case IMMOBILIER:
+				if ( typeOperation != TypeOperation.ACHAT 
+				&& typeOperation != TypeOperation.PLUS_VALUE ) {
+					throw new ServiceException(
+							ErreurFonctionnelle.OPERATION_TYPE_COMPTE_RECETTE_INCOMPATIBLE,
+							typeOperation.getLibelle(),
+							typeFonctionnementCompte.getLibelle());
+				}
+				break;
+			default:
+				throw new ServiceException(
+						ErreurProgrammation.TYPE_FONCTIONNEMENT_COMPTE_NON_GERE, 
+						typeFonctionnementCompte.getCode(),
+						typeFonctionnementCompte.getLibelle());
+			}
+		}
+		else {
 			throw new ServiceException(
-					OperationFonctionnelleErreur.OPERATION_LISTE_DETAIL_SOMME_MONTANTS_ERRONEE, 
-					sommeMontantDetailEnCentimes,
-					montantOperationEnCentimes);
+					ErreurProgrammation.COMPTE_CLASSE_NON_GEREE, 
+					compteRecette.getClass().getSimpleName());
 		}
 	}
 
-	private Set<Compte> determinerComptesCompatiblesEnDepense(TypeOperation typeOperation) throws ServiceException {
+	private void verifierListeDetailOperation(Operation operation) throws ServiceException {
 
-		Set<Compte> resultat = new HashSet<>();
-
-		switch(typeOperation) {
-
-		case TRANSFERT:
-		case DEPOT:
-		case INVESTISSEMENT:
-		case DEPENSE:
-			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.COURANT));
-			break;
-		case RETRAIT:
-		case LIQUIDATION:
-			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.FINANCIER));
-			break;
-		case VENTE:
-			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.BIEN));
-			break;
-		case RECETTE:
-		case ACHAT:
-			resultat.addAll(compteExterneService.rechercherTous());
-			break;
-		case TECHNIQUE:
-			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.FINANCIER));
-			resultat.addAll(compteTechniqueService.rechercherTous());
-			break;
-		default:
-			throw new ServiceException(GeneriqueTechniqueErreur.TYPE_NON_GERE,
-					TypeOperation.class.getSimpleName(),
-					typeOperation.getCode(),
-					typeOperation.getLibelle());
+		if ( operation == null ) {
+			throw new ServiceException(
+					ErreurProgrammation.OPERATION_NULL);
 		}
 
-		return resultat;
-	}
+		Set<DetailOperation> detailsOperation = operation.getDetailsOperation();
 
-	private Set<Compte> determinerComptesCompatiblesEnRecette(TypeOperation typeOperation) throws ServiceException {
-
-		Set<Compte> resultat = new HashSet<>();
-
-		switch(typeOperation) {
-
-		case TRANSFERT:
-		case RETRAIT:
-		case LIQUIDATION:
-		case RECETTE:
-			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.COURANT));
-			break;
-		case DEPOT:
-		case INVESTISSEMENT:
-			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.FINANCIER));
-			break;
-		case ACHAT:
-			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.BIEN));
-			break;
-		case DEPENSE:
-		case VENTE:
-			resultat.addAll(compteExterneService.rechercherTous());
-			break;
-		case TECHNIQUE:
-			resultat.addAll(compteInterneService.rechercherParTypeFonctionnement(TypeFonctionnement.FINANCIER));
-			resultat.addAll(compteTechniqueService.rechercherTous());
-			break;
-		default:
-			throw new ServiceException(GeneriqueTechniqueErreur.TYPE_NON_GERE,
-					TypeOperation.class.getSimpleName(),
-					typeOperation.getCode(),
-					typeOperation.getLibelle());
+		if ( detailsOperation == null 
+				|| detailsOperation.isEmpty() ) {
+			throw new ServiceException(
+					ErreurFonctionnelle.OPERATION_AU_MOINS_UN_DETAIL_OPERATION_REQUIS);
 		}
 
-		return resultat;
+		Set<Integer> sequences = new HashSet<>();
+		Long montantTotalEnCentimes = 0L;
+		for ( DetailOperation detailOperation : detailsOperation ) {
+			if ( sequences.contains(detailOperation.getSequence()) ) {
+				throw new ServiceException(
+						ErreurFonctionnelle.OPERATION_LISTE_DETAIL_NUMERO_SEQUENCE_DUPLIQUEE,
+						detailOperation.getSequence());
+			}
+			sequences.add(detailOperation.getSequence());
+			montantTotalEnCentimes += detailOperation.getMontantDetailEnCentimes();
+		}
+		if ( ! montantTotalEnCentimes.equals(operation.getMontantTotalEnCentimes()) ) {
+			throw new ServiceException(
+					ErreurFonctionnelle.OPERATION_LISTE_DETAIL_SOMME_MONTANTS_ERRONEE,
+					operation.getMontantTotalEnCentimes(), 
+					montantTotalEnCentimes);
+		}
 	}
 
+	private Long calculerSolde(
+			CompteInterne compteInterne,
+			ZonedDateTime dateFin) throws ServiceException {
+
+		Long soldeInitial = compteInterne.getMontantSoldeInitialEnCentimes();
+		
+		// Calcul du montant des dépenses entre date début et date fin
+		List<Operation> operationsDepense = rechercherOperationDepenseParCompteIdEntreDateDebutEtDateFin(
+				compteInterne.getId(),
+				compteInterne.getDateSoldeInitial(),
+				dateFin);
+		Long montantTotalDepenseEnCentimes = 0L;
+		for ( Operation operation : operationsDepense) {
+			if ( operation.getTypeOperation() == TypeOperation.MOINS_VALUE 
+					|| operation.getTypeOperation() == TypeOperation.PLUS_VALUE ) {
+				continue;
+			}
+			montantTotalDepenseEnCentimes += operation.getMontantTotalEnCentimes();
+		}
+
+		// Calcul du montant des recettes entre date début et date fin
+		List<Operation> operationsRecette = rechercherOperationRecetteParCompteIdEntreDateDebutEtDateFin(
+				compteInterne.getId(),
+				compteInterne.getDateSoldeInitial(),
+				dateFin);
+		Long montantTotalRecetteEnCentimes = 0L;
+		for ( Operation operation : operationsRecette) {
+			if ( operation.getTypeOperation() == TypeOperation.MOINS_VALUE 
+					|| operation.getTypeOperation() == TypeOperation.PLUS_VALUE ) {
+				continue;
+			}
+			montantTotalRecetteEnCentimes += operation.getMontantTotalEnCentimes();
+		}
+
+		return soldeInitial
+				+ montantTotalRecetteEnCentimes
+				- montantTotalDepenseEnCentimes;
+	}
 }

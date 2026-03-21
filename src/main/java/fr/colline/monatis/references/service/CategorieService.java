@@ -4,29 +4,32 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import fr.colline.monatis.exceptions.ServiceException;
-import fr.colline.monatis.references.ReferenceFonctionnelleErreur;
+import fr.colline.monatis.exceptions.erreurs.ErreurFonctionnelle;
 import fr.colline.monatis.references.model.Categorie;
 import fr.colline.monatis.references.repository.CategorieRepository;
+import fr.colline.monatis.references.repository.ReferenceRepository;
 
 @Service
-public class CategorieService extends ReferenceService<Categorie> {
+public class CategorieService extends ReferenceService<Categorie>{
 
-	@Autowired private CategorieRepository categorieRepository;
+	@Autowired private CategorieRepository repository;
 
 	@Override
-	public Class<Categorie> getTClass() {
+	protected ReferenceRepository<Categorie> getRepository() {
+
+		return repository;
+	}
+
+	@Override
+	protected Class<Categorie> getTClass() {
+		
 		return Categorie.class;
 	}
 
 	@Override
-	public CategorieRepository getRepository() {
-		return categorieRepository;
-	}
-
-	@Override
-	protected Categorie controlerEtPreparerPourSuppression(Categorie categorie) throws ServiceException {
+	protected Categorie controlerEtPreparerPourSuppression(Long categorieId) throws ServiceException {
 		
-		categorie = super.controlerEtPreparerPourSuppression(categorie);
+		Categorie categorie = super.controlerEtPreparerPourSuppression(categorieId);
 
 		verifierAbsenceSousCategorieAssociee(categorie);
 		
@@ -38,10 +41,9 @@ public class CategorieService extends ReferenceService<Categorie> {
 		if ( categorie.getSousCategories() != null
 				&& ! categorie.getSousCategories().isEmpty() ) {
 			throw new ServiceException(
-					ReferenceFonctionnelleErreur.SUPPRESSION_CATEGORIE_AVEC_SOUS_CATEGORIES,
+					ErreurFonctionnelle.CATEGORIE_SUPPRESSION_AVEC_SOUS_CATEGORIES,
 					categorie.getNom(),
 					categorie.getSousCategories().size());
 		}
 	}
-	
 }

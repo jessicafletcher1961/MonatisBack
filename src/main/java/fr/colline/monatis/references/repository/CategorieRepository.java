@@ -5,6 +5,6 @@ import org.springframework.stereotype.Repository;
 import fr.colline.monatis.references.model.Categorie;
 
 @Repository
-public interface CategorieRepository extends ReferenceRepository<Categorie> {
+public interface CategorieRepository  extends ReferenceRepository <Categorie> {
 
 }

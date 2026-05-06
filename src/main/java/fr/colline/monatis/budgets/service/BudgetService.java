@@ -1,57 +1,106 @@
 package fr.colline.monatis.budgets.service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import fr.colline.monatis.budgets.BudgetFonctionnelleErreur;
 import fr.colline.monatis.budgets.BudgetTechniqueErreur;
 import fr.colline.monatis.budgets.model.Budget;
 import fr.colline.monatis.budgets.repository.BudgetRepository;
-import fr.colline.monatis.exceptions.GeneriqueTechniqueErreur;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.references.model.Reference;
+import fr.colline.monatis.typologies.model.TypePeriode;
 import fr.colline.monatis.utils.DateEtPeriodeUtils;
-import fr.colline.monatis.utils.TypePeriode;
 
 @Service
 public class BudgetService {
 
 	@Autowired private BudgetRepository budgetRepository;
 
-	public Budget rechercherParId(Long budgetId) throws ServiceException {
+	public Budget rechercherParId(Long id) throws ServiceException {
 
 		try {
-			Optional<Budget> optional = budgetRepository.findById(budgetId);
+			Optional<Budget> optional = budgetRepository.findById(id);
 			return optional.isEmpty() ? null : optional.get();
 		}
 		catch (Throwable t) {
 			throw new ServiceException(
 					t,
 					BudgetTechniqueErreur.RECHERCHE_PAR_ID,
-					budgetId );
+					id );
 		}
 	}
 
-	public boolean isExistantParId(Long budgetId) throws ServiceException {
+	public boolean isExistantParId(Long id) throws ServiceException {
 
 		try {
-			return this.budgetRepository.existsById(budgetId);
+			return this.budgetRepository.existsById(id);
 		}
 		catch (Throwable t) {
 			throw new ServiceException(
 					t,
 					BudgetTechniqueErreur.EXISTENCE_PAR_ID,
-					budgetId);
+					id);
 		}
 	}
 
-	public ArrayList<Budget> rechercherParReferenceId(Long referenceId) throws ServiceException {
+	public Budget rechercherParCle(String cle) throws ServiceException {
+
+		try {
+			Optional<Budget> optional = budgetRepository.findByCle(cle);
+			return optional.isEmpty() ? null : optional.get();
+		}
+		catch (Throwable t) {
+			throw new ServiceException(
+					t,
+					BudgetTechniqueErreur.RECHERCHE_PAR_IDENTIFIANT_FONCTIONNEL,
+					cle);
+		}
+	}
+
+	public boolean isExistantParCle(String cle) throws ServiceException {
+
+		try {
+			return budgetRepository.existsByCle(cle);
+		}
+		catch (Throwable t) {
+			throw new ServiceException(
+					t,
+					BudgetTechniqueErreur.EXISTENCE_PAR_IDENTIFIANT_FONCTIONNEL,
+					Budget.class.getSimpleName(),
+					cle);
+		}
+	}
+
+	public List<Budget> rechercherTous() throws ServiceException {
+
+		try {
+			return budgetRepository.findAll();
+		}
+		catch (Throwable t) {
+			throw new ServiceException (
+					t,
+					BudgetTechniqueErreur.RECHERCHE_TOUS);
+		}
+	}
+
+	public void supprimerTous() throws ServiceException {
+
+		try {
+			budgetRepository.deleteAll();
+		}
+		catch (Throwable t) {
+			throw new ServiceException (
+					t,
+					BudgetTechniqueErreur.SUPPRESSION_TOUS);
+		}
+	}
+
+	public List<Budget> rechercherParReferenceId(Long referenceId) throws ServiceException {
 
 		try {
 			return budgetRepository.findByReferenceIdOrderByDateFinDesc(referenceId);
@@ -80,7 +129,10 @@ public class BudgetService {
 	public Budget rechercherParReferenceIdEtDateCible(Long referenceId, LocalDate dateCible) throws ServiceException {
 
 		try {
-			Optional<Budget> optional = budgetRepository.findByReferenceIdAndDateDebutLessThanEqualAndDateFinGreaterThan(referenceId, dateCible, dateCible);
+			Optional<Budget> optional = budgetRepository.findByReferenceIdAndDateDebutLessThanEqualAndDateFinGreaterThanEqual(
+					referenceId, 
+					dateCible, 
+					dateCible);
 			return optional.isEmpty() ? null : optional.get(); 
 		}
 		catch (Throwable t) {
@@ -120,42 +172,6 @@ public class BudgetService {
 		}
 	}
 
-	public List<Budget> rechercherTous() throws ServiceException {
-
-		try {
-			return budgetRepository.findAll();
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					BudgetTechniqueErreur.RECHERCHE_TOUS);
-		}
-	}
-
-	public List<Budget> rechercherTous(Sort tri) throws ServiceException {
-
-		try {
-			return budgetRepository.findAll(tri);
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					BudgetTechniqueErreur.RECHERCHE_TOUS);
-		}
-	}
-
-	public void supprimerTous() throws ServiceException {
-
-		try {
-			budgetRepository.deleteAll();
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					BudgetTechniqueErreur.SUPPRESSION_TOUS);
-		}
-	}
-
 	public Budget creerBudget(Budget budget) throws ServiceException {
 
 		budget = controlerEtPreparerPourCreation(budget);
@@ -187,7 +203,12 @@ public class BudgetService {
 	private Budget enregistrer(Budget budget) throws ServiceException {
 
 		try {
-			return budgetRepository.save(budget);
+			budget = budgetRepository.save(budget);
+			if ( budget.getCle() == null ) {
+				budget.setCle(String.format("BUDG-%010d", budget.getId()));
+				budget = budgetRepository.save(budget);
+			}
+			return budget;
 		}
 		catch (Throwable t) {
 			throw new ServiceException (
@@ -218,128 +239,85 @@ public class BudgetService {
 
 	private Budget controlerEtPreparerPourCreation(Budget budget) throws ServiceException {
 
-		if ( budget.getTypePeriode() == TypePeriode.TECHNIQUE ) {
-			throw new ServiceException(
-					BudgetFonctionnelleErreur.CREATION_ET_RECONDUCTION_AUTOMATIQUE_IMPOSSIBLE,
-					TypePeriode.TECHNIQUE.getLibelle());
-		}
+		LocalDate dateDebutPeriode = DateEtPeriodeUtils.recadrerDateDebutPeriode(budget.getTypePeriode(), budget.getDateDebut());
+		LocalDate dateFinPeriode = DateEtPeriodeUtils.rechercherDateFinPeriode(budget.getTypePeriode(), dateDebutPeriode);
 
-		LocalDate dateDebut = DateEtPeriodeUtils.recadrerDateDebutPeriode(budget.getTypePeriode(), budget.getDateDebut());
-		LocalDate dateFin = DateEtPeriodeUtils.rechercherDebutPeriodeSuivante(budget.getTypePeriode(), budget.getDateDebut());
-
-		budget.setDateDebut(dateDebut);
-		budget.setDateFin(dateFin);
-
-		return budget;
-	}
-
-	private Budget controlerEtPreparerPourReconduction(Budget budget) throws ServiceException {
+		verifierChevauchementPeriode(budget.getReference(), budget.getTypePeriode(), dateDebutPeriode, dateFinPeriode);
 		
-		if ( budget.getTypePeriode() == TypePeriode.TECHNIQUE ) {
-			throw new ServiceException(
-					BudgetFonctionnelleErreur.CREATION_ET_RECONDUCTION_AUTOMATIQUE_IMPOSSIBLE,
-					TypePeriode.TECHNIQUE.getLibelle());
-		}
-
-		Reference reference = budget.getReference();
-		Budget dernierBudget = rechercherDernierParReferenceId(reference.getId());
-		LocalDate dateDebut = DateEtPeriodeUtils.recadrerDateDebutPeriode(budget.getTypePeriode(), budget.getDateDebut());
-		LocalDate dateFin = DateEtPeriodeUtils.rechercherDebutPeriodeSuivante(budget.getTypePeriode(), dateDebut);
-
-		if ( dateDebut.isBefore(dernierBudget.getDateFin())) {
-
-			// Chevauchement avec la dernière période enregistrée
-
-			throw new ServiceException(
-					BudgetFonctionnelleErreur.CHEVAUCHEMENT_PERIODES, 
-					budget.getReference().getClass().getSimpleName(),
-					budget.getReference().getNom(),
-					dernierBudget.getTypePeriode().getCode(),
-					dernierBudget.getDateFin(),
-					budget.getTypePeriode().getCode(),
-					dateDebut);
-		}
-
-		if ( ! dernierBudget.getDateFin().equals(dateDebut) ) {
-
-			// Il y a un "trou" entre le dernier budget enregistré et le nouveau budget : on crée un budget technique intermédiaire
-
-			long montantMensuelDernierBudget = calculerMontantParMois(dernierBudget);
-			long nombreDeMoisBudgetIntermediaire = DateEtPeriodeUtils.calculerNombreMoisEntreDeuxDates(dernierBudget.getDateFin(), dateDebut);
-			Budget budgetIntermediaire = new Budget(
-					budget.getReference(),
-					TypePeriode.TECHNIQUE,
-					dernierBudget.getDateFin(),
-					dateDebut,
-					montantMensuelDernierBudget * nombreDeMoisBudgetIntermediaire); 
-			enregistrer(budgetIntermediaire);
-		}
-
-		budget.setDateDebut(dateDebut);
-		budget.setDateFin(dateFin);
+		budget.setDateDebut(dateDebutPeriode);
+		budget.setDateFin(dateFinPeriode);
 
 		return budget;
 	}
 
-	private Budget controlerEtPreparerPourModification(Budget budget) {
+	private Budget controlerEtPreparerPourReconduction(Budget budgetAReconduire) throws ServiceException {
+		
+		LocalDate dateDebutPeriode = DateEtPeriodeUtils.rechercherDebutPeriodeSuivante(budgetAReconduire.getTypePeriode(), budgetAReconduire.getDateDebut());
+		LocalDate dateFinPeriode = DateEtPeriodeUtils.rechercherDateFinPeriode(budgetAReconduire.getTypePeriode(), dateDebutPeriode);
 
+		Budget budgetReconduit = new Budget();
+		budgetReconduit.setCle(null);
+		budgetReconduit.setReference(budgetAReconduire.getReference());
+		budgetReconduit.setTypePeriode(budgetAReconduire.getTypePeriode());
+		budgetReconduit.setDateDebut(dateDebutPeriode);
+		budgetReconduit.setDateFin(dateFinPeriode);
+		budgetReconduit.setLibelle(budgetAReconduire.getLibelle());
+		budgetReconduit.setMontantBudgetEnCentimes(budgetAReconduire.getMontantBudgetEnCentimes());
+
+		verifierChevauchementPeriode(budgetReconduit.getReference(), budgetReconduit.getTypePeriode(), dateDebutPeriode, dateFinPeriode);
+		
+		return budgetReconduit;
+	}
+
+	private Budget controlerEtPreparerPourModification(Budget budget) throws ServiceException {
+
+		LocalDate dateDebutPeriode = DateEtPeriodeUtils.recadrerDateDebutPeriode(budget.getTypePeriode(), budget.getDateDebut());
+		LocalDate dateFinPeriode = DateEtPeriodeUtils.rechercherDateFinPeriode(budget.getTypePeriode(), dateDebutPeriode);
+
+		verifierChevauchementPeriode(budget.getReference(), budget.getTypePeriode(), dateDebutPeriode, dateFinPeriode);
+		
+		budget.setDateDebut(dateDebutPeriode);
+		budget.setDateFin(dateFinPeriode);
+		
 		return budget;
 	}
 
 	private Budget controlerEtPreparerPourSuppression(Budget budget) throws ServiceException {
 
-		Reference reference = budget.getReference();
-
-		ArrayList<Budget> historique = rechercherParReferenceId(reference.getId());
-		for ( Budget dernierBudget : historique ) {
-
-			// Suppression des budgets postérieurs au budget à supprimer
-
-			if ( budget.getId().equals(dernierBudget.getId()) ) {
-				break;
-			}
-			supprimer(dernierBudget);
-		}
-
 		return budget;
 	}
-
-	private long calculerMontantParMois(Budget budget) {
-
-		long nombreMoisBudget = DateEtPeriodeUtils.calculerNombreMoisEntreDeuxDates(budget.getDateDebut(), budget.getDateFin());
-
-		return Math.round((double) budget.getMontantEnCentimes() / nombreMoisBudget);
-	}
 	
-	public long estimerMontantBudget(TypePeriode typePeriode, Budget budgetReference) throws ServiceException {
-		
-		long montantParMois = calculerMontantParMois(budgetReference);
-		
-		long nombreMois;
-		switch ( typePeriode ) {
-		case ANNUEL:
-			nombreMois = 12;
-			break;
-		case SEMESTRIEL:
-			nombreMois = 6;
-			break;
-		case TRIMESTRIEL:
-			nombreMois = 3;
-			break;
-		case BIMESTRIEL:
-			nombreMois = 2;
-			break;
-		case MENSUEL:
-			nombreMois = 1;
-			break;
-		default:
-			throw new ServiceException(
-					GeneriqueTechniqueErreur.TYPE_NON_GERE,
-					TypePeriode.class.getSimpleName(),
-					typePeriode.getCode(),
-					typePeriode.getLibelle());
+	private void verifierChevauchementPeriode(Reference reference, TypePeriode typePeriode, LocalDate dateDebutPeriode, LocalDate dateFinPeriode) throws ServiceException {
+
+		if ( rechercherDernierParReferenceId(reference.getId()) != null ) {
+
+			// Au moins un budget existe déjà
+			
+			// Vérification chevauchement avec une période antérieure
+			Budget budgetChevauchementDebut = rechercherParReferenceIdEtDateCible(reference.getId(), dateDebutPeriode); 
+			if ( budgetChevauchementDebut != null ) {
+				throw new ServiceException(
+						BudgetFonctionnelleErreur.CHEVAUCHEMENT_PERIODE_PRECEDENTE, 
+						reference.getClass().getSimpleName(),
+						reference.getNom(),
+						budgetChevauchementDebut.getTypePeriode().getCode(),
+						budgetChevauchementDebut.getDateFin(),
+						typePeriode,
+						dateDebutPeriode);
+			}
+			
+			// Vérification chevauchement avec une période postérieure
+			Budget budgetChevauchementFin = rechercherParReferenceIdEtDateCible(reference.getId(), dateFinPeriode);
+			if ( budgetChevauchementFin != null ) {
+				throw new ServiceException(
+						BudgetFonctionnelleErreur.CHEVAUCHEMENT_PERIODE_SUIVANTE, 
+						reference.getClass().getSimpleName(),
+						reference.getNom(),
+						budgetChevauchementFin.getTypePeriode().getCode(),
+						budgetChevauchementFin.getDateDebut(),
+						typePeriode,
+						dateFinPeriode);
+			}
 		}
-		
-		return montantParMois * nombreMois;
 	}
 }

@@ -1,5 +1,6 @@
 package fr.colline.monatis.references.model;
 
+import fr.colline.monatis.typologies.model.TypeReference;
 import jakarta.persistence.Entity;
 
 @Entity

@@ -24,7 +24,7 @@ import fr.colline.monatis.budgets.BudgetTechniqueErreur;
 import fr.colline.monatis.budgets.model.Budget;
 import fr.colline.monatis.budgets.service.BudgetService;
 import fr.colline.monatis.exceptions.ServiceException;
-import fr.colline.monatis.utils.TypePeriode;
+import fr.colline.monatis.typologies.model.TypePeriode;
 import jakarta.transaction.Transactional;
 
 @RestController
@@ -85,7 +85,7 @@ public class BudgetCsvController {
 					budget.getTypePeriode().getCode(), 
 					budget.getDateDebut().toString(), 
 					budget.getDateFin().toString(), 
-					budget.getMontantEnCentimes().toString()));
+					budget.getMontantBudgetEnCentimes().toString()));
 		}
 
 		String csvFileName = "budget-tables.csv";

@@ -8,27 +8,27 @@ public class PlusMoinsValueCompteInternePeriode {
 	private LocalDate dateFinPeriode;
 	
 	private Long montantSoldeInitialEnCentimes;
+	private Long montantOperationsEnCentimes;
+	private Long montantPlusMoinsValueNetteEnCentimes;
+	private Double tauxPlusMoinsValueNette;
 	private Long montantSoldeFinalEnCentimes;
-	private Long montantMouvementTransactionEnCentimes;
-	private Long montantMouvementTechniqueEnCentimes;
-	private Long montantPlusMoinsValuePotentielleEnCentimes;
-	private Double tauxPlusMoinsValuePotentielle;
-	private Long montantPlusValueRealiseeEnCentimes;
-
+	private Long montantFraisEnCentimes;
+	private Double tauxFrais;
+	
 	public LocalDate getDateDebutPeriode() {
 		return dateDebutPeriode;
 	}
 
-	public void setDateDebutPeriode(LocalDate dateDebutEvaluation) {
-		this.dateDebutPeriode = dateDebutEvaluation;
+	public void setDateDebutPeriode(LocalDate dateDebutPeriode) {
+		this.dateDebutPeriode = dateDebutPeriode;
 	}
 
 	public LocalDate getDateFinPeriode() {
 		return dateFinPeriode;
 	}
 
-	public void setDateFinPeriode(LocalDate dateFinEvaluation) {
-		this.dateFinPeriode = dateFinEvaluation;
+	public void setDateFinPeriode(LocalDate dateFinPeriode) {
+		this.dateFinPeriode = dateFinPeriode;
 	}
 
 	public Long getMontantSoldeInitialEnCentimes() {
@@ -39,6 +39,30 @@ public class PlusMoinsValueCompteInternePeriode {
 		this.montantSoldeInitialEnCentimes = montantSoldeInitialEnCentimes;
 	}
 
+	public Long getMontantOperationsEnCentimes() {
+		return montantOperationsEnCentimes;
+	}
+
+	public void setMontantOperationsEnCentimes(Long montantOperationsEnCentimes) {
+		this.montantOperationsEnCentimes = montantOperationsEnCentimes;
+	}
+
+	public Long getMontantPlusMoinsValueNetteEnCentimes() {
+		return montantPlusMoinsValueNetteEnCentimes;
+	}
+
+	public void setMontantPlusMoinsValueNetteEnCentimes(Long montantPlusMoinsValueNetteEnCentimes) {
+		this.montantPlusMoinsValueNetteEnCentimes = montantPlusMoinsValueNetteEnCentimes;
+	}
+
+	public Double getTauxPlusMoinsValueNette() {
+		return tauxPlusMoinsValueNette;
+	}
+
+	public void setTauxPlusMoinsValueNette(Double tauxPlusMoinsValueNette) {
+		this.tauxPlusMoinsValueNette = tauxPlusMoinsValueNette;
+	}
+
 	public Long getMontantSoldeFinalEnCentimes() {
 		return montantSoldeFinalEnCentimes;
 	}
@@ -47,44 +71,19 @@ public class PlusMoinsValueCompteInternePeriode {
 		this.montantSoldeFinalEnCentimes = montantSoldeFinalEnCentimes;
 	}
 
-	public Long getMontantMouvementTransactionEnCentimes() {
-		return montantMouvementTransactionEnCentimes;
+	public Long getMontantFraisEnCentimes() {
+		return montantFraisEnCentimes;
 	}
 
-	public void setMontantMouvementTransactionEnCentimes(Long montantMouvementEnCentimes) {
-		this.montantMouvementTransactionEnCentimes = montantMouvementEnCentimes;
+	public void setMontantFraisEnCentimes(Long montantFraisEnCentimes) {
+		this.montantFraisEnCentimes = montantFraisEnCentimes;
 	}
 
-	public Long getMontantMouvementTechniqueEnCentimes() {
-		return montantMouvementTechniqueEnCentimes;
+	public Double getTauxFrais() {
+		return tauxFrais;
 	}
 
-	public void setMontantMouvementTechniqueEnCentimes(Long montantTechniqueEnCentimes) {
-		this.montantMouvementTechniqueEnCentimes = montantTechniqueEnCentimes;
+	public void setTauxFrais(Double tauxFrais) {
+		this.tauxFrais = tauxFrais;
 	}
-
-	public Long getMontantPlusMoinsValuePotentielleEnCentimes() {
-		return montantPlusMoinsValuePotentielleEnCentimes;
-	}
-
-	public void setMontantPlusMoinsValuePotentielleEnCentimes(Long montantPlusMoinsValuePotentielleEnCentimes) {
-		this.montantPlusMoinsValuePotentielleEnCentimes = montantPlusMoinsValuePotentielleEnCentimes;
-	}
-
-	public Long getMontantPlusValueRealiseeEnCentimes() {
-		return montantPlusValueRealiseeEnCentimes;
-	}
-
-	public void setMontantPlusValueRealiseeEnCentimes(Long montantPlusMoinsValueReelleEnCentimes) {
-		this.montantPlusValueRealiseeEnCentimes = montantPlusMoinsValueReelleEnCentimes;
-	}
-
-	public Double getTauxPlusMoinsValuePotentielle() {
-		return tauxPlusMoinsValuePotentielle;
-	}
-
-	public void setTauxPlusMoinsValuePotentielle(Double tauxPlusMoinsValuePotentielle) {
-		this.tauxPlusMoinsValuePotentielle = tauxPlusMoinsValuePotentielle;
-	}
-
 }

@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import fr.colline.monatis.comptes.model.Compte;
+import fr.colline.monatis.typologies.model.TypeOperation;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

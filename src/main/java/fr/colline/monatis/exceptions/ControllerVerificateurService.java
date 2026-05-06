@@ -6,18 +6,18 @@ import java.time.format.DateTimeParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import fr.colline.monatis.budgets.BudgetControleErreur;
+import fr.colline.monatis.budgets.model.Budget;
+import fr.colline.monatis.budgets.service.BudgetService;
 import fr.colline.monatis.comptes.CompteControleErreur;
 import fr.colline.monatis.comptes.model.Compte;
 import fr.colline.monatis.comptes.model.CompteInterne;
-import fr.colline.monatis.comptes.model.TypeCompte;
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.comptes.service.CompteGeneriqueService;
 import fr.colline.monatis.evaluations.EvaluationControleErreur;
 import fr.colline.monatis.evaluations.model.Evaluation;
 import fr.colline.monatis.evaluations.service.EvaluationService;
 import fr.colline.monatis.operations.OperationControleErreur;
 import fr.colline.monatis.operations.model.Operation;
-import fr.colline.monatis.operations.model.TypeOperation;
 import fr.colline.monatis.operations.service.OperationService;
 import fr.colline.monatis.references.ReferenceControleErreur;
 import fr.colline.monatis.references.model.Banque;
@@ -26,13 +26,16 @@ import fr.colline.monatis.references.model.Categorie;
 import fr.colline.monatis.references.model.Reference;
 import fr.colline.monatis.references.model.SousCategorie;
 import fr.colline.monatis.references.model.Titulaire;
-import fr.colline.monatis.references.model.TypeReference;
 import fr.colline.monatis.references.service.BanqueService;
 import fr.colline.monatis.references.service.BeneficiaireService;
 import fr.colline.monatis.references.service.CategorieService;
 import fr.colline.monatis.references.service.SousCategorieService;
 import fr.colline.monatis.references.service.TitulaireService;
-import fr.colline.monatis.utils.TypePeriode;
+import fr.colline.monatis.typologies.model.TypeCompte;
+import fr.colline.monatis.typologies.model.TypeFonctionnement;
+import fr.colline.monatis.typologies.model.TypeOperation;
+import fr.colline.monatis.typologies.model.TypePeriode;
+import fr.colline.monatis.typologies.model.TypeReference;
 
 @Service
 public class ControllerVerificateurService {
@@ -45,6 +48,7 @@ public class ControllerVerificateurService {
 	@Autowired private CompteGeneriqueService compteGeneriqueService;
 	@Autowired private OperationService operationService;
 	@Autowired private EvaluationService evaluationService;
+	@Autowired private BudgetService budgetService;
 
 	public String verifierNom(String nom, boolean obligatoire) throws ControllerException {
 
@@ -56,7 +60,7 @@ public class ControllerVerificateurService {
 			return null;
 		}
 
-		return nom.trim().toUpperCase().replaceAll(" ", "-").replaceAll("_", "-");
+		return standardiserIdentifiantFonctionnel(nom);
 	}
 
 	public String verifierNomValideEtUnique(TypeReference typeReference, String nomReference, Long id, boolean obligatoire) throws ControllerException, ServiceException {
@@ -112,7 +116,7 @@ public class ControllerVerificateurService {
 			return null;
 		}
 
-		return identifiant.trim().toUpperCase().replaceAll(" ", "-").replaceAll("_", "-");
+		return standardiserIdentifiantFonctionnel(identifiant);
 	}
 
 	public String verifierIdentifiantValideEtUnique(String identifiant, Long id, boolean obligatoire) throws ControllerException, ServiceException {
@@ -143,7 +147,7 @@ public class ControllerVerificateurService {
 			return null;
 		}
 
-		return numero.trim().toUpperCase().replaceAll(" ", "-").replaceAll("_", "-");
+		return standardiserIdentifiantFonctionnel(numero);
 	}
 
 	public String verifierNumeroValideEtUnique(String numero, Long id, boolean obligatoire) throws ControllerException, ServiceException {
@@ -174,10 +178,10 @@ public class ControllerVerificateurService {
 			return null;
 		}
 
-		return cle.trim().toUpperCase().replaceAll(" ", "-").replaceAll("_", "-");
+		return standardiserIdentifiantFonctionnel(cle);
 	}
 
-	public String verifierCleValideEtUnique(String cle, Long id, boolean obligatoire) throws ControllerException, ServiceException {
+	public String verifierCleEvaluationValideEtUnique(String cle, Long id, boolean obligatoire) throws ControllerException, ServiceException {
 
 		cle = verifierCle(cle, obligatoire);
 		if ( cle == null ) {
@@ -190,6 +194,24 @@ public class ControllerVerificateurService {
 					EvaluationControleErreur.CLE_DEJA_UTILISE,
 					evaluation,
 					evaluation.getClass().getSimpleName());
+		}
+
+		return cle;
+	}
+
+	public String verifierCleBudgetValideEtUnique(String cle, Long id, boolean obligatoire) throws ControllerException, ServiceException {
+
+		cle = verifierCle(cle, obligatoire);
+		if ( cle == null ) {
+			return null;
+		}
+
+		Budget budget = budgetService.rechercherParCle(cle);
+		if ( budget != null && ! budget.getId().equals(id) ) {
+			throw new ControllerException(
+					EvaluationControleErreur.CLE_DEJA_UTILISE,
+					budget,
+					budget.getClass().getSimpleName());
 		}
 
 		return cle;
@@ -483,6 +505,32 @@ public class ControllerVerificateurService {
 			}
 			return evaluation;
 		}
+	}
+	
+	public Budget verifierBudget(String cle, boolean obligatoire) throws ServiceException, ControllerException {
+
+		cle = verifierCle(cle, obligatoire);
+
+		if ( cle == null ) {
+			return null;
+		}
+		else {
+			Budget budget = budgetService.rechercherParCle(cle);
+			if ( budget == null ) {
+				throw new ControllerException(
+						BudgetControleErreur.NON_TROUVE_PAR_CLE,
+						cle);
+			}
+			return budget;
+		}
+	}
+	
+	public String standardiserIdentifiantFonctionnel(String identifiantFonctionnel) {
+		
+		if ( identifiantFonctionnel != null ) {
+			return identifiantFonctionnel.trim().toUpperCase().replaceAll(" ", "-").replaceAll("_", "-");
+		}
+		return null;
 	}
 }
 

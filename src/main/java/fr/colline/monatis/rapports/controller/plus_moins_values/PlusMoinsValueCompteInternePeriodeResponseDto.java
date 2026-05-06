@@ -10,12 +10,12 @@ public class PlusMoinsValueCompteInternePeriodeResponseDto implements Serializab
 	public LocalDate dateDebutperiode;
 	public LocalDate dateFinPeriode;
 	
-	public Double montantMouvementEnEuros;
-	public Double montantTechniqueEnEuros; 
-	public Double montantPlusMoinsValuePotentielleEnEuros;
-	public Double tauxPlusMoinsValuePotentielle;
-	public Double montantPlusMoinsValueRealiseeEnEuros;
 	public Double montantSoldeInitialEnEuros;
+	public Double montantOperationsEnEuros;
+	public Double montantPlusMoinsValueNetteEnEuros;
+	public Double tauxPlusMoinsValueNette;
 	public Double montantSoldeFinalEnEuros;
-
+	
+	public Double montantFraisEnEuros; 
+	public Double tauxFrais;
 }

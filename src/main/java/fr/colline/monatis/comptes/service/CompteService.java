@@ -1,15 +1,16 @@
 package fr.colline.monatis.comptes.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import fr.colline.monatis.comptes.CompteFonctionnelleErreur;
 import fr.colline.monatis.comptes.CompteTechniqueErreur;
 import fr.colline.monatis.comptes.model.Compte;
+import fr.colline.monatis.comptes.model.CompteInterne;
 import fr.colline.monatis.comptes.repository.CompteRepository;
 import fr.colline.monatis.exceptions.ServiceException;
 
@@ -86,21 +87,6 @@ public abstract class CompteService<T extends Compte> {
 
 		try {
 			return getRepository().findAll();
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					CompteTechniqueErreur.RECHERCHE_TOUS,
-					getTClass().getSimpleName());
-		}
-	}
-
-	public List<T> rechercherTous(Sort tri) throws ServiceException {
-
-		Assert.notNull(tri, () -> "Le TRI pour la recherche de tous les comptes de type '" + getTClass().getSimpleName() + "' est obligatoire");
-
-		try {
-			return getRepository().findAll(tri);
 		}
 		catch (Throwable t) {
 			throw new ServiceException (
@@ -213,6 +199,82 @@ public abstract class CompteService<T extends Compte> {
 					id,
 					nombreOperationAssociee);
 		}
+	}
+
+	/**
+	 * Si le compte n'est pas un compte interne, retourne la date indiquée.</br>
+	 * Si le compte est un compte interne :<ul>
+	 *  <li>si la date passée est à null, retourne la date du solde initial.</li>
+	 *  <li>si la date passée n'est pas à null, retourne  soit la date indiquée, soit la date de
+	 *  	solde initial si celle-ci est après la date indiquée.</li></ul> 
+	 *  
+	 * @param compte
+	 * @param dateCible
+	 * @return
+	 */
+	public static LocalDate prendreDateSoldeInitialAuBesoin(Compte compte, LocalDate dateCible) {
+	
+		if ( dateCible != null && CompteInterne.class.isAssignableFrom(compte.getClass()) ) {
+			
+			CompteInterne compteInterne = (CompteInterne) compte;
+			LocalDate dateSoldeInitial = compteInterne.getDateSoldeInitial();
+			
+			// La date de début pour la prise en compte des opération est au minimum la date du solde initial.
+			// En effet, toutes les opérations jusqu'à la veille du jour de la "création" du compte doivent
+			// être ignorées
+			if ( dateCible.isBefore(dateSoldeInitial) ) {
+				dateCible = dateSoldeInitial;
+			}
+		}
+
+		return dateCible;
+	}
+
+	/**
+	 * Si le compte n'est pas un compte interne, retourne la date indiquée.</br>
+	 * Si le compte est un compte interne :<ul>
+	 *  <li>si la date passée est à null, retourne la date de clôture (qui peut être à null).</li>
+	 *  <li>si la date passée n'est pas à null, retourne  soit la date indiquée, soit la date de
+	 *  	clôture du compte si elle existe et qu'elle est avant la date indiquée.</li></ul> 
+	 *  
+	 * @param compte
+	 * @param dateFin
+	 * @return
+	 */
+	public static LocalDate prendreDateClotureAuBesoin(Compte compte, LocalDate dateCible) {
+	
+		if ( dateCible != null && CompteInterne.class.isAssignableFrom(compte.getClass()) ) {
+			
+			CompteInterne compteInterne = (CompteInterne) compte;
+			LocalDate dateCloture = compteInterne.getDateCloture();
+			
+			// La date de fin pour la prise en compte des opération est au maximum la date de clôture.
+			// En effet, toutes les opérations à partir de cette date doivent être ignorées (normalement,
+			// il ne peut pas y en avoir mais sait-on jamais)
+			if ( dateCloture != null && dateCible.isAfter(dateCloture) ) {
+				dateCible = dateCloture;
+			}
+		}
+
+		return dateCible;
+	}
+
+	public static boolean isDateCibleVisible(Compte compte, LocalDate dateCible) {
+
+		if ( CompteInterne.class.isAssignableFrom(compte.getClass()) ) {
+			
+			CompteInterne compteInterne = (CompteInterne) compte;
+			LocalDate dateSoldeInitial = compteInterne.getDateSoldeInitial();
+			LocalDate dateCloture = compteInterne.getDateCloture();
+			
+			if ( dateCible == null
+					|| dateSoldeInitial.isAfter(dateCible) 
+					|| (dateCloture != null && dateCloture.isBefore(dateCible)) ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 	
 	public abstract Class<T> getTClass();

@@ -1,11 +1,10 @@
 package fr.colline.monatis.evaluations.controller;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,13 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import fr.colline.monatis.comptes.model.Compte;
 import fr.colline.monatis.comptes.model.CompteInterne;
-import fr.colline.monatis.comptes.model.TypeCompte;
-import fr.colline.monatis.comptes.service.CompteInterneService;
 import fr.colline.monatis.evaluations.model.Evaluation;
 import fr.colline.monatis.evaluations.service.EvaluationService;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ControllerVerificateurService;
 import fr.colline.monatis.exceptions.ServiceException;
+import fr.colline.monatis.typologies.model.TypeCompte;
 import jakarta.transaction.Transactional;
 
 @RestController
@@ -39,22 +37,14 @@ public class EvaluationController {
 	@Autowired private ControllerVerificateurService verificateur; 
 	@Autowired private EvaluationService evaluationService;
 	
-	@Autowired private CompteInterneService compteInterneService;
-	
 	@GetMapping("/all")
 	public List<EvaluationResponseDto> getAllEvaluation() throws ServiceException, ControllerException {
 
-		List<EvaluationResponseDto> resultat = new ArrayList<>();
-		
-		List<CompteInterne> comptesInternes = compteInterneService.rechercherTous(Sort.by("identifiant"));
-		for ( CompteInterne compteInterne : comptesInternes ) {
-			List<Evaluation> evaluations = evaluationService.rechercherParCompteInterneId(compteInterne.getId());
-			for ( Evaluation evaluation : evaluations ) {
-				resultat.add(EvaluationResponseDtoMapper.mapperModelToBasicResponseDto(evaluation));
-			}
-		}
-
-		return resultat;
+		return evaluationService.rechercherTous()
+				.stream()
+				.sorted((e1, e2) -> {return e1.getCle().compareTo(e2.getCle());})
+				.map((e) -> {return EvaluationResponseDtoMapper.mapperModelToBasicResponseDto(e);})
+				.toList();
 	}
 
 	@GetMapping("/get/{cle}")
@@ -94,27 +84,39 @@ public class EvaluationController {
 		evaluationService.supprimerEvaluation(evaluation);
 	}
 
-	@GetMapping("/selection/toutes_par_compte")
-	public List<EvaluationResponseDto> selectionnnerToutesParCompte(
+	@PostMapping("/selection")
+	public List<EvaluationResponseDto>selectionnerEvaluation(
 			@RequestBody EvaluationSelectionRequestDto requestDto) throws ServiceException, ControllerException {
 
-		Compte compte = verificateur.verifierCompteEtTypeCompte(TypeCompte.INTERNE, requestDto.identifiantCompteInterne, OBLIGATOIRE);
-				
-		return evaluationService.rechercherParCompteInterneId(compte.getId())
+		final String cle = verificateur.standardiserIdentifiantFonctionnel(requestDto.cleContient);
+		final String libelle = verificateur.verifierLibelle(requestDto.libelleContient, FACULTATIF, null);
+		final Compte compte = verificateur.verifierCompteEtTypeCompte(TypeCompte.INTERNE, requestDto.identifiantCompteInterne, FACULTATIF);
+		final LocalDate avantLe = verificateur.verifierDate(requestDto.avantLe, FACULTATIF, null);
+		
+		return evaluationService.rechercherTous()
 				.stream()
+				.filter((e) -> {return cle == null 
+						|| e.getCle().contains(cle);})
+				.filter((e) -> {return libelle == null 
+						|| e.getLibelle().toUpperCase().contains(libelle.toUpperCase());})
+				.filter((e) -> {return compte == null 
+						|| e.getCompteInterne().getId().equals(compte.getId());})
+				.filter((e) -> {return avantLe == null
+						|| e.getDateSolde().isBefore(avantLe);})
+				.sorted(Comparator.comparing(Evaluation::getDateSolde, Comparator.reverseOrder()))
 				.map((o) -> {return EvaluationResponseDtoMapper.mapperModelToBasicResponseDto(o);})
 				.toList();
 	}
 
 	private Evaluation mapperCreationRequestDtoToModel(
-			EvaluationCreationRequestDto dto, 
+			EvaluationCreationRequestDto requestDto, 
 			Evaluation evaluation) throws ControllerException, ServiceException {
 
-		evaluation.setCle(verificateur.verifierCleValideEtUnique(dto.cle, evaluation.getId(), FACULTATIF));
-		evaluation.setCompteInterne((CompteInterne) verificateur.verifierCompteEtTypeCompte(TypeCompte.INTERNE, dto.identifiantCompteInterne, OBLIGATOIRE));
-		evaluation.setDateSolde(verificateur.verifierDate(dto.dateSolde, FACULTATIF, LocalDate.now()));
-		evaluation.setLibelle(verificateur.verifierLibelle(dto.libelle, FACULTATIF, null));
-		evaluation.setMontantSoldeEnCentimes(verificateur.verifierMontantEnCentimes(dto.montantSoldeEnCentimes, OBLIGATOIRE, null));
+		evaluation.setCle(verificateur.verifierCleEvaluationValideEtUnique(requestDto.cle, evaluation.getId(), FACULTATIF));
+		evaluation.setCompteInterne((CompteInterne) verificateur.verifierCompteEtTypeCompte(TypeCompte.INTERNE, requestDto.identifiantCompteInterne, OBLIGATOIRE));
+		evaluation.setDateSolde(verificateur.verifierDate(requestDto.dateSolde, FACULTATIF, LocalDate.now()));
+		evaluation.setLibelle(verificateur.verifierLibelle(requestDto.libelle, FACULTATIF, null));
+		evaluation.setMontantSoldeEnCentimes(verificateur.verifierMontantEnCentimes(requestDto.montantSoldeEnCentimes, OBLIGATOIRE, null));
 
 		return evaluation;
 	}
@@ -123,7 +125,7 @@ public class EvaluationController {
 			EvaluationModificationRequestDto dto, 
 			Evaluation evaluation) throws ControllerException, ServiceException {
 
-		if ( dto.cle != null ) evaluation.setCle(verificateur.verifierCleValideEtUnique(dto.cle, evaluation.getId(), OBLIGATOIRE));
+		if ( dto.cle != null ) evaluation.setCle(verificateur.verifierCleEvaluationValideEtUnique(dto.cle, evaluation.getId(), OBLIGATOIRE));
 		if ( dto.identifiantCompteInterne != null ) evaluation.setCompteInterne((CompteInterne) verificateur.verifierCompteEtTypeCompte(TypeCompte.INTERNE, dto.identifiantCompteInterne, OBLIGATOIRE));
 		if ( dto.dateSolde != null ) evaluation.setDateSolde(verificateur.verifierDate(dto.dateSolde, OBLIGATOIRE, null));
  		if ( dto.libelle != null ) evaluation.setLibelle(verificateur.verifierLibelle(dto.libelle, FACULTATIF, null));

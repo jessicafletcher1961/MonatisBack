@@ -9,7 +9,10 @@ public class PlusMoinsValueTypeFonctionnementPeriodeResponseDto implements Seria
 
 	public LocalDate dateDebutPeriode;
 	public LocalDate dateFinPeriode;
-	
-	public Double montantPlusMoinsValuePotentielleEnCentimes;
+
+	public double montantPlusMoinsValueNetteEnEuros;
+	public Double tauxPlusMoinsValueNette;
+	public double montantFraisEnEuros;
+	public Double tauxFrais;
 
 }

@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import fr.colline.monatis.comptes.model.CompteInterne;
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.comptes.service.CompteInterneService;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.operations.model.Operation;
@@ -19,8 +18,9 @@ import fr.colline.monatis.rapports.model.composants.bilan_patrimoine.BilanPatrim
 import fr.colline.monatis.rapports.model.composants.bilan_patrimoine.BilanPatrimoineTypeFonctionnementLigne;
 import fr.colline.monatis.rapports.model.composants.bilan_patrimoine.BilanPatrimoineTypeFonctionnementPeriode;
 import fr.colline.monatis.references.model.Titulaire;
+import fr.colline.monatis.typologies.model.TypeFonctionnement;
+import fr.colline.monatis.typologies.model.TypePeriode;
 import fr.colline.monatis.utils.DateEtPeriodeUtils;
-import fr.colline.monatis.utils.TypePeriode;
 
 @Service
 class BilanPatrimoineService {
@@ -190,7 +190,7 @@ class BilanPatrimoineService {
 		montantTotalRecette = operationsPeriode
 				.stream()
 				.filter((o) -> {return o.getCompteRecette().getId().equals(compteInterne.getId());})
-				.filter((o) -> {return o.getTypeOperation().isFluxTransaction();})
+				.filter((o) -> {return ! o.getTypeOperation().isFluxTechnique();})
 				.mapToLong((o) -> {
 					return o.getMontantEnCentimes();})
 				.sum();
@@ -199,7 +199,7 @@ class BilanPatrimoineService {
 		montantTotalDepense = operationsPeriode
 				.stream()
 				.filter((o) -> {return o.getCompteDepense().getId().equals(compteInterne.getId());})
-				.filter((o) -> {return o.getTypeOperation().isFluxTransaction();})
+				.filter((o) -> {return ! o.getTypeOperation().isFluxTechnique();})
 				.mapToLong((o) -> {
 					return o.getMontantEnCentimes();})
 				.sum();

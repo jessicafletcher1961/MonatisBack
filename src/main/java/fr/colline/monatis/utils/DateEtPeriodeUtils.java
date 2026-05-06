@@ -5,6 +5,7 @@ import java.time.temporal.ChronoUnit;
 
 import fr.colline.monatis.exceptions.GeneriqueTechniqueErreur;
 import fr.colline.monatis.exceptions.ServiceException;
+import fr.colline.monatis.typologies.model.TypePeriode;
 
 public class DateEtPeriodeUtils {
 
@@ -28,10 +29,29 @@ public class DateEtPeriodeUtils {
 					7, 1);
 			if ( dateCible.isBefore(date2) )  {
 				dateDebutPeriode = date1;
+				break;
 			}
-			else {
+			dateDebutPeriode = date2;
+			break;
+		case QUADRIMESTRIEL:
+			date1 = LocalDate.of(
+					dateCible.getYear(),
+					1, 1);
+			date2 = LocalDate.of(
+					dateCible.getYear(),
+					5, 1);
+			if ( dateCible.isBefore(date2) )  {
+				dateDebutPeriode = date1;
+				break;
+			}
+			date3 = LocalDate.of(
+					dateCible.getYear(),
+					9, 1);
+			if ( dateCible.isBefore(date3) )  {
 				dateDebutPeriode = date2;
+				break;
 			}
+			dateDebutPeriode = date3;
 			break;
 		case TRIMESTRIEL:
 			date1 = LocalDate.of(
@@ -56,10 +76,9 @@ public class DateEtPeriodeUtils {
 					10, 1);
 			if ( dateCible.isBefore(date4) ) {
 				dateDebutPeriode = date3;
+				break;
 			}
-			else {
-				dateDebutPeriode = date4;
-			}
+			dateDebutPeriode = date4;
 			break;
 		case BIMESTRIEL:
 			if ( dateCible.getMonthValue() % 2 == 0 ) {
@@ -98,6 +117,9 @@ public class DateEtPeriodeUtils {
 		case SEMESTRIEL:
 			dateDebutPeriodeSuivante = dateDebutPeriodeCourante.plusMonths(6);
 			break;
+		case QUADRIMESTRIEL:
+			dateDebutPeriodeSuivante = dateDebutPeriodeCourante.plusMonths(4);
+			break;
 		case TRIMESTRIEL:
 			dateDebutPeriodeSuivante = dateDebutPeriodeCourante.plusMonths(3);
 			break;
@@ -125,7 +147,7 @@ public class DateEtPeriodeUtils {
 
 	public static long calculerNombreMoisEntreDeuxDates(LocalDate dateDebut, LocalDate dateFin) {
 
-		return ChronoUnit.MONTHS.between(dateDebut, dateFin);
+		return ChronoUnit.MONTHS.between(dateDebut, dateFin.plus(1, ChronoUnit.DAYS));
 	}
 
 	public static int calculerNombrePeriodesEntreDateDebutEtDateFin(

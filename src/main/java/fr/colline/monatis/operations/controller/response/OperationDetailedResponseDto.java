@@ -3,12 +3,13 @@ package fr.colline.monatis.operations.controller.response;
 import java.util.List;
 
 import fr.colline.monatis.comptes.controller.CompteResponseDto;
+import fr.colline.monatis.typologies.controller.TypologieResponseDto;
 
 public class OperationDetailedResponseDto extends OperationResponseDto {
 
 	private static final long serialVersionUID = -8123052695805765163L;
 	
-	public TypeOperationResponseDto typeOperation;
+	public TypologieResponseDto typeOperation;
 	public CompteResponseDto compteRecette;
 	public CompteResponseDto compteDepense;
 

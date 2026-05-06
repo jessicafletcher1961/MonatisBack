@@ -25,8 +25,8 @@ import jakarta.persistence.SequenceGenerator;
 public class OperationLigne {
 
 	@Id
-	@GeneratedValue(generator = "gen_seq_operation", strategy = GenerationType.SEQUENCE)
-	@SequenceGenerator(name = "gen_seq_operation", sequenceName = "seq_operation", allocationSize = 1)
+	@GeneratedValue(generator = "gen_seq_operation_ligne", strategy = GenerationType.SEQUENCE)
+	@SequenceGenerator(name = "gen_seq_operation_ligne", sequenceName = "seq_operation_ligne", allocationSize = 1)
 	private Long id;
 
 	private int numeroLigne;
@@ -35,8 +35,8 @@ public class OperationLigne {
 
 	private LocalDate dateComptabilisation;
 	
-	@Column(length = 240)
-	private String libelle;
+		@Column(length = 240)
+		private String libelle;
 
 	@ManyToOne
 	@JoinColumn(name = "operation_id")

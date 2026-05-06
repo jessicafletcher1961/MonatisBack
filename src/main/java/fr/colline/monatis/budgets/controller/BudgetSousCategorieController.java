@@ -29,49 +29,57 @@ public class BudgetSousCategorieController extends BudgetController<SousCategori
 
 	@Autowired private ControllerVerificateurService verificateur;
 	@Autowired private SousCategorieService sousCategorieService;
-
-	@GetMapping("/all")
-	public List<BudgetsParReferenceResponseDto> getAllBudgets() throws ServiceException, ControllerException {
-		
-		return super.getAllBudgets();
-	}
+//
+//	@GetMapping("/all")
+//	public List<BudgetResponseDto> getAllBudgets() throws ServiceException, ControllerException {
+//		
+//		return super.getAllBudgets();
+//	}
+//	
+//	@GetMapping("/get/{cle}")
+//	public BudgetResponseDto getBudgetsParNomReference(
+//			@PathVariable String cle) throws ServiceException, ControllerException {
+//
+//		return super.getBudgetParCle(cle);
+//	}
+//	
+//	@PostMapping("/new")
+//	public BudgetResponseDto creerBudget(
+//			@RequestBody BudgetCreationRequestDto dto) throws ControllerException, ServiceException {
+//
+//		return super.creerBudget(dto);
+//	}
+//
+//	@PostMapping("/next/{cle}")
+//	public BudgetResponseDto reconduireBudget(
+//			@PathVariable String cle) throws ControllerException, ServiceException {
+//
+//		return super.reconduireBudget(cle);
+//	}
+//
+//	@PutMapping("/mod/{cle}")
+//	public BudgetResponseDto modifierBudget(
+//			@PathVariable String cle,
+//			@RequestBody BudgetModificationRequestDto dto) throws ControllerException, ServiceException {
+//
+//		return super.modifierBudget(cle, dto);
+//	}
+//
+//	@DeleteMapping("/del/{cle}")
+//	@ResponseStatus(value = HttpStatus.NO_CONTENT)
+//	public void supprimerBudget(
+//			@PathVariable String cle) throws ControllerException, ServiceException {
+//
+//		super.supprimerBudget(cle);
+//	}
+//
+//	@PostMapping("/selection")
+//	public List<BudgetResponseDto> selectionnerBudgets(
+//			@RequestBody BudgetSelectionRequestDto requestDto) throws ServiceException, ControllerException {
+//	
+//		return super.selectionnerBudgets(requestDto);
+//	}
 	
-	@GetMapping("/get/{nom}")
-	public BudgetsParReferenceResponseDto getBudgetsParNomReference(
-			@PathVariable (name = "nom") String nomSousCategorie) throws ServiceException, ControllerException {
-
-		return super.getBudgetsParNomReference(nomSousCategorie);
-	}
-	
-	@PostMapping("/new")
-	public BudgetsParReferenceResponseDto creerBudget(
-			@RequestBody BudgetRequestDto dto) throws ControllerException, ServiceException {
-
-		return super.creerBudget(dto);
-	}
-
-	@PostMapping("/next")
-	public BudgetsParReferenceResponseDto reconduireBudget(
-			@RequestBody BudgetRequestDto dto) throws ControllerException, ServiceException {
-
-		return super.reconduireBudget(dto);
-	}
-
-	@PutMapping("/mod")
-	public BudgetsParReferenceResponseDto modifierBudget(
-			@RequestBody BudgetRequestDto dto) throws ControllerException, ServiceException {
-
-		return super.modifierBudget(dto);
-	}
-
-	@DeleteMapping("/del")
-	@ResponseStatus(value = HttpStatus.NO_CONTENT)
-	public void supprimerBudget(
-			@RequestBody BudgetRequestDto dto) throws ControllerException, ServiceException {
-
-		super.supprimerBudget(dto);
-	}
-
 	@Override
 	protected SousCategorie getReferenceVerifiee(String nomReference, boolean obligatoire) throws ControllerException, ServiceException {
 		return verificateur.verifierSousCategorie(nomReference, obligatoire);

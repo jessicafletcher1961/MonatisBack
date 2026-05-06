@@ -26,7 +26,7 @@ public class CompteTechniqueService extends CompteService<CompteTechnique> {
 		return compteTechniqueRepository;
 	}
 
-	public CompteTechnique rechercherOuCreerCompteTechniqueRemunerationsEtFrais() throws ServiceException {
+	public CompteTechnique rechercherOuCreerCompteTechnique() throws ServiceException {
 		return rechercherOuCreerCompteTechnique("TECH-REMUNERATIONS-FRAIS", "Contrepartie technique des opérations de rémunération et de frais");
 	}
 

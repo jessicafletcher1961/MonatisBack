@@ -1,14 +1,21 @@
 package fr.colline.monatis.operations.controller;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.csv.CSVException;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,26 +27,31 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import fr.colline.monatis.admin.AdminControleErreur;
+import fr.colline.monatis.admin.AdminController;
 import fr.colline.monatis.comptes.controller.CompteResponseDto;
 import fr.colline.monatis.comptes.controller.CompteResponseDtoMapper;
 import fr.colline.monatis.comptes.model.Compte;
-import fr.colline.monatis.comptes.model.TypeCompte;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ControllerVerificateurService;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.operations.OperationControleErreur;
+import fr.colline.monatis.operations.OperationTechniqueErreur;
 import fr.colline.monatis.operations.controller.request.OperationCreationRequestDto;
 import fr.colline.monatis.operations.controller.request.OperationLigneModificationRequestDto;
 import fr.colline.monatis.operations.controller.request.OperationModificationRequestDto;
 import fr.colline.monatis.operations.controller.request.OperationSelectionRequestDto;
 import fr.colline.monatis.operations.controller.response.CompatibilitesResponseDto;
 import fr.colline.monatis.operations.controller.response.OperationResponseDto;
-import fr.colline.monatis.operations.controller.response.TypeOperationResponseDto;
 import fr.colline.monatis.operations.model.Operation;
 import fr.colline.monatis.operations.model.OperationLigne;
-import fr.colline.monatis.operations.model.TypeOperation;
+import fr.colline.monatis.operations.service.CompatibiliteService;
 import fr.colline.monatis.operations.service.OperationService;
 import fr.colline.monatis.references.model.Beneficiaire;
+import fr.colline.monatis.typologies.controller.TypologieResponseDto;
+import fr.colline.monatis.typologies.controller.TypologieResponseDtoMapper;
+import fr.colline.monatis.typologies.model.TypeCompte;
+import fr.colline.monatis.typologies.model.TypeOperation;
 import jakarta.transaction.Transactional;
 
 @RestController
@@ -52,17 +64,15 @@ public class OperationController {
 
 	@Autowired private ControllerVerificateurService verificateur; 
 	@Autowired private OperationService operationService;
+	@Autowired private CompatibiliteService compatibiliteService;
 
 	@GetMapping("/all")
 	public List<OperationResponseDto> getAllOperation() throws ServiceException, ControllerException {
 
-		List<OperationResponseDto> dto = new ArrayList<>();
-		Sort tri = Sort.by("dateValeur");
-		List<Operation> liste = operationService.rechercherTous(tri);
-		for ( Operation operation : liste ) {
-			dto.add(OperationResponseDtoMapper.mapperModelToBasicResponseDto(operation));
-		}
-		return dto;
+		return operationService.rechercherTous()
+				.sorted((o1, o2) -> {return o1.getNumero().compareTo(o2.getNumero());})
+				.map((o) -> {return OperationResponseDtoMapper.mapperModelToBasicResponseDto(o);})
+				.toList();
 	}
 
 	@GetMapping("/get/{numero}")
@@ -101,27 +111,47 @@ public class OperationController {
 		Operation operation = verificateur.verifierOperation(numero, OBLIGATOIRE);
 		operationService.supprimerOperation(operation);
 	}
-	
-	@GetMapping("/typologie/operation")
-	public List<TypeOperationResponseDto> getTypesOperations() {
-		
-		return Arrays.asList(TypeOperation.values())
-				.stream()
-				.map((to) -> {return OperationResponseDtoMapper.mapperTypeOperation(to);})
-				.toList();
-	}
 
-	@GetMapping("/selection/dernieres_par_compte")
-	public List<OperationResponseDto> selectionnnerDernieresOperationsParCompte(
+	@PostMapping("/selection")
+	public List<OperationResponseDto> selectionnnerOperations(
 			@RequestBody OperationSelectionRequestDto requestDto) throws ServiceException, ControllerException {
-
-		Compte compte = verificateur.verifierCompte(requestDto.identifiantCompte, OBLIGATOIRE);
-		LocalDate dateFin = verificateur.verifierDate(requestDto.dateValeurFin, FACULTATIF, LocalDate.now());
-		long limite = requestDto.nombreLimite == null ? 5L : requestDto.nombreLimite; 
-				
-		return operationService.rechercherDernieresParCompte(compte, dateFin, limite)
-				.stream()
+		
+		final String numero = verificateur.standardiserIdentifiantFonctionnel(requestDto.numeroContient);
+		final String libelle = verificateur.verifierLibelle(requestDto.libelleContient, FACULTATIF, null);
+		final LocalDate dateDebut = verificateur.verifierDate(requestDto.depuisLe, FACULTATIF, null);
+		final LocalDate dateFin = verificateur.verifierDate(requestDto.jusqueAu, FACULTATIF, null);
+		final TypeOperation typeOperation = verificateur.verifierTypeOperation(requestDto.codeTypeOperation, FACULTATIF, null);
+		final Compte compteRecetteOuDepense = verificateur.verifierCompte(requestDto.identifiantCompteRecetteOuDepense, FACULTATIF);
+		final Compte compteDepense = verificateur.verifierCompte(requestDto.identifiantCompteDepense, FACULTATIF);
+		final Compte compteRecette = verificateur.verifierCompte(requestDto.identifiantCompteRecette, FACULTATIF);
+		final Boolean pointee = verificateur.verifierBoolean(requestDto.pointee, FACULTATIF, null);
+		final Long limite = requestDto.nombreLimite == null ? 90L : requestDto.nombreLimite; 
+		
+		Long montantEnCentimesApproximatif = requestDto.montantEnCentimesApproximatif;
+		final Long montantBasEnCentimes = montantEnCentimesApproximatif == null ? null : montantEnCentimesApproximatif - Math.round(montantEnCentimesApproximatif * 0.1);
+		final Long montantHautEnCentimes = montantEnCentimesApproximatif == null ? null : montantEnCentimesApproximatif + Math.round(montantEnCentimesApproximatif * 0.1);
+		
+		return operationService.rechercherOperationsVisiblesParDateValeurDesc(dateDebut, dateFin)
+				.filter((o) -> {return numero == null
+						|| o.getNumero().contains(numero);})
+				.filter((o) -> {return libelle == null 
+						|| o.getLibelle().toUpperCase().contains(libelle.toUpperCase());})
+				.filter((o) -> {return typeOperation == null 
+						|| o.getTypeOperation() == typeOperation;})
+				.filter((o) -> {return montantEnCentimesApproximatif == null
+						|| (o.getMontantEnCentimes().compareTo(montantBasEnCentimes) >= 0 && o.getMontantEnCentimes().compareTo(montantHautEnCentimes) <= 0);})
+				.filter((o) -> {return compteRecetteOuDepense == null 
+						|| o.getCompteDepense().getId().equals(compteRecetteOuDepense.getId())
+						|| o.getCompteRecette().getId().equals(compteRecetteOuDepense.getId());})
+				.filter((o) -> {return compteDepense == null
+						|| o.getCompteDepense().getId().equals(compteDepense.getId());})
+				.filter((o) -> {return compteRecette == null 
+						|| o.getCompteRecette().getId().equals(compteRecette.getId());})
+				.filter((o) -> {return pointee == null 
+						|| (o.isPointee() != null && o.isPointee().equals(pointee));})
+				.sorted(Comparator.comparing(Operation::getDateValeur, Comparator.reverseOrder()).thenComparing(Operation::getNumero))
 				.map((o) -> {return OperationResponseDtoMapper.mapperModelToBasicResponseDto(o);})
+				.limit(limite)
 				.toList();
 	}
 
@@ -134,7 +164,7 @@ public class OperationController {
 		CompatibilitesResponseDto dto = new CompatibilitesResponseDto();
 		
 		dto.comptesCompatiblesDepense = new ArrayList<CompteResponseDto>();
-		for ( Compte compte : operationService.rechercherComptesCompatiblesDepense(typeOperationChoisi) ) {
+		for ( Compte compte : compatibiliteService.rechercherComptesCompatiblesDepense(typeOperationChoisi) ) {
 			if ( compte.getTypeCompte() == TypeCompte.TECHNIQUE ) {
 				dto.comptesCompatiblesDepense = null;
 				break;
@@ -143,7 +173,7 @@ public class OperationController {
 		}
 		
 		dto.comptesCompatiblesRecette = new ArrayList<CompteResponseDto>();
-		for ( Compte compte : operationService.rechercherComptesCompatiblesRecette(typeOperationChoisi) ) {
+		for ( Compte compte : compatibiliteService.rechercherComptesCompatiblesRecette(typeOperationChoisi) ) {
 			if ( compte.getTypeCompte() == TypeCompte.TECHNIQUE ) {
 				dto.comptesCompatiblesRecette = null;
 				break;
@@ -162,14 +192,14 @@ public class OperationController {
 		
 		CompatibilitesResponseDto dto = new CompatibilitesResponseDto();
 		
-		dto.typesOperationsCompatiblesDepense = operationService.rechercherTypesOperationCompatiblesDepense(compteChoisi)
+		dto.typesOperationsCompatiblesDepense = compatibiliteService.rechercherTypesOperationCompatiblesDepense(compteChoisi)
 				.stream()
-				.map((to) -> {return OperationResponseDtoMapper.mapperTypeOperation(to);})
+				.map((to) -> {return TypologieResponseDtoMapper.mapperModelToResponseDto(to);})
 				.toList();
 		
-		dto.typesOperationsCompatiblesRecette = operationService.rechercherTypesOperationCompatiblesRecette(compteChoisi)
+		dto.typesOperationsCompatiblesRecette = compatibiliteService.rechercherTypesOperationCompatiblesRecette(compteChoisi)
 				.stream()
-				.map((to) -> {return OperationResponseDtoMapper.mapperTypeOperation(to);})
+				.map((to) -> {return TypologieResponseDtoMapper.mapperModelToResponseDto(to);})
 				.toList();
 
 		return dto;
@@ -183,7 +213,7 @@ public class OperationController {
 		TypeOperation typeOperationChoisi = verificateur.verifierTypeOperation(codeTypeOperationChoisi, OBLIGATOIRE, null);
 		Compte compteChoisiRecette = verificateur.verifierCompte(identifiantCompteChoisiRecette, OBLIGATOIRE);
 		
-		if ( ! operationService.verifierCompatibiliteRecette(compteChoisiRecette, typeOperationChoisi) ) {
+		if ( ! compatibiliteService.isCompatibiliteRecette(compteChoisiRecette, typeOperationChoisi) ) {
 			throw new ControllerException(
 					OperationControleErreur.INCOMPATIBILITE_ENTRE_TYPE_OPERATION_CHOISI_ET_COMPTE_CHOISI_RECETTE,
 					typeOperationChoisi.getCode(),
@@ -193,7 +223,7 @@ public class OperationController {
 		CompatibilitesResponseDto dto = new CompatibilitesResponseDto();
 		
 		dto.comptesCompatiblesDepense = new ArrayList<CompteResponseDto>();
-		for ( Compte compte : operationService.rechercherComptesCompatiblesDepense(typeOperationChoisi) ) {
+		for ( Compte compte : compatibiliteService.rechercherComptesCompatiblesDepense(typeOperationChoisi) ) {
 			if ( compte.getTypeCompte() == TypeCompte.TECHNIQUE ) {
 				dto.comptesCompatiblesDepense = null;
 				break;
@@ -215,7 +245,7 @@ public class OperationController {
 		TypeOperation typeOperationChoisi = verificateur.verifierTypeOperation(codeTypeOperationChoisi, OBLIGATOIRE, null);
 		Compte compteChoisiDepense = verificateur.verifierCompte(identifiantCompteChoisiDepense, OBLIGATOIRE);
 		
-		if ( ! operationService.verifierCompatibiliteDepense(compteChoisiDepense, typeOperationChoisi) ) {
+		if ( ! compatibiliteService.isCompatibiliteDepense(compteChoisiDepense, typeOperationChoisi) ) {
 			throw new ControllerException(
 					OperationControleErreur.INCOMPATIBILITE_ENTRE_TYPE_OPERATION_CHOISI_ET_COMPTE_CHOISI_DEPENSE,
 					typeOperationChoisi.getCode(),
@@ -225,7 +255,7 @@ public class OperationController {
 		CompatibilitesResponseDto dto = new CompatibilitesResponseDto();
 		
 		dto.comptesCompatiblesRecette = new ArrayList<CompteResponseDto>();
-		for ( Compte compte : operationService.rechercherComptesCompatiblesRecette(typeOperationChoisi) ) {
+		for ( Compte compte : compatibiliteService.rechercherComptesCompatiblesRecette(typeOperationChoisi) ) {
 			if ( compte.getTypeCompte() == TypeCompte.TECHNIQUE ) {
 				dto.comptesCompatiblesRecette = null;
 				break;
@@ -237,6 +267,73 @@ public class OperationController {
 		}
 		
 		return dto;
+	}
+
+	@GetMapping("/addcsv/{nomFichierCsv}")
+	public List<OperationResponseDto> creerOperationsFromCsv(
+			@PathVariable String nomFichierCsv) throws ControllerException, ServiceException {
+		
+		nomFichierCsv = AdminController.REPERTOIRE_ECHANGE
+				+ "/" 
+				+ nomFichierCsv;
+		File fichierCsv = new File(nomFichierCsv);
+		if ( ! fichierCsv.exists() || fichierCsv.isDirectory() ) {
+			throw new ControllerException(AdminControleErreur.FICHIER_NON_TROUVE, fichierCsv.getAbsolutePath());
+		}
+
+		List<OperationResponseDto> dto = new ArrayList<OperationResponseDto>();
+		
+		CSVFormat format = CSVFormat.RFC4180.builder().get();
+				
+		try ( FileReader reader = new FileReader(fichierCsv);
+				CSVParser parser = format.parse(reader) ) {
+			for (CSVRecord record : parser.getRecords() ) {
+				
+				OperationCreationRequestDto operationDto = new OperationCreationRequestDto();
+				
+				operationDto.numero = record.get(0);
+				operationDto.libelle = record.get(1);
+				operationDto.codeTypeOperation = record.get(2);
+				operationDto.dateValeur = LocalDate.parse(record.get(3));
+				operationDto.montantEnCentimes = Long.decode(record.get(4));
+				operationDto.identifiantCompteDepense = record.get(5);
+				operationDto.identifiantCompteRecette = record.get(6);
+				if ( record.size() > 6 ) {
+					if ( record.get(7) != null && ! record.get(7).isBlank() ) {
+						operationDto.nomSousCategorie = record.get(7);
+					}
+				}
+				if ( record.size() > 7 ) {
+					operationDto.nomsBeneficiaires = new ArrayList<String>();
+					for ( int numeroColonne = 8 ; numeroColonne < record.size() ; numeroColonne++ ) {
+						if ( record.get(numeroColonne) != null && ! record.get(numeroColonne).isBlank() ) {
+							operationDto.nomsBeneficiaires.add(record.get(numeroColonne));
+						}
+					}
+				}
+				
+				dto.add(creerOperation(operationDto));
+				
+			}
+		} 
+		catch (CSVException e) {
+			throw new ControllerException(e, OperationTechniqueErreur.FICHIER_NON_PARSABLE, fichierCsv.getAbsolutePath());
+		} 
+		catch (IOException e) {
+			throw new ControllerException(e, OperationTechniqueErreur.FICHIER_NON_LISIBLE, fichierCsv.getAbsolutePath());
+		}
+		
+		return dto;
+	}
+
+	//-- A SUPPRIMER POUR V2 
+	@GetMapping("/typologie/operation")
+	public List<TypologieResponseDto> getTypesOperations() {
+		
+		return Arrays.asList(TypeOperation.values())
+				.stream()
+				.map((to) -> {return TypologieResponseDtoMapper.mapperModelToResponseDto(to);})
+				.toList();
 	}
 
 	private Operation mapperCreationRequestDtoToModel(

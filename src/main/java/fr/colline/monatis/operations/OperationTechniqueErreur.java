@@ -64,8 +64,25 @@ public enum OperationTechniqueErreur implements MonatisErreur {
 			"Un problème technique est survenu lors de la recherche des opérations du compte d'identifiant '%s' entre les dates %s et %s"), 
 	 */
 	RECHERCHE_OPERATION_PAR_COMPTE_ENTRE_DATE_DEBUT_ET_DATE_FIN(
-			"Un problème technique est survenu lors de la recherche des opérations du compte d'identifiant '%s' entre les dates %s et %s"), 
-
+			"Un problème technique est survenu lors de la recherche des opérations du compte d'identifiant '%s' entre les dates %s et %s"),
+	
+	/**
+			"Un problème technique est survenu lors de la recherche des opérations visibles"), 
+	 */
+	RECHERCHER_OPERATIONS_VISIBLES(
+			"Un problème technique est survenu lors de la recherche des opérations visibles"),
+	
+	/**
+			"Un problème technique est survenu lors de l'analyse CSV du fichier '%s'"), 
+	 */
+	FICHIER_NON_PARSABLE(
+			"Un problème technique est survenu lors de l'analyse CSV du fichier '%s'"), 
+	
+	/**
+			"Un problème technique est survenu lors de la lecture du fichier '%s'"), 
+	 */
+	FICHIER_NON_LISIBLE(
+			"Un problème technique est survenu lors de la lecture du fichier '%s'"), 
 
 	;
 

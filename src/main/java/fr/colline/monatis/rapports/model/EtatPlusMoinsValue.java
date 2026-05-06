@@ -4,20 +4,21 @@ import java.time.LocalDate;
 import java.util.List;
 
 import fr.colline.monatis.comptes.model.CompteInterne;
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.rapports.model.composants.plus_moins_value.PlusMoinsValuePeriode;
 import fr.colline.monatis.rapports.model.composants.plus_moins_value.PlusMoinsValueTypeFonctionnementLigne;
+import fr.colline.monatis.references.model.Banque;
 import fr.colline.monatis.references.model.Titulaire;
-import fr.colline.monatis.utils.TypePeriode;
+import fr.colline.monatis.typologies.model.TypeFonctionnement;
+import fr.colline.monatis.typologies.model.TypePeriode;
 
 public class EtatPlusMoinsValue {
 
 	private LocalDate dateDebutEtat;
 	private LocalDate dateFinEtat;
 	private TypePeriode typePeriode;
-	
 	private List<CompteInterne> comptesInternes;
 	private List<TypeFonctionnement> typesFonctionnements;
+	private Banque banque;
 	private Titulaire titulaire;
 	
 	private List<PlusMoinsValueTypeFonctionnementLigne> lignesTypeFonctionnement;
@@ -61,6 +62,14 @@ public class EtatPlusMoinsValue {
 
 	public void setTypesFonctionnements(List<TypeFonctionnement> typesFonctionnements) {
 		this.typesFonctionnements = typesFonctionnements;
+	}
+
+	public Banque getBanque() {
+		return banque;
+	}
+
+	public void setBanque(Banque banque) {
+		this.banque = banque;
 	}
 
 	public Titulaire getTitulaire() {

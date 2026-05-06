@@ -22,8 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 import fr.colline.monatis.operations.OperationControleErreur;
 import fr.colline.monatis.operations.OperationFonctionnelleErreur;
 import fr.colline.monatis.operations.OperationTechniqueErreur;
-import fr.colline.monatis.operations.model.TypeOperation;
 import fr.colline.monatis.operations.service.OperationService;
+import fr.colline.monatis.typologies.model.TypeOperation;
 import jakarta.transaction.Transactional;
 
 @RestController

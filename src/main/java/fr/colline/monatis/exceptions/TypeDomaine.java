@@ -9,6 +9,7 @@ public enum TypeDomaine {
 	OPERATION("OPE", "operation", "Opérations"),
 	RAPPORT("RAP", "rapport", "Elaboration des rapports"),
 	GENERIQUE("GEN", "generique", "Plusieurs domaines"),
+	ADMIN("ADM", "admin", "Maintenance, sauvegardes et restaurations")
 	
 	;
 	

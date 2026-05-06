@@ -10,15 +10,20 @@ public enum BudgetFonctionnelleErreur implements MonatisErreur {
 	/**
 			"Chevauchement de périodes pour la référence de type '%s' et de nom '%s' entre une période de type '%s' finissant le %s et la période de type '%s' commençant le %s"),
 	 */
-	CHEVAUCHEMENT_PERIODES(
+	CHEVAUCHEMENT_PERIODE_PRECEDENTE(
 			"Chevauchement de périodes pour la référence de type '%s' et de nom '%s' entre une période de type '%s' finissant le %s et la période de type '%s' commençant le %s"),
 
+	/**
+			"Chevauchement de périodes pour la référence de type '%s' et de nom '%s' entre une période de type '%s' commençant le %s et la période de type '%s' finissant le %s"),
+	 */
+	CHEVAUCHEMENT_PERIODE_SUIVANTE(
+			"Chevauchement de périodes pour la référence de type '%s' et de nom '%s' entre une période de type '%s' commençant le %s et la période de type '%s' finissant le %s"),
 
 	/**
-			"La création et la reconduction automatique d'un budget de type de période '%s' est impossible"),
+			"La reconduction automatique d'un budget pour la réfétence de type '%s' et de nom '%s' n'est pas possible car il n'existe encore aucun budget pour cette référence"),
 	 */
-	CREATION_ET_RECONDUCTION_AUTOMATIQUE_IMPOSSIBLE(
-			"La création et la reconduction automatique d'un budget de type de période '%s' est impossible"),
+	RECONDUCTION_AUTOMATIQUE_IMPOSSIBLE(
+			"La reconduction automatique d'un budget pour la réfétence de type '%s' et de nom '%s' n'est pas possible car il n'existe encore aucun budget pour cette référence"),
 
 	;
 

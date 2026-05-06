@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import fr.colline.monatis.comptes.model.CompteInterne;
+import fr.colline.monatis.comptes.service.CompteInterneService;
 import fr.colline.monatis.evaluations.EvaluationFonctionnelleErreur;
 import fr.colline.monatis.evaluations.EvaluationTechniqueErreur;
 import fr.colline.monatis.evaluations.model.Evaluation;
@@ -96,20 +96,6 @@ public class EvaluationService {
 		}
 	}
 
-	public List<Evaluation> rechercherTous(Sort tri) throws ServiceException {
-
-		Assert.notNull(tri, () -> "Le TRI pour la recherche de toutes les évaluations est obligatoire");
-
-		try {
-			return evaluationRepository.findAll(tri);
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					EvaluationTechniqueErreur.RECHERCHE_TOUS);
-		}
-	}
-
 	public void supprimerTous() throws ServiceException {
 
 		try {
@@ -123,103 +109,52 @@ public class EvaluationService {
 		}
 	}
 
-	public List<Evaluation> rechercherParCompteInterneId(Long compteInterneId) throws ServiceException {
-
-		try {
-			return evaluationRepository.findByCompteInterneIdOrderByDateSolde(compteInterneId);
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					EvaluationTechniqueErreur.RECHERCHE_PAR_COMPTE_INTERNE_ID,
-					compteInterneId);
-		}
-	}
-
-	public List<Evaluation> rechercherParCompteInterneIdEntreDateDebutEtDateFin(
-			Long compteInterneId,
-			LocalDate dateDebut, 
-			LocalDate dateFin) throws ServiceException {
-
-		try {
-			return evaluationRepository.findByCompteInterneIdAndDateSoldeBetweenOrderByDateSolde(compteInterneId, dateDebut, dateFin);
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					EvaluationTechniqueErreur.RECHERCHE_PAR_COMPTE_INTERNE_ID_ENTRE_DATE_DEBUT_ET_DATE_FIN,
-					compteInterneId,
-					dateDebut,
-					dateFin);
-		}
-	}
-
-	public List<Evaluation> rechercherParCompteInterneIdDepuisDateDebut(
-			Long compteInterneId, 
-			LocalDate dateDebut) throws ServiceException {
-
-		try {
-			return evaluationRepository.findByCompteInterneIdAndDateSoldeGreaterThanEqualOrderByDateSolde(compteInterneId, dateDebut);
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					EvaluationTechniqueErreur.RECHERCHE_PAR_COMPTE_INTERNE_ID_DEPUIS_DATE_DEBUT,
-					compteInterneId,
-					dateDebut);
-		}
-	}
-	
-	public Evaluation rechercherPremiereParCompteInterneIdDepuisDateCible(Long compteInterneId, LocalDate dateCible) throws ServiceException {
+	public Evaluation rechercherParCompteInterneIdEtDateSolde(Long compteInterneId, LocalDate dateSolde) throws ServiceException {
 		
 		try {
-			Optional<Evaluation> optional = evaluationRepository.findFirstByCompteInterneIdAndDateSoldeGreaterThanEqualOrderByDateSolde(
+			Optional<Evaluation> optional = evaluationRepository.findByCompteInterneIdAndDateSolde(
 					compteInterneId, 
-					dateCible);
+					dateSolde);
 			return optional.isEmpty() ? null : optional.get();
 		}
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					EvaluationTechniqueErreur.RECHERCHE_PREMIERE_PAR_COMPTE_INTERNE_ID_DEPUIS_DATE_CIBLE,
+					EvaluationTechniqueErreur.RECHERCHE_PAR_COMPTE_INTERNE_ID_ET_DATE_SOLDE,
 					compteInterneId,
-					dateCible);
+					dateSolde);
 		}
+		
 	}
 	
+	/**
+	 * Recherche la plus récente des évaluations telles que dateDebut <= evaluation.dateSole <= dateFin
+	 * 
+	 * @param compteInterne
+	 * @param dateDebut date à partir de laquelle on effectue la recherche (comprise dans la recherche)
+	 * @param dateFin date jusqu'à laquelle on effectue la recherche (comprise dans la recherche)
+	 * @return l'évaluation trouvée ou null s'il n'y en a pas
+	 * @throws ServiceException en cas de problème technique lors de l'exécution de la requête en base
+	 */
 	public Evaluation rechercherDerniereParCompteInterneEntreDateDebutEtDateFin(CompteInterne compteInterne, LocalDate dateDebut, LocalDate dateFin) throws ServiceException {
 
-			try {
-				Optional<Evaluation> optional = evaluationRepository.findFirstByCompteInterneIdAndDateSoldeBetweenOrderByDateSoldeDesc(
-						compteInterne.getId(), 
-						dateDebut,
-						dateFin);
-				return optional.isEmpty() ? null : optional.get();
-			}
-			catch (Throwable t) {
-				throw new ServiceException (
-						t,
-					EvaluationTechniqueErreur.RECHERCHE_DERNIERE_PAR_COMPTE_INTERNE_ENTRE_DATE_DEBUT_ET_DATE_FIN,
-						compteInterne.getIdentifiant(),
-						dateDebut,
-						dateFin);
-			}
-	}
+		LocalDate dateDebutRecherche = CompteInterneService.prendreDateSoldeInitialAuBesoin(compteInterne, dateDebut);
+		LocalDate dateFinRecherche = CompteInterneService.prendreDateClotureAuBesoin(compteInterne, dateFin);
 
-	public Evaluation rechercherDerniereParCompteInterneIdJusqueDateCible(Long compteInterneId, LocalDate dateCible) throws ServiceException {
-		
 		try {
-			Optional<Evaluation> optional = evaluationRepository.findFirstByCompteInterneIdAndDateSoldeLessThanEqualOrderByDateSoldeDesc(
-					compteInterneId, 
-					dateCible);
+			Optional<Evaluation> optional = evaluationRepository.findFirstByCompteInterneIdAndDateSoldeBetweenOrderByDateSoldeDesc(
+					compteInterne.getId(), 
+					dateDebutRecherche,
+					dateFinRecherche);
 			return optional.isEmpty() ? null : optional.get();
 		}
 		catch (Throwable t) {
 			throw new ServiceException (
 					t,
-					EvaluationTechniqueErreur.RECHERCHE_PAR_COMPTE_INTERNE_ID_JUSQUE_DATE_CIBLE,
-					compteInterneId,
-					dateCible);
+					EvaluationTechniqueErreur.RECHERCHE_DERNIERE_PAR_COMPTE_INTERNE_ENTRE_DATE_DEBUT_ET_DATE_FIN,
+					compteInterne.getIdentifiant(),
+					dateDebut,
+					dateFin);
 		}
 	}
 	
@@ -255,7 +190,7 @@ public class EvaluationService {
 		try {
 			evaluation = evaluationRepository.save(evaluation);
 			if ( evaluation.getCle() == null ) {
-				evaluation.setCle(String.format("AUTO-%010d", evaluation.getId()));
+				evaluation.setCle(String.format("EVAL-%010d", evaluation.getId()));
 				evaluation = evaluationRepository.save(evaluation);
 			}
 			return evaluation;
@@ -264,7 +199,8 @@ public class EvaluationService {
 			throw new ServiceException (
 					t,
 					EvaluationTechniqueErreur.ENREGISTREMENT,
-					evaluation.getCle());
+					evaluation.getCompteInterne().getIdentifiant(),
+					evaluation.getDateSolde());
 		}
 	}
 	
@@ -277,7 +213,8 @@ public class EvaluationService {
 			throw new ServiceException (
 					t,
 					EvaluationTechniqueErreur.SUPPRESSION,
-					evaluation.getCle());
+					evaluation.getCompteInterne().getIdentifiant(),
+					evaluation.getDateSolde());
 		}
 	}
 
@@ -305,14 +242,13 @@ public class EvaluationService {
 			Long evaluationId,
 			LocalDate dateSolde) throws ServiceException {
 
-		Evaluation evaluation = rechercherPremiereParCompteInterneIdDepuisDateCible(compteInterneId, dateSolde);
+		Evaluation evaluation = rechercherParCompteInterneIdEtDateSolde(compteInterneId, dateSolde);
 		
 		if ( evaluation != null 
-				&& evaluation.getDateSolde().equals(dateSolde) 
 				&& ! evaluation.getId().equals(evaluationId) ) {
 			throw new ServiceException(
 					EvaluationFonctionnelleErreur.UNE_SEULE_EVALUATION_PAR_JOUR_PAR_COMPTE_INTERNE,
-					evaluation.getCle(), 
+					evaluation.getCompteInterne().getIdentifiant(),
 					evaluation.getDateSolde());
 		}
 	}

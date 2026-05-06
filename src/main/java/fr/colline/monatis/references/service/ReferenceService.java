@@ -3,7 +3,6 @@ package fr.colline.monatis.references.service;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -85,21 +84,6 @@ public abstract class ReferenceService<T extends Reference> {
 
 		try {
 			return getRepository().findAll();
-		}
-		catch (Throwable t) {
-			throw new ServiceException (
-					t,
-					ReferenceTechniqueErreur.RECHERCHE_TOUS,
-					getTClass().getSimpleName());
-		}
-	}
-
-	public List<T> rechercherTous(Sort tri) throws ServiceException {
-
-		Assert.notNull(tri,() -> "Le TRI pour la recherche des références de type '" + getTClass().getSimpleName() + "' est obligatoire");
-
-		try {
-			return getRepository().findAll(tri);
 		}
 		catch (Throwable t) {
 			throw new ServiceException (

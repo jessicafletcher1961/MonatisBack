@@ -24,6 +24,12 @@ public enum BudgetControleErreur implements MonatisErreur {
 	RECONDUCTION_SANS_HISTORIQUE(
 			"Aucun budget n'existe encore pour la référence de type '%s' de nom '%s'"),
 	
+	/**
+			"Aucun budget avec la cle '%s' n'a été trouvé"),
+	 */
+	NON_TROUVE_PAR_CLE(
+			"Aucun budget avec la cle '%s' n'a été trouvé"),
+	
 	;
 	
 	private final TypeDomaine typeDomaine = TypeDomaine.BUDGET;

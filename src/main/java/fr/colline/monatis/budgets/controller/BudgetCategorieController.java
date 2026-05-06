@@ -29,48 +29,48 @@ public class BudgetCategorieController extends BudgetController<Categorie> {
 
 	@Autowired private ControllerVerificateurService verificateur;
 	@Autowired private CategorieService categorieService;
-
-	@GetMapping("/all")
-	public List<BudgetsParReferenceResponseDto> getAllBudgets() throws ServiceException, ControllerException {
-		
-		return super.getAllBudgets();
-	}
-	
-	@GetMapping("/get/{nom}")
-	public BudgetsParReferenceResponseDto getBudgetsParNomReference(
-			@PathVariable (name = "nom") String nomCategorie) throws ServiceException, ControllerException {
-
-		return super.getBudgetsParNomReference(nomCategorie);
-	}
-	
-	@PostMapping("/new")
-	public BudgetsParReferenceResponseDto creerBudget(
-			@RequestBody BudgetRequestDto dto) throws ControllerException, ServiceException {
-
-		return super.creerBudget(dto);
-	}
-
-	@PostMapping("/next")
-	public BudgetsParReferenceResponseDto reconduireBudget(
-			@RequestBody BudgetRequestDto dto) throws ControllerException, ServiceException {
-
-		return super.reconduireBudget(dto);
-	}
-
-	@PutMapping("/mod")
-	public BudgetsParReferenceResponseDto modifierBudget(
-			@RequestBody BudgetRequestDto dto) throws ControllerException, ServiceException {
-
-		return super.modifierBudget(dto);
-	}
-
-	@DeleteMapping("/del")
-	@ResponseStatus(value = HttpStatus.NO_CONTENT)
-	public void supprimerBudget(
-			@RequestBody BudgetRequestDto dto) throws ControllerException, ServiceException {
-
-		super.supprimerBudget(dto);
-	}
+//
+//	@GetMapping("/all")
+//	public List<BudgetsParReferenceResponseDto> getAllBudgets() throws ServiceException, ControllerException {
+//		
+//		return super.getAllBudgets();
+//	}
+//	
+//	@GetMapping("/get/{nom}")
+//	public BudgetsParReferenceResponseDto getBudgetsParNomReference(
+//			@PathVariable (name = "nom") String nomCategorie) throws ServiceException, ControllerException {
+//
+//		return super.getBudgetsParNomReference(nomCategorie);
+//	}
+//	
+//	@PostMapping("/new")
+//	public BudgetsParReferenceResponseDto creerBudget(
+//			@RequestBody BudgetRequestDto dto) throws ControllerException, ServiceException {
+//
+//		return super.creerBudget(dto);
+//	}
+//
+//	@PostMapping("/next")
+//	public BudgetsParReferenceResponseDto reconduireBudget(
+//			@RequestBody BudgetRequestDto dto) throws ControllerException, ServiceException {
+//
+//		return super.reconduireBudget(dto);
+//	}
+//
+//	@PutMapping("/mod")
+//	public BudgetsParReferenceResponseDto modifierBudget(
+//			@RequestBody BudgetRequestDto dto) throws ControllerException, ServiceException {
+//
+//		return super.modifierBudget(dto);
+//	}
+//
+//	@DeleteMapping("/del")
+//	@ResponseStatus(value = HttpStatus.NO_CONTENT)
+//	public void supprimerBudget(
+//			@RequestBody BudgetRequestDto dto) throws ControllerException, ServiceException {
+//
+//		super.supprimerBudget(dto);
+//	}
 
 	@Override
 	protected ReferenceService<Categorie> getReferenceService() {

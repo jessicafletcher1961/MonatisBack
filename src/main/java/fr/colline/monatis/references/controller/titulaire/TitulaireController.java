@@ -1,10 +1,9 @@
 package fr.colline.monatis.references.controller.titulaire;
 
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,9 +19,10 @@ import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ControllerVerificateurService;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.references.controller.ReferenceResponseDto;
+import fr.colline.monatis.references.controller.ReferenceSelectionRequestDto;
 import fr.colline.monatis.references.model.Titulaire;
-import fr.colline.monatis.references.model.TypeReference;
 import fr.colline.monatis.references.service.TitulaireService;
+import fr.colline.monatis.typologies.model.TypeReference;
 import jakarta.transaction.Transactional;
 
 @RestController
@@ -38,14 +38,12 @@ public class TitulaireController {
 
 	@GetMapping("/all")
 	public List<ReferenceResponseDto> getAllReference() throws ServiceException {
-		
-		List<ReferenceResponseDto> resultat = new ArrayList<>();
-		Sort tri = Sort.by("nom");
-		List<Titulaire> liste = titulaireService.rechercherTous(tri);
-		for ( Titulaire titulaire : liste ) {
-			resultat.add(TitulaireResponseDtoMapper.mapperModelToBasicResponseDto(titulaire));
-		}
-		return resultat;
+
+		return titulaireService.rechercherTous()
+				.stream()
+				.sorted((t1, t2) -> {return t1.getNom().compareTo(t2.getNom());})
+				.map((t) -> {return TitulaireResponseDtoMapper.mapperModelToBasicResponseDto(t);})
+				.toList();
 	}
 
 	@GetMapping("/get/{nom}")
@@ -84,6 +82,24 @@ public class TitulaireController {
 
 		Titulaire titulaire = verificateur.verifierTitulaire(nom, OBLIGATOIRE);
 		titulaireService.supprimerReference(titulaire);
+	}
+
+	@PostMapping("/selection")
+	public List<ReferenceResponseDto>selectionnerTitulaire (
+			@RequestBody ReferenceSelectionRequestDto requestDto) throws ControllerException, ServiceException {
+		
+		final String nom = verificateur.standardiserIdentifiantFonctionnel(requestDto.nomContient);
+		final String libelle = verificateur.verifierLibelle(requestDto.libelleContient, FACULTATIF, null);
+		
+		return titulaireService.rechercherTous()
+				.stream()
+				.filter((t) -> {return nom == null 
+						|| t.getNom().contains(nom);})
+				.filter((t) -> {return libelle == null 
+						|| t.getLibelle().toUpperCase().contains(libelle.toUpperCase());})
+				.sorted(Comparator.comparing(Titulaire::getNom))
+				.map((t) -> {return TitulaireResponseDtoMapper.mapperModelToBasicResponseDto(t);})
+				.toList();
 	}
 
 	private Titulaire mapperCreationRequestDtoToModel(TitulaireRequestDto dto, Titulaire titulaire) throws ControllerException, ServiceException {

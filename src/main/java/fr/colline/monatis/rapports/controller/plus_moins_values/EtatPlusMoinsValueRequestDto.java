@@ -10,6 +10,7 @@ public class EtatPlusMoinsValueRequestDto implements Serializable {
 
 	public List<String> identifiantsComptesInternes;
 	public List<String> codesTypesFonctionnements;
+	public String nomBanque;
 	public String nomTitulaire;
 	
 	public LocalDate dateDebut;

@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.operations.model.OperationLigne;
-import fr.colline.monatis.operations.model.TypeOperation;
 import fr.colline.monatis.operations.service.OperationService;
 import fr.colline.monatis.rapports.model.composants.depense_recette.DepenseRecetteCategorieLigne;
 import fr.colline.monatis.rapports.model.composants.depense_recette.DepenseRecetteCategoriePeriode;
@@ -18,8 +17,9 @@ import fr.colline.monatis.rapports.model.composants.depense_recette.DepenseRecet
 import fr.colline.monatis.references.model.Beneficiaire;
 import fr.colline.monatis.references.model.Categorie;
 import fr.colline.monatis.references.model.SousCategorie;
+import fr.colline.monatis.typologies.model.TypeOperation;
+import fr.colline.monatis.typologies.model.TypePeriode;
 import fr.colline.monatis.utils.DateEtPeriodeUtils;
-import fr.colline.monatis.utils.TypePeriode;
 
 @Service
 class DepenseRecetteService {
@@ -173,13 +173,11 @@ class DepenseRecetteService {
 			LocalDate dateDebutPeriode, 
 			LocalDate dateFinPeriode) throws ServiceException {
 		
-		List<OperationLigne> operationsLignes = operationService.rechercherOperationsLignesParSousCategorieIdEntreDateDebutEtDateFin(
+		List<OperationLigne> operationsLignes = operationService.rechercherOperationsLignesParSousCategorieIdEtCriteres(
 				sousCategorie.getId(),
+				beneficiaire.getId(),
 				dateDebutPeriode,
 				dateFinPeriode)
-				.stream()
-				.filter((ol) -> {return beneficiaire == null || ol.getBeneficiaires().contains(beneficiaire);})
-				.filter((ol) -> {return ol.getOperation().getTypeOperation() == TypeOperation.DEPENSE || ol.getOperation().getTypeOperation() == TypeOperation.RECETTE;})
 				.toList();
 		
 		Long montantDepenseEnCentimes = operationsLignes

@@ -7,10 +7,10 @@ import fr.colline.monatis.exceptions.TypeErreur;
 public enum EvaluationFonctionnelleErreur  implements MonatisErreur {
 
 	/**
-			"Il ne peut y avoir qu'une seule évaluation par jour et par compte interne, or une évaluation de clé '%' existe déjà à la date %s"),
+			"Il ne peut y avoir qu'une seule évaluation par jour et par compte interne, or une évaluation existe déjà pour le compte d'identifiant '%s' à la date %s"),
 	 */
 	UNE_SEULE_EVALUATION_PAR_JOUR_PAR_COMPTE_INTERNE(
-			"Il ne peut y avoir qu'une seule évaluation par jour et par compte interne, or une évaluation de clé '%' existe déjà à la date %s"),
+			"Il ne peut y avoir qu'une seule évaluation par jour et par compte interne, or une évaluation existe déjà pour le compte d'identifiant '%s' à la date %s"),
 	;
 	
 	private final TypeDomaine typeDomaine = TypeDomaine.EVALUATION;

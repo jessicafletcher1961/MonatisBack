@@ -2,7 +2,7 @@ package fr.colline.monatis.rapports.model.composants.bilan_patrimoine;
 
 import java.util.List;
 
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
+import fr.colline.monatis.typologies.model.TypeFonctionnement;
 
 public class BilanPatrimoineTypeFonctionnementLigne {
 

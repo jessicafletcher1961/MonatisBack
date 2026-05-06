@@ -10,6 +10,8 @@ import java.util.Set;
 
 import fr.colline.monatis.references.model.Banque;
 import fr.colline.monatis.references.model.Titulaire;
+import fr.colline.monatis.typologies.model.TypeCompte;
+import fr.colline.monatis.typologies.model.TypeFonctionnement;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

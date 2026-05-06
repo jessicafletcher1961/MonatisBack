@@ -3,6 +3,7 @@ package fr.colline.monatis.operations.controller.response;
 import java.util.List;
 
 import fr.colline.monatis.comptes.controller.CompteResponseDto;
+import fr.colline.monatis.typologies.controller.TypologieResponseDto;
 
 public class CompatibilitesResponseDto {
 
@@ -10,8 +11,8 @@ public class CompatibilitesResponseDto {
 	
 	public List<CompteResponseDto> comptesCompatiblesRecette;
 
-	public List<TypeOperationResponseDto> typesOperationsCompatiblesDepense;
+	public List<TypologieResponseDto> typesOperationsCompatiblesDepense;
 
-	public List<TypeOperationResponseDto> typesOperationsCompatiblesRecette;
+	public List<TypologieResponseDto> typesOperationsCompatiblesRecette;
 
 }

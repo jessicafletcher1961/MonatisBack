@@ -1,7 +1,5 @@
 package fr.colline.monatis.references.controller;
 
-import fr.colline.monatis.exceptions.ControllerException;
-import fr.colline.monatis.exceptions.GeneriqueTechniqueErreur;
 import fr.colline.monatis.references.controller.banque.BanqueResponseDtoMapper;
 import fr.colline.monatis.references.controller.beneficiaire.BeneficiaireResponseDtoMapper;
 import fr.colline.monatis.references.controller.categorie.CategorieResponseDtoMapper;
@@ -16,7 +14,7 @@ import fr.colline.monatis.references.model.Titulaire;
 
 public class ReferenceResponseDtoMapper {
 
-	public static ReferenceResponseDto mapperModelToBasicResponseDto(Reference reference) throws ControllerException {
+	public static ReferenceResponseDto mapperModelToBasicResponseDto(Reference reference) {
 
 		if ( Banque.class.isAssignableFrom(reference.getClass()) ) {
 			return BanqueResponseDtoMapper.mapperModelToBasicResponseDto((Banque) reference);
@@ -34,12 +32,10 @@ public class ReferenceResponseDtoMapper {
 			return TitulaireResponseDtoMapper.mapperModelToBasicResponseDto((Titulaire) reference);
 		}
 		
-		throw new ControllerException(
-				GeneriqueTechniqueErreur.CLASSE_NON_TRAITEE, 
-				reference.getClass().getSimpleName());
+		return null;
 	}
 
-	public static ReferenceResponseDto mapperModelToSimpleResponseDto(Reference reference) throws ControllerException {
+	public static ReferenceResponseDto mapperModelToSimpleResponseDto(Reference reference) {
 
 		if ( Banque.class.isAssignableFrom(reference.getClass()) ) {
 			return BanqueResponseDtoMapper.mapperModelToSimpleResponseDto((Banque) reference);
@@ -56,13 +52,11 @@ public class ReferenceResponseDtoMapper {
 		else if ( Titulaire.class.isAssignableFrom(reference.getClass()) ) {
 			return TitulaireResponseDtoMapper.mapperModelToSimpleResponseDto((Titulaire) reference);
 		}
-		
-		throw new ControllerException(
-				GeneriqueTechniqueErreur.CLASSE_NON_TRAITEE, 
-				reference.getClass().getSimpleName());
+
+		return null;
 	}
 
-	public static ReferenceResponseDto mapperModelToDetailedResponseDto(Reference reference) throws ControllerException {
+	public static ReferenceResponseDto mapperModelToDetailedResponseDto(Reference reference) {
 
 		if ( Banque.class.isAssignableFrom(reference.getClass()) ) {
 			return BanqueResponseDtoMapper.mapperModelToDetailedResponseDto((Banque) reference);
@@ -80,9 +74,7 @@ public class ReferenceResponseDtoMapper {
 			return TitulaireResponseDtoMapper.mapperModelToDetailedResponseDto((Titulaire) reference);
 		}
 		
-		throw new ControllerException(
-				GeneriqueTechniqueErreur.CLASSE_NON_TRAITEE, 
-				reference.getClass().getSimpleName());
+		return null;
 	}
 
 }

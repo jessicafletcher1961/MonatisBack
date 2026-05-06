@@ -25,13 +25,13 @@ import fr.colline.monatis.comptes.CompteTechniqueErreur;
 import fr.colline.monatis.comptes.model.CompteExterne;
 import fr.colline.monatis.comptes.model.CompteInterne;
 import fr.colline.monatis.comptes.model.CompteTechnique;
-import fr.colline.monatis.comptes.model.TypeCompte;
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.comptes.service.CompteExterneService;
 import fr.colline.monatis.comptes.service.CompteInterneService;
 import fr.colline.monatis.comptes.service.CompteTechniqueService;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.references.model.Titulaire;
+import fr.colline.monatis.typologies.model.TypeCompte;
+import fr.colline.monatis.typologies.model.TypeFonctionnement;
 import jakarta.transaction.Transactional;
 
 @RestController

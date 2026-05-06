@@ -2,6 +2,7 @@ package fr.colline.monatis.comptes.model;
 
 import java.util.Objects;
 
+import fr.colline.monatis.typologies.model.TypeCompte;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

@@ -12,13 +12,12 @@ import fr.colline.monatis.operations.controller.response.OperationLigneDetailedR
 import fr.colline.monatis.operations.controller.response.OperationLigneSimpleResponseDto;
 import fr.colline.monatis.operations.controller.response.OperationResponseDto;
 import fr.colline.monatis.operations.controller.response.OperationSimpleResponseDto;
-import fr.colline.monatis.operations.controller.response.TypeOperationResponseDto;
 import fr.colline.monatis.operations.model.Operation;
 import fr.colline.monatis.operations.model.OperationLigne;
-import fr.colline.monatis.operations.model.TypeOperation;
 import fr.colline.monatis.references.controller.beneficiaire.BeneficiaireResponseDtoMapper;
 import fr.colline.monatis.references.controller.souscategorie.SousCategorieResponseDtoMapper;
 import fr.colline.monatis.references.model.Beneficiaire;
+import fr.colline.monatis.typologies.controller.TypologieResponseDtoMapper;
 
 public class OperationResponseDtoMapper {
 
@@ -52,7 +51,7 @@ public class OperationResponseDtoMapper {
 
 		OperationSimpleResponseDto dto = new OperationSimpleResponseDto();
 		
-		dto.typeOperation = mapperTypeOperation(operation.getTypeOperation());
+		dto.typeOperation = TypologieResponseDtoMapper.mapperModelToResponseDto(operation.getTypeOperation());
 		dto.numero = operation.getNumero();
 		dto.dateValeur = operation.getDateValeur();
 		dto.montantEnCentimes = operation.getMontantEnCentimes();
@@ -78,7 +77,7 @@ public class OperationResponseDtoMapper {
 
 		OperationDetailedResponseDto dto = new OperationDetailedResponseDto();
 		
-		dto.typeOperation = mapperTypeOperation(operation.getTypeOperation());
+		dto.typeOperation = TypologieResponseDtoMapper.mapperModelToResponseDto(operation.getTypeOperation());
 		dto.numero = operation.getNumero();
 		dto.dateValeur = operation.getDateValeur();
 		dto.montantEnCentimes = operation.getMontantEnCentimes();
@@ -97,18 +96,6 @@ public class OperationResponseDtoMapper {
 			});
 		}
 
-		return dto;
-	}
-
-	public static TypeOperationResponseDto mapperTypeOperation(TypeOperation typeOperation) {
-		
-		TypeOperationResponseDto dto = new TypeOperationResponseDto();
-		
-		dto.name = typeOperation.name();
-		dto.code = typeOperation.getCode();
-		dto.libelleCourt = typeOperation.getLibelleCourt();
-		dto.libelle = typeOperation.getLibelle();
-		
 		return dto;
 	}
 

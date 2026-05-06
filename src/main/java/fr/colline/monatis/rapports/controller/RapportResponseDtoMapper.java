@@ -6,16 +6,17 @@ import fr.colline.monatis.comptes.model.Compte;
 import fr.colline.monatis.comptes.model.CompteExterne;
 import fr.colline.monatis.comptes.model.CompteInterne;
 import fr.colline.monatis.comptes.model.CompteTechnique;
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.GeneriqueTechniqueErreur;
 import fr.colline.monatis.operations.model.Operation;
+import fr.colline.monatis.operations.model.OperationLigne;
 import fr.colline.monatis.rapports.controller.bilan_patrimoine.BilanPatrimoineCompteInterneLigneResponseDto;
 import fr.colline.monatis.rapports.controller.bilan_patrimoine.BilanPatrimoineCompteInternePeriodeResponseDto;
 import fr.colline.monatis.rapports.controller.bilan_patrimoine.BilanPatrimoinePeriodeResponseDto;
 import fr.colline.monatis.rapports.controller.bilan_patrimoine.BilanPatrimoineTypeFonctionnementLigneResponseDto;
 import fr.colline.monatis.rapports.controller.bilan_patrimoine.BilanPatrimoineTypeFonctionnementPeriodeResponseDto;
 import fr.colline.monatis.rapports.controller.bilan_patrimoine.EtatBilanPatrimoineResponseDto;
+import fr.colline.monatis.rapports.controller.commun.BanqueResponseDto;
 import fr.colline.monatis.rapports.controller.commun.BeneficiaireResponseDto;
 import fr.colline.monatis.rapports.controller.commun.CategorieResponseDto;
 import fr.colline.monatis.rapports.controller.commun.EnteteCompteExterneResponseDto;
@@ -24,8 +25,6 @@ import fr.colline.monatis.rapports.controller.commun.EnteteCompteResponseDto;
 import fr.colline.monatis.rapports.controller.commun.EnteteCompteTechniqueResponseDto;
 import fr.colline.monatis.rapports.controller.commun.SousCategorieResponseDto;
 import fr.colline.monatis.rapports.controller.commun.TitulaireResponseDto;
-import fr.colline.monatis.rapports.controller.commun.TypeFonctionnementResponseDto;
-import fr.colline.monatis.rapports.controller.commun.TypePeriodeResponseDto;
 import fr.colline.monatis.rapports.controller.depense_recette.DepenseRecetteCategorieLigneResponseDto;
 import fr.colline.monatis.rapports.controller.depense_recette.DepenseRecetteCategoriePeriodeResponseDto;
 import fr.colline.monatis.rapports.controller.depense_recette.DepenseRecettePeriodeResponseDto;
@@ -40,6 +39,10 @@ import fr.colline.monatis.rapports.controller.plus_moins_values.PlusMoinsValueTy
 import fr.colline.monatis.rapports.controller.plus_moins_values.PlusMoinsValueTypeFonctionnementPeriodeResponseDto;
 import fr.colline.monatis.rapports.controller.releve_compte.ReleveCompteOperationResponseDto;
 import fr.colline.monatis.rapports.controller.releve_compte.ReleveCompteResponseDto;
+import fr.colline.monatis.rapports.controller.releve_non_categorise.ReleveNonCategoriseOperationLigneResponseDto;
+import fr.colline.monatis.rapports.controller.releve_non_categorise.ReleveNonCategoriseResponseDto;
+import fr.colline.monatis.rapports.controller.releve_sous_categorie.ReleveSousCategorieOperationLigneResponseDto;
+import fr.colline.monatis.rapports.controller.releve_sous_categorie.ReleveSousCategorieResponseDto;
 import fr.colline.monatis.rapports.controller.remunerations_frais.EtatRemunerationsFraisResponseDto;
 import fr.colline.monatis.rapports.controller.remunerations_frais.RemunerationsFraisCompteInterneLigneResponseDto;
 import fr.colline.monatis.rapports.controller.remunerations_frais.RemunerationsFraisCompteInternePeriodeResponseDto;
@@ -51,7 +54,9 @@ import fr.colline.monatis.rapports.model.EtatBilanPatrimoine;
 import fr.colline.monatis.rapports.model.EtatDepenseRecette;
 import fr.colline.monatis.rapports.model.EtatPlusMoinsValue;
 import fr.colline.monatis.rapports.model.EtatRemunerationsFrais;
+import fr.colline.monatis.rapports.model.ReleveNonCategorise;
 import fr.colline.monatis.rapports.model.ReleveOperationCompte;
+import fr.colline.monatis.rapports.model.ReleveSousCategorie;
 import fr.colline.monatis.rapports.model.ResumeCompteInterne;
 import fr.colline.monatis.rapports.model.composants.bilan_patrimoine.BilanPatrimoineCompteInterneLigne;
 import fr.colline.monatis.rapports.model.composants.bilan_patrimoine.BilanPatrimoineCompteInternePeriode;
@@ -73,11 +78,16 @@ import fr.colline.monatis.rapports.model.composants.remunerations_frais.Remunera
 import fr.colline.monatis.rapports.model.composants.remunerations_frais.RemunerationsFraisPeriode;
 import fr.colline.monatis.rapports.model.composants.remunerations_frais.RemunerationsFraisTypeFonctionnementLigne;
 import fr.colline.monatis.rapports.model.composants.remunerations_frais.RemunerationsFraisTypeFonctionnementPeriode;
+import fr.colline.monatis.references.model.Banque;
 import fr.colline.monatis.references.model.Beneficiaire;
 import fr.colline.monatis.references.model.Categorie;
 import fr.colline.monatis.references.model.SousCategorie;
 import fr.colline.monatis.references.model.Titulaire;
-import fr.colline.monatis.utils.TypePeriode;
+import fr.colline.monatis.typologies.controller.TypeOperationResponseDto;
+import fr.colline.monatis.typologies.controller.TypologieResponseDto;
+import fr.colline.monatis.typologies.model.TypeFonctionnement;
+import fr.colline.monatis.typologies.model.TypeOperation;
+import fr.colline.monatis.typologies.model.TypePeriode;
 
 public class RapportResponseDtoMapper {
 
@@ -137,6 +147,83 @@ public class RapportResponseDtoMapper {
 		dto.identifiantAutreCompte = operation.getCompteRecette().getIdentifiant();
 		dto.libelleAutreCompte = operation.getCompteRecette().getLibelle();
 		dto.codeTypeAutreCompte = operation.getCompteRecette().getTypeCompte().getCode();
+
+		return dto;
+	}
+	
+	// --- Liste des lignes d'opération non catégorisées
+	
+	public static ReleveNonCategoriseResponseDto mapperReleveNonCategorise(ReleveNonCategorise releve) throws ControllerException {
+		
+		ReleveNonCategoriseResponseDto dto = new ReleveNonCategoriseResponseDto();
+		
+		dto.dateDebutReleve = releve.getDateDebutReleve();
+		dto.dateFinReleve = releve.getDateFinReleve();
+
+		dto.operationsLignes = new ArrayList<ReleveNonCategoriseOperationLigneResponseDto>();
+		for ( OperationLigne operationLigne : releve.getOperationsLignes() ) {
+			dto.operationsLignes.add(mapperOperationLigneNonCategorisee(operationLigne));
+		}
+		
+		return dto;
+	}
+
+	private static ReleveNonCategoriseOperationLigneResponseDto mapperOperationLigneNonCategorisee(OperationLigne operationLigne) throws ControllerException {
+		
+		ReleveNonCategoriseOperationLigneResponseDto dto = new ReleveNonCategoriseOperationLigneResponseDto();
+		
+		dto.dateComptabilisation = operationLigne.getDateComptabilisation();
+		dto.libelle = operationLigne.getLibelle();
+		dto.montantEnEuros = (double) (operationLigne.getMontantEnCentimes() / 100.00);
+		dto.numeroOperation = operationLigne.getOperation().getNumero();
+		dto.numeroLigne = operationLigne.getNumeroLigne();
+		dto.typeOperation = mapperTypeOperation(operationLigne.getOperation().getTypeOperation());
+		dto.compteDepense = mapperEnteteCompte(operationLigne.getOperation().getCompteDepense());
+		dto.compteRecette = mapperEnteteCompte(operationLigne.getOperation().getCompteRecette());
+
+		dto.beneficiaires = new ArrayList<BeneficiaireResponseDto>();
+		for ( Beneficiaire beneficiaire : operationLigne.getBeneficiaires() ) {
+			dto.beneficiaires.add(mapperBeneficiaire(beneficiaire));
+		}
+		
+		return dto;
+	}
+	
+	// --- Liste des opérations (lignes) pour une sous-categorie donnée
+	
+	public static ReleveSousCategorieResponseDto mapperReleveSousCategorie(ReleveSousCategorie releve) throws ControllerException {
+
+		ReleveSousCategorieResponseDto dto = new ReleveSousCategorieResponseDto();
+		
+		dto.dateDebutReleve = releve.getDateDebutReleve();
+		dto.dateFinReleve = releve.getDateFinReleve();
+
+		dto.operationsLignes = new ArrayList<ReleveSousCategorieOperationLigneResponseDto>();
+		for ( OperationLigne operationLigne : releve.getOperationsLignes() ) {
+			dto.operationsLignes.add(mapperOperationLigneSousCategorisee(operationLigne));
+		}
+
+		return dto;
+	}
+
+	private static ReleveSousCategorieOperationLigneResponseDto mapperOperationLigneSousCategorisee(
+			OperationLigne operationLigne) throws ControllerException {
+		
+		ReleveSousCategorieOperationLigneResponseDto dto = new ReleveSousCategorieOperationLigneResponseDto();
+		
+		dto.dateComptabilisation = operationLigne.getDateComptabilisation();
+		dto.libelle = operationLigne.getLibelle();
+		dto.montantEnEuros = (double) (operationLigne.getMontantEnCentimes() / 100.00);
+		dto.numeroOperation = operationLigne.getOperation().getNumero();
+		dto.numeroLigne = operationLigne.getNumeroLigne();
+		dto.typeOperation = mapperTypeOperation(operationLigne.getOperation().getTypeOperation());
+		dto.compteDepense = mapperEnteteCompte(operationLigne.getOperation().getCompteDepense());
+		dto.compteRecette = mapperEnteteCompte(operationLigne.getOperation().getCompteRecette());
+
+		dto.beneficiaires = new ArrayList<BeneficiaireResponseDto>();
+		for ( Beneficiaire beneficiaire : operationLigne.getBeneficiaires() ) {
+			dto.beneficiaires.add(mapperBeneficiaire(beneficiaire));
+		}
 
 		return dto;
 	}
@@ -299,15 +386,15 @@ public class RapportResponseDtoMapper {
 		dto.dateDebutEtat = etat.getDateDebutEtat();
 		dto.dateFinEtat = etat.getDateFinEtat();
 		dto.typePeriode = mapperTypePeriode(etat.getTypePeriode());
-		
 		dto.comptesInternes = new ArrayList<EnteteCompteResponseDto>();
 		for ( CompteInterne compteInterne : etat.getComptesInternes() ) {
 			dto.comptesInternes.add(mapperEnteteCompte(compteInterne));
 		}
-		dto.typesFonctionnements = new ArrayList<TypeFonctionnementResponseDto>();
+		dto.typesFonctionnements = new ArrayList<>();
 		for ( TypeFonctionnement typeFonctionnement : etat.getTypesFonctionnements() ) {
 			dto.typesFonctionnements.add(mapperTypeFonctionnement(typeFonctionnement));
 		}
+		dto.banque = mapperBanque(etat.getBanque());
 		dto.titulaire = mapperTitulaire(etat.getTitulaire());
 
 		dto.lignesTypeFonctionnement = new ArrayList<PlusMoinsValueTypeFonctionnementLigneResponseDto>();
@@ -322,13 +409,17 @@ public class RapportResponseDtoMapper {
 		return dto;	
 	}
 
-	private static PlusMoinsValuePeriodeResponseDto mapperPlusMoinsValuePeriode(PlusMoinsValuePeriode plusMoinsValuePeriode) {
+	private static PlusMoinsValuePeriodeResponseDto mapperPlusMoinsValuePeriode(PlusMoinsValuePeriode etat) {
 		
 		PlusMoinsValuePeriodeResponseDto dto = new PlusMoinsValuePeriodeResponseDto();
 		
-		dto.dateDebutPeriode = plusMoinsValuePeriode.getDateDebutPeriode();
-		dto.dateFinPeriode = plusMoinsValuePeriode.getDateFinPeriode();
-		dto.montantPlusMoinsValuePotentielleEnCentimes = (Double) (plusMoinsValuePeriode.getMontantPlusMoinsValuePotentielleEnCentimes() / 100.00);
+		dto.dateDebutPeriode = etat.getDateDebutPeriode();
+		dto.dateFinPeriode = etat.getDateFinPeriode();
+		
+		dto.montantPlusMoinsValueNetteEnEuros = (double) (etat.getMontantPlusMoinsValueNetteEnCentimes() / 100.00);
+		dto.tauxPlusMoinsValueNette = etat.getTauxPlusMoinsValueNette();
+		dto.montantFraisEnEuros = (double) (etat.getMontantFraisEnCentimes() / 100.00);
+		dto.tauxFrais = etat.getTauxFrais();
 
 		return dto;
 	}
@@ -340,6 +431,7 @@ public class RapportResponseDtoMapper {
 		int nombrePeriodes = etat.getCumulsPeriodes().length;
 
 		dto.typeFonctionnement = mapperTypeFonctionnement(etat.getTypeFonctionnement());
+		
 		dto.lignesCompteInterne = new ArrayList<PlusMoinsValueCompteInterneLigneResponseDto>();
 		for ( PlusMoinsValueCompteInterneLigne ligneCompteInterne : etat.getLignesCompteInterne() ) {
 			dto.lignesCompteInterne.add(mapperPlusMoinsValueCompteInterneLigne(ligneCompteInterne));
@@ -358,7 +450,11 @@ public class RapportResponseDtoMapper {
 		
 		dto.dateDebutPeriode = etat.getDateDebutPeriode();
 		dto.dateFinPeriode = etat.getDateFinPeriode();
-		dto.montantPlusMoinsValuePotentielleEnCentimes = (Double) (etat.getMontantPlusMoinsValuePotentielleEnCentimes() / 100.00);
+		
+		dto.montantPlusMoinsValueNetteEnEuros = (double) (etat.getMontantPlusMoinsValueNetteEnCentimes() / 100.00);
+		dto.tauxPlusMoinsValueNette = etat.getTauxPlusMoinsValueNette();
+		dto.montantFraisEnEuros = (double) (etat.getMontantFraisEnCentimes() / 100.00);
+		dto.tauxFrais = etat.getTauxFrais();
 		
 		return dto;
 	}
@@ -384,13 +480,14 @@ public class RapportResponseDtoMapper {
 
 		dto.dateDebutperiode = etat.getDateDebutPeriode();
 		dto.dateFinPeriode = etat.getDateFinPeriode();
+		
 		dto.montantSoldeInitialEnEuros = (double) (etat.getMontantSoldeInitialEnCentimes() / 100.00);
+		dto.montantOperationsEnEuros = (double) (etat.getMontantOperationsEnCentimes() / 100.00);
+		dto.montantPlusMoinsValueNetteEnEuros = (double) (etat.getMontantPlusMoinsValueNetteEnCentimes() / 100.00);
+		dto.tauxPlusMoinsValueNette = etat.getTauxPlusMoinsValueNette();
 		dto.montantSoldeFinalEnEuros = (double) (etat.getMontantSoldeFinalEnCentimes() / 100.00);
-		dto.montantMouvementEnEuros = (double) (etat.getMontantMouvementTransactionEnCentimes() / 100.00);
-		dto.montantTechniqueEnEuros = (double) (etat.getMontantMouvementTechniqueEnCentimes() / 100.00);
-		dto.montantPlusMoinsValuePotentielleEnEuros = (double) (etat.getMontantPlusMoinsValuePotentielleEnCentimes() / 100.00);
-		dto.tauxPlusMoinsValuePotentielle = etat.getTauxPlusMoinsValuePotentielle();
-		dto.montantPlusMoinsValueRealiseeEnEuros = (double) (etat.getMontantPlusValueRealiseeEnCentimes() / 100.00);
+		dto.montantFraisEnEuros = (double) (etat.getMontantFraisEnCentimes() / 100.00);
+		dto.tauxFrais = etat.getTauxFrais();
 		
 		return dto;
 	}
@@ -411,7 +508,7 @@ public class RapportResponseDtoMapper {
 		for ( CompteInterne compteInterne : etat.getComptesInternes() ) {
 			dto.comptesInternes.add(mapperEnteteCompte(compteInterne));
 		}
-		dto.typesFonctionnements = new ArrayList<TypeFonctionnementResponseDto>();
+		dto.typesFonctionnements = new ArrayList<TypologieResponseDto>();
 		for ( TypeFonctionnement typeFonctionnement : etat.getTypesFonctionnements() ) {
 			dto.typesFonctionnements.add(mapperTypeFonctionnement(typeFonctionnement));
 		}
@@ -451,6 +548,7 @@ public class RapportResponseDtoMapper {
 		int nombrePeriodes = etat.getCumuls().length;
 
 		dto.typeFonctionnement = mapperTypeFonctionnement(etat.getTypeFonctionnement());
+
 		dto.lignesCompteInterne = new ArrayList<RemunerationsFraisCompteInterneLigneResponseDto>();
 		for ( RemunerationsFraisCompteInterneLigne detail : etat.getLignesCompteInterne() ) {
 			dto.lignesCompteInterne.add(mapperRemunerationsFraisCompteInterneLigne(detail));
@@ -517,12 +615,11 @@ public class RapportResponseDtoMapper {
 		dto.dateDebutEtat = etat.getDateDebutEtat();
 		dto.dateFinEtat = etat.getDateFinEtat();
 		dto.typePeriode = mapperTypePeriode(etat.getTypePeriode());
-		
 		dto.comptesInternes = new ArrayList<EnteteCompteResponseDto>();
 		for ( CompteInterne compteInterne : etat.getComptesInternes() ) {
 			dto.comptesInternes.add(mapperEnteteCompte(compteInterne));
 		}
-		dto.typesFonctionnements = new ArrayList<TypeFonctionnementResponseDto>();
+		dto.typesFonctionnements = new ArrayList<>();
 		for ( TypeFonctionnement typeFonctionnement : etat.getTypesFonctionnements() ) {
 			dto.typesFonctionnements.add(mapperTypeFonctionnement(typeFonctionnement));
 		}
@@ -565,6 +662,7 @@ public class RapportResponseDtoMapper {
 		int nombrePeriodes = etat.getCumulsPeriodes().length;
 
 		dto.typeFonctionnement = mapperTypeFonctionnement(etat.getTypeFonctionnement());
+		
 		dto.lignesCompteInterne = new ArrayList<BilanPatrimoineCompteInterneLigneResponseDto>();
 		for ( BilanPatrimoineCompteInterneLigne detail : etat.getLignesCompteInterne() ) {
 			dto.lignesCompteInterne.add(mapperBilanPatrimoineCompteInterneLigne(detail));
@@ -686,38 +784,6 @@ public class RapportResponseDtoMapper {
 		}
 	}
 
-	private static TypePeriodeResponseDto mapperTypePeriode(TypePeriode typePeriode) {
-		
-		TypePeriodeResponseDto dto = new TypePeriodeResponseDto();
-
-		if ( typePeriode != null ) {
-			dto.code = typePeriode.getCode();
-			dto.libelle = typePeriode.getLibelle();
-		}
-		else {
-			dto.code = "INDEFINI";
-			dto.libelle = "Aucune périodicité définie";
-		}
-
-		return dto;
-	}
-
-	private static TypeFonctionnementResponseDto mapperTypeFonctionnement(TypeFonctionnement typeFonctionnement) {
-
-		TypeFonctionnementResponseDto dto = new TypeFonctionnementResponseDto();
-		
-		if ( typeFonctionnement != null ) {
-			dto.code = typeFonctionnement.getCode();
-			dto.libelle = typeFonctionnement.getLibelle();
-		}
-		else {
-			dto.code = "INDEFINI";
-			dto.libelle = "Aucun type de fonctionnement défini";
-		}
-		
-		return dto;
-	}
-	
 	private static CategorieResponseDto mapperCategorie(Categorie categorie) {
 
 		CategorieResponseDto dto = new CategorieResponseDto();
@@ -728,7 +794,7 @@ public class RapportResponseDtoMapper {
 		}
 		else {
 			dto.nom = "INDETERMINEE";
-			dto.libelle = "Catégorie indéterminée";
+			dto.libelle = "Catégorie non spécifiée";
 		}
 		
 		return dto;
@@ -744,7 +810,7 @@ public class RapportResponseDtoMapper {
 		}
 		else {
 			dto.nom = "INDETERMINEE";
-			dto.libelle = "Sous-catégorie indéterminée";
+			dto.libelle = "Sous-catégorie non spécifiée";
 		}
 		
 		return dto;
@@ -760,7 +826,23 @@ public class RapportResponseDtoMapper {
 		}
 		else {
 			dto.nom = "INDETERMINE";
-			dto.libelle = "Beneficiaire indéterminé";
+			dto.libelle = "Beneficiaire non spécifié";
+		}
+		
+		return dto;
+	}
+
+	private static BanqueResponseDto mapperBanque(Banque banque) {
+		
+		BanqueResponseDto dto = new BanqueResponseDto();
+		
+		if ( banque != null ) {
+			dto.nom = banque.getNom();
+			dto.libelle = banque.getLibelle();
+		}
+		else {
+			dto.nom = "INDETERMINEE";
+			dto.libelle = "Banque non spécifiée";
 		}
 		
 		return dto;
@@ -776,9 +858,63 @@ public class RapportResponseDtoMapper {
 		}
 		else {
 			dto.nom = "INDETERMINE";
-			dto.libelle = "Titulaire indéterminé";
+			dto.libelle = "Titulaire non spécifié";
 		}
 		
 		return dto;
+	}
+	
+	private static TypologieResponseDto mapperTypePeriode(TypePeriode typePeriode) {
+		
+		TypologieResponseDto dto = new TypologieResponseDto();
+		
+		if ( typePeriode != null ) {
+			dto.code = typePeriode.getCode();
+			dto.libelle = typePeriode.getLibelle();
+		}
+		else {
+			dto.code = "INDETERMINE";
+			dto.libelle = "Type de période non spécifié";
+		}
+			
+		return dto;
+	}
+	
+	private static TypologieResponseDto mapperTypeFonctionnement(TypeFonctionnement typeFonctionnement) {
+		
+		TypologieResponseDto dto = new TypologieResponseDto();
+		
+		if ( typeFonctionnement != null ) {
+			dto.code = typeFonctionnement.getCode();
+			dto.libelle = typeFonctionnement.getLibelle();
+		}
+		else {
+			dto.code = "INDETERMINE";
+			dto.libelle = "Type de fonctionnement non spécifié";
+		}
+			
+		return dto;
+	}
+	
+	private static TypologieResponseDto mapperTypeOperation(TypeOperation typeOperation) {
+		
+		TypeOperationResponseDto dto = new TypeOperationResponseDto();
+		
+		if ( typeOperation != null ) {
+			dto.code = typeOperation.getCode();
+			dto.libelleCourt = typeOperation.getLibelleCourt();
+			dto.libelle = typeOperation.getLibelle();
+			dto.fluxTechnique = typeOperation.isFluxTechnique();
+			dto.categorisable = typeOperation.isCategorisable();
+		}
+		else {
+			dto.code = "INDETERMINE";
+			dto.libelleCourt = "Indéterminé";
+			dto.libelle = "Type d'opération non spécifié";
+			dto.fluxTechnique = false;
+			dto.categorisable = false;
+			
+		}
+		return dto; 
 	}
 }

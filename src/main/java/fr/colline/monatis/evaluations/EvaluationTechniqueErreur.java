@@ -43,16 +43,16 @@ public enum EvaluationTechniqueErreur implements MonatisErreur {
 			"Un problème technique est survenu lors de la suppression de toutes les évaluations"),
 
 	/**
-	"Un problème technique est survenu lors de l'enregistrement de l'évaluation numéro '%s'"),
+			"Un problème technique est survenu lors de l'enregistrement d'une évaluation du compte d'identifiant '%s' au %s"),
 	 */
 	ENREGISTREMENT(
-			"Un problème technique est survenu lors de l'enregistrement de l'évaluation numéro '%s'"),
+			"Un problème technique est survenu lors de l'enregistrement d'une évaluation du compte d'identifiant '%s' au %s"),
 
 	/**
-	"Un problème technique est survenu lors de la suppression de l'évaluation numéro '%s"),
+			"Un problème technique est survenu lors de la suppression de l'évaluation du compte d'identifiant '%s' du %s"), 
 	 */
 	SUPPRESSION(
-			"Un problème technique est survenu lors de la suppression de l'évaluation numéro '%s"), 
+			"Un problème technique est survenu lors de la suppression de l'évaluation du compte d'identifiant '%s' du %s"), 
 	
 	/**
 			"Un problème technique est survenu lors de la recherche des évaluation du compte interne d'ID %s"),
@@ -73,10 +73,10 @@ public enum EvaluationTechniqueErreur implements MonatisErreur {
 			"Un problème technique est survenu lors de la recherche des évaluations du compte interne d'ID %s depuis le %s"),
 	
 	/**
-			"Un problème technique est survenu lors de la recherche de la première évaluation du compte interne d'ID %s depuis le %s"),
+			"Un problème technique est survenu lors de la recherche de l'évaluation du compte interne d'ID %s au %s"),
 	 */
-	RECHERCHE_PREMIERE_PAR_COMPTE_INTERNE_ID_DEPUIS_DATE_CIBLE(
-			"Un problème technique est survenu lors de la recherche de la première évaluation du compte interne d'ID %s depuis le %s"),
+	RECHERCHE_PAR_COMPTE_INTERNE_ID_ET_DATE_SOLDE(
+			"Un problème technique est survenu lors de la recherche de l'évaluation du compte interne d'ID %s au %s"),
 	
 	/**
 			"Un problème technique est survenu lors de la recherche de la dernière évaluation du compte interne d'ID %s jusqu'au %s"),

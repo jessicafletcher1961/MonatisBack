@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 import fr.colline.monatis.comptes.CompteFonctionnelleErreur;
 import fr.colline.monatis.comptes.CompteTechniqueErreur;
 import fr.colline.monatis.comptes.model.CompteInterne;
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.comptes.repository.CompteInterneRepository;
 import fr.colline.monatis.exceptions.ServiceException;
+import fr.colline.monatis.typologies.model.TypeFonctionnement;
 
 @Service
 public class CompteInterneService extends CompteService<CompteInterne> {
@@ -42,7 +42,7 @@ public class CompteInterneService extends CompteService<CompteInterne> {
 					typeFonctionnement.getLibelle());
 		}
 	}
-
+	
 	protected CompteInterne controlerEtPreparerPourCreation(CompteInterne compte) throws ServiceException {
 		
 		super.controlerEtPreparerPourCreation(compte);

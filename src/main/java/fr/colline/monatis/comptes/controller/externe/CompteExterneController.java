@@ -1,10 +1,8 @@
 package fr.colline.monatis.comptes.controller.externe;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,11 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import fr.colline.monatis.comptes.controller.CompteResponseDto;
 import fr.colline.monatis.comptes.model.CompteExterne;
-import fr.colline.monatis.comptes.model.TypeCompte;
 import fr.colline.monatis.comptes.service.CompteExterneService;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ControllerVerificateurService;
 import fr.colline.monatis.exceptions.ServiceException;
+import fr.colline.monatis.typologies.model.TypeCompte;
 import jakarta.transaction.Transactional;
 
 @RestController
@@ -38,14 +36,12 @@ public class CompteExterneController {
 
 	@GetMapping("/all")
 	public List<CompteResponseDto> getAllCompte() throws ServiceException {
-		
-		List<CompteResponseDto> resultat = new ArrayList<>();
-		Sort tri = Sort.by("identifiant");
-		List<CompteExterne> liste = compteExterneService.rechercherTous(tri);
-		for ( CompteExterne compteExterne : liste ) {
-			resultat.add(CompteExterneResponseDtoMapper.mapperModelToBasicResponseDto(compteExterne));
-		}
-		return resultat;
+
+		return compteExterneService.rechercherTous()
+				.stream()
+				.sorted((c1, c2) -> {return c1.getIdentifiant().compareTo(c2.getIdentifiant());})
+				.map((c) -> {return CompteExterneResponseDtoMapper.mapperModelToBasicResponseDto(c);})
+				.toList();
 	}
 
 	@GetMapping("/get/{identifiant}")
@@ -93,6 +89,24 @@ public class CompteExterneController {
 				identifiant, 
 				OBLIGATOIRE);
 		compteExterneService.supprimerCompte(compteExterne);
+	}
+
+	@PostMapping("/selection")
+	public List<CompteResponseDto> selectionnerComptes(
+			@RequestBody CompteExterneSelectionRequestDto requestDto) throws ControllerException, ServiceException {
+
+		final String identifiant = verificateur.standardiserIdentifiantFonctionnel(requestDto.identifiantContient);
+		final String libelle = verificateur.verifierLibelle(requestDto.libelleContient, FACULTATIF, null);
+
+		return compteExterneService.rechercherTous()
+				.stream()
+				.filter((c) -> {return identifiant == null 
+						|| c.getIdentifiant().contains(identifiant);})
+				.filter((c) -> {return libelle == null 
+						|| c.getLibelle().toUpperCase().contains(libelle.toUpperCase());})
+				.sorted((c1, c2) -> {return c1.getIdentifiant().compareTo(c2.getIdentifiant());})
+				.map((c) -> {return CompteExterneResponseDtoMapper.mapperModelToBasicResponseDto(c);})
+				.toList();
 	}
 
 	private CompteExterne mapperCreationRequestDtoToModel(CompteExterneRequestDto dto, CompteExterne compteExterne) throws ControllerException, ServiceException {

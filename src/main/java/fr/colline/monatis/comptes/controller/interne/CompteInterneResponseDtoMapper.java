@@ -5,10 +5,10 @@ import java.util.Collections;
 
 import fr.colline.monatis.comptes.controller.CompteResponseDto;
 import fr.colline.monatis.comptes.model.CompteInterne;
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.references.controller.banque.BanqueResponseDtoMapper;
 import fr.colline.monatis.references.controller.titulaire.TitulaireResponseDtoMapper;
 import fr.colline.monatis.references.model.Titulaire;
+import fr.colline.monatis.typologies.controller.TypologieResponseDtoMapper;
 
 public class CompteInterneResponseDtoMapper {
 
@@ -47,7 +47,7 @@ public class CompteInterneResponseDtoMapper {
 		dto.libelle = compteInterne.getLibelle();
 
 		dto.dateCloture = compteInterne.getDateCloture();
-		dto.typeFonctionnement = mapperModelToResponseDto(compteInterne.getTypeFonctionnement());
+		dto.typeFonctionnement = TypologieResponseDtoMapper.mapperModelToResponseDto(compteInterne.getTypeFonctionnement());
 		dto.dateSoldeInitial = compteInterne.getDateSoldeInitial();
 		dto.montantSoldeInitialEnCentimes = compteInterne.getMontantSoldeInitialEnCentimes();
 		if ( compteInterne.getBanque() != null ) {
@@ -74,7 +74,7 @@ public class CompteInterneResponseDtoMapper {
 		dto.libelle = compteInterne.getLibelle();
 
 		dto.dateCloture = compteInterne.getDateCloture();
-		dto.typeFonctionnement = mapperModelToResponseDto(compteInterne.getTypeFonctionnement());
+		dto.typeFonctionnement = TypologieResponseDtoMapper.mapperModelToResponseDto(compteInterne.getTypeFonctionnement());
 		dto.dateSoldeInitial = compteInterne.getDateSoldeInitial();
 		dto.montantSoldeInitialEnCentimes = compteInterne.getMontantSoldeInitialEnCentimes();
 		if ( compteInterne.getBanque() != null ) {
@@ -89,16 +89,6 @@ public class CompteInterneResponseDtoMapper {
 				return o1.nom.compareTo(o2.nom);
 			});
 		}
-		
-		return dto;
-	}
-
-	public static TypeFonctionnementResponseDto mapperModelToResponseDto(TypeFonctionnement typeFonctionnement) {
-		
-		TypeFonctionnementResponseDto dto = new TypeFonctionnementResponseDto();
-		
-		dto.code = typeFonctionnement.getCode();
-		dto.libelle = typeFonctionnement.getLibelle();
 		
 		return dto;
 	}

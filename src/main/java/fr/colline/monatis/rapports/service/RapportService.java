@@ -10,15 +10,17 @@ import org.springframework.stereotype.Service;
 
 import fr.colline.monatis.comptes.model.Compte;
 import fr.colline.monatis.comptes.model.CompteInterne;
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.operations.model.Operation;
+import fr.colline.monatis.operations.model.OperationLigne;
 import fr.colline.monatis.operations.service.OperationService;
 import fr.colline.monatis.rapports.model.EtatBilanPatrimoine;
 import fr.colline.monatis.rapports.model.EtatDepenseRecette;
 import fr.colline.monatis.rapports.model.EtatPlusMoinsValue;
 import fr.colline.monatis.rapports.model.EtatRemunerationsFrais;
+import fr.colline.monatis.rapports.model.ReleveNonCategorise;
 import fr.colline.monatis.rapports.model.ReleveOperationCompte;
+import fr.colline.monatis.rapports.model.ReleveSousCategorie;
 import fr.colline.monatis.rapports.model.ResumeCompteInterne;
 import fr.colline.monatis.rapports.model.composants.bilan_patrimoine.BilanPatrimoinePeriode;
 import fr.colline.monatis.rapports.model.composants.bilan_patrimoine.BilanPatrimoineTypeFonctionnementLigne;
@@ -32,12 +34,14 @@ import fr.colline.monatis.rapports.model.composants.plus_moins_value.PlusMoinsVa
 import fr.colline.monatis.rapports.model.composants.remunerations_frais.RemunerationsFraisPeriode;
 import fr.colline.monatis.rapports.model.composants.remunerations_frais.RemunerationsFraisTypeFonctionnementLigne;
 import fr.colline.monatis.rapports.model.composants.remunerations_frais.RemunerationsFraisTypeFonctionnementPeriode;
+import fr.colline.monatis.references.model.Banque;
 import fr.colline.monatis.references.model.Beneficiaire;
 import fr.colline.monatis.references.model.Categorie;
 import fr.colline.monatis.references.model.SousCategorie;
 import fr.colline.monatis.references.model.Titulaire;
+import fr.colline.monatis.typologies.model.TypeFonctionnement;
+import fr.colline.monatis.typologies.model.TypePeriode;
 import fr.colline.monatis.utils.DateEtPeriodeUtils;
-import fr.colline.monatis.utils.TypePeriode;
 
 /**
  * Liste des rapports
@@ -135,78 +139,43 @@ public class RapportService {
 		return releve;
 	}
 
-//
-//	public RelevePlusMoinsValueRealisee rechercherRelevePlusMoinsValueRealisee(
-//			CompteInterne compteInterne,
-//			LocalDate dateDebut,
-//			LocalDate dateFin) throws ServiceException {
-//
-//		// Tout à 0 si le relevé est situé entièrement avant ou après la période de "vie" du compte interne.  
-//		if ( dateFin.isBefore(compteInterne.getDateSoldeInitial()) 
-//				|| (compteInterne.getDateCloture() != null && dateDebut.isAfter(compteInterne.getDateCloture())) )  {
-//			RelevePlusMoinsValueRealisee releve = new RelevePlusMoinsValueRealisee();
-//
-//			releve.setCompteInterne(compteInterne);
-//			releve.setDateDebutReleve(dateDebut);
-//			releve.setDateFinReleve(dateFin);
-//			releve.setMontantTotalPlusMoinsValueRealiseeEnCentimes(0L);
-//			releve.setRealisations(new ArrayList<PlusMoinsValueRealisee>());
-//
-//			return releve;
-//		}
-//
-//		// On considère que la date de début du relevé doit être égale ou
-//		// supérieure à la date du solde initial du compte
-//		LocalDate dateDebutReleve = dateDebut;
-//		if ( dateDebut.isBefore(compteInterne.getDateSoldeInitial()) ) {
-//			dateDebutReleve = compteInterne.getDateSoldeInitial();
-//		}
-//		// On considère que la date de fin du relevé doit être égale ou
-//		// inférieure à la date de clôture du compte
-//		LocalDate dateFinReleve = dateFin;
-//		if ( compteInterne.getDateCloture() != null
-//				&& dateFin.isAfter(compteInterne.getDateCloture()) ) {
-//			dateFinReleve = compteInterne.getDateCloture();
-//		}
-//
-//		List<Operation> operationsRealisation = operationService.rechercherOperationsDepenseParCompteIdEntreDateDebutEtDateFin(
-//				compteInterne.getId(), 
-//				dateDebutReleve, 
-//				dateFinReleve)
-//				.stream()
-//				.filter((o) -> {return o.getTypeOperation().isFluxTransaction();})
-//				.toList();
-//
-//		Long montantTotalPlusMoinsValueRealiseeEnCentimes = 0L;
-//		List<PlusMoinsValueRealisee> realisations = new ArrayList<PlusMoinsValueRealisee>();
-//		for ( Operation operation : operationsRealisation ) {
-//			
-//			Double taux = plusMoinsValueService.estimerTauxPlusMoinsValuePeriode(
-//					compteInterne.getMontantSoldeInitialEnCentimes(), 
-//					soldeService.rechercherSolde(compteInterne, operation.getDateValeur()), 
-//					operation.getMontantEnCentimes());
-//			Long montantPlusMoinsValueEnCentimes = Math.round((double) (operation.getMontantEnCentimes() * taux / 100.00)); 
-//			
-//			PlusMoinsValueRealisee realisation = new PlusMoinsValueRealisee();
-//			realisation.setOperationRealisation(operation);
-//			realisation.setMontantPlusMoinsValueRealiseeEnCentimes(montantPlusMoinsValueEnCentimes);
-//			realisation.setPourcentagePlusMoinsValueRealisee(taux);
-//			realisations.add(realisation);
-//			
-//			montantTotalPlusMoinsValueRealiseeEnCentimes += montantPlusMoinsValueEnCentimes;
-//		}
-//
-//		RelevePlusMoinsValueRealisee releve = new RelevePlusMoinsValueRealisee();
-//		
-//		releve.setCompteInterne(compteInterne);
-//		releve.setDateDebutReleve(dateDebutReleve);
-//		releve.setDateFinReleve(dateFinReleve);
-//		releve.setMontantTotalPlusMoinsValueRealiseeEnCentimes(montantTotalPlusMoinsValueRealiseeEnCentimes);
-//		releve.setRealisations(realisations);
-//		
-//		return releve;
-//	}
-	
+	public ReleveNonCategorise rechercherReleveOperationNonCategorise(LocalDate dateDebut, LocalDate dateFin) throws ServiceException {
+		
+		List<OperationLigne> operationsLignes = operationService.rechercherOperationsLignesParSousCategorieIdEtCriteres(
+				null,
+				null,
+				dateDebut, 
+				dateFin)
+				.toList();
+		
+		ReleveNonCategorise releve = new ReleveNonCategorise();
+		
+		releve.setDateDebutReleve(dateDebut);
+		releve.setDateFinReleve(dateFin);
+		releve.setOperationsLignes(operationsLignes);
+		
+		return releve;
+	}
+
+	public ReleveSousCategorie rechercherReleveOperationSousCategorie(SousCategorie sousCategorie, LocalDate dateDebut, LocalDate dateFin) throws ServiceException {
+		
+		List<OperationLigne> operationsLignes = operationService.rechercherOperationsLignesParSousCategorieIdEtCriteres(
+				sousCategorie.getId(), 
+				null,
+				dateDebut, 
+				dateFin)
+				.toList();
+		
+		ReleveSousCategorie releve = new ReleveSousCategorie();
+		
+		releve.setDateDebutReleve(dateDebut);
+		releve.setDateFinReleve(dateFin);
+		releve.setSousCategorie(sousCategorie);
+		releve.setOperationsLignes(operationsLignes);
+		
+		return releve;
+	}
+
 	public ResumeCompteInterne rechercherResumeCompteInterne(
 			CompteInterne compteInterne, 
 			LocalDate dateSolde) throws ServiceException {
@@ -286,6 +255,7 @@ public class RapportService {
 	public EtatPlusMoinsValue rechercherEtatPlusMoinsValue(
 			List<CompteInterne> comptesInternes,
 			List<TypeFonctionnement> typesFonctionnements,
+			Banque banque,
 			Titulaire titulaire,
 			LocalDate dateDebutEtat,
 			LocalDate dateFinEtat,
@@ -301,6 +271,7 @@ public class RapportService {
 			PlusMoinsValueTypeFonctionnementLigne ligneTypeFonctionnement = plusMoinsValueService.rechercherPlusMoinsValueTypeFonctionnementLigne(
 					comptesInternes,
 					typeFonctionnement,
+					banque,
 					titulaire,
 					dateDebutEtat, 
 					dateFinEtat,
@@ -312,14 +283,48 @@ public class RapportService {
 				PlusMoinsValuePeriode cumulEtatPeriode;
 				if ( cumulsEtat[numeroPeriode] == null ) {
 					cumulEtatPeriode = new PlusMoinsValuePeriode();
+					
 					cumulEtatPeriode.setDateDebutPeriode(cumulTypeFonctionnementPeriode.getDateDebutPeriode());
 					cumulEtatPeriode.setDateFinPeriode(cumulTypeFonctionnementPeriode.getDateFinPeriode());
-					cumulEtatPeriode.setMontantPlusMoinsValuePotentielleEnCentimes(cumulTypeFonctionnementPeriode.getMontantPlusMoinsValuePotentielleEnCentimes());
+					
+					cumulEtatPeriode.setMontantSoldeInitialEnCentimes(cumulTypeFonctionnementPeriode.getMontantSoldeInitialEnCentimes());
+					cumulEtatPeriode.setMontantOperationsEnCentimes(cumulTypeFonctionnementPeriode.getMontantOperationsEnCentimes());
+					cumulEtatPeriode.setMontantPlusMoinsValueNetteEnCentimes(cumulTypeFonctionnementPeriode.getMontantPlusMoinsValueNetteEnCentimes());
+					cumulEtatPeriode.setTauxPlusMoinsValueNette(cumulTypeFonctionnementPeriode.getTauxPlusMoinsValueNette());
+					cumulEtatPeriode.setMontantSoldeFinalEnCentimes(cumulTypeFonctionnementPeriode.getMontantSoldeFinalEnCentimes());
+					cumulEtatPeriode.setMontantFraisEnCentimes(cumulTypeFonctionnementPeriode.getMontantFraisEnCentimes());
+					cumulEtatPeriode.setTauxFrais(cumulTypeFonctionnementPeriode.getTauxFrais());
+
 					cumulsEtat[numeroPeriode] = cumulEtatPeriode;
 				}
 				else {
 					cumulEtatPeriode = cumulsEtat[numeroPeriode];
-					cumulEtatPeriode.setMontantPlusMoinsValuePotentielleEnCentimes(cumulEtatPeriode.getMontantPlusMoinsValuePotentielleEnCentimes() + cumulTypeFonctionnementPeriode.getMontantPlusMoinsValuePotentielleEnCentimes());
+					
+					cumulEtatPeriode.setMontantPlusMoinsValueNetteEnCentimes(cumulEtatPeriode.getMontantPlusMoinsValueNetteEnCentimes() + cumulTypeFonctionnementPeriode.getMontantPlusMoinsValueNetteEnCentimes());
+					
+					cumulEtatPeriode.setMontantSoldeInitialEnCentimes(cumulEtatPeriode.getMontantSoldeInitialEnCentimes() + cumulTypeFonctionnementPeriode.getMontantSoldeInitialEnCentimes());
+					cumulEtatPeriode.setMontantOperationsEnCentimes(cumulEtatPeriode.getMontantOperationsEnCentimes() + cumulTypeFonctionnementPeriode.getMontantOperationsEnCentimes());
+					cumulEtatPeriode.setMontantPlusMoinsValueNetteEnCentimes(cumulEtatPeriode.getMontantPlusMoinsValueNetteEnCentimes() + cumulTypeFonctionnementPeriode.getMontantPlusMoinsValueNetteEnCentimes());
+					cumulEtatPeriode.setMontantSoldeFinalEnCentimes(cumulEtatPeriode.getMontantSoldeFinalEnCentimes() + cumulTypeFonctionnementPeriode.getMontantSoldeFinalEnCentimes());
+					cumulEtatPeriode.setMontantFraisEnCentimes(cumulEtatPeriode.getMontantFraisEnCentimes() + cumulTypeFonctionnementPeriode.getMontantFraisEnCentimes());
+
+					Double tauxPlusMoinsValueNette = null;
+					Long soldeDebutAvecOperations = cumulEtatPeriode.getMontantSoldeInitialEnCentimes() + cumulEtatPeriode.getMontantOperationsEnCentimes();
+					Long montantPlusMoinsValueNetteEnCentimes = cumulEtatPeriode.getMontantPlusMoinsValueNetteEnCentimes();
+					if ( soldeDebutAvecOperations != 0 ) {
+						tauxPlusMoinsValueNette = (double) (100.00 * montantPlusMoinsValueNetteEnCentimes / soldeDebutAvecOperations);
+					}
+					cumulEtatPeriode.setTauxPlusMoinsValueNette(tauxPlusMoinsValueNette);
+
+					Double tauxFrais = null;
+					Long soldeFinPeriode = cumulEtatPeriode.getMontantSoldeFinalEnCentimes();
+					Long montantFraisEnCentimes = cumulEtatPeriode.getMontantFraisEnCentimes();
+					if ( soldeFinPeriode != 0 ) {
+						tauxFrais = (double) (100.00 * montantFraisEnCentimes / soldeFinPeriode);
+					}
+					cumulEtatPeriode.setTauxFrais(tauxFrais);
+
+					
 				}
 			}
 		}
@@ -330,6 +335,7 @@ public class RapportService {
 		etat.setDateFinEtat(dateFinEtat);
 		etat.setTypePeriode(typePeriode);
 		etat.setComptesInternes(comptesInternes);
+		etat.setBanque(banque);
 		etat.setTitulaire(titulaire);
 		etat.setTypesFonctionnements(typesFonctionnements);
 		etat.setLignesTypeFonctionnement(lignesTypeFonctionnement);
@@ -468,5 +474,4 @@ public class RapportService {
 
 		return etat;
 	}
-
 }

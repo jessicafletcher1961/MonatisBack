@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Sc&eacute;narios</title>
+</head>
+<body style="background-color:#ffcc00;">
+
+<h1>OPERATIONS-02 - Saisie d'opérations au vu d'un relevé bancaire</h1>
+	
+<form>
+  
+  <span name="choisi" id="choisi">choix</span></br>
+  
+  <span name="operations" id="operations">opérations</span></br>
+  
+  <span name="boxes" id="boxes">
+	<span name="gauche" id="gauche">partie gauche</span>
+	<span name="milieu" id="milieu" style="width:10%;background-color:#88cc00;">partie centrale</span>
+	<span name="droite" id="droite">partie droite</span>
+  </span></br>
+  
+  <span name="boutons" id="boutons">boutons</span></br>
+  
+  <span><textarea name="log" id="log"></textarea></span>
+  
+  <script>
+  
+	function TypeOperation(code, libelleCourt) {
+	
+		this.code = code;
+		this.libelleCourt = libelleCourt;
+	}
+	
+	function Compte(identifiant, libelle, typeCompte, typeFonctionnement) {
+		
+		this.identifiant = identifiant;
+		this.libelle = libelle;
+		this.typeCompte = typeCompte;
+		this.typeFonctionnement = typeFonctionnement;
+	}
+
+	function Operation(numero, libelle, typeOperation, dateValeur, montantEnEuros, compteDepense, compteRecette, sousCategorie, beneficiaires) {
+	
+		this.numero = numero;
+		this.libelle = libelle;
+		this.typeOperation = typeOperation;
+		this.dateValeur = dateValeur;
+		this.montantEnEuros = montantEnEuros;
+		this.compteDepense = compteDepense;
+		this.compteRecette = compteRecette;
+		this.sousCategorie = sousCategorie;
+		this.beneficiaires = beneficiaires;
+	}
+	
+	function definirListeTypesOperations() {
+	
+		const typesOperations = [];
+
+		let i = 0;
+		typesOperations[i++] = new TypeOperation("TRANSFERT", "Transfert");
+		typesOperations[i++] = new TypeOperation("DEPENSE", "Dépense");
+		typesOperations[i++] = new TypeOperation("RECETTE", "Recette");
+		typesOperations[i++] = new TypeOperation("INVEST", "Investissement");
+		typesOperations[i++] = new TypeOperation("DEPOT", "Dépôt");
+		typesOperations[i++] = new TypeOperation("LIQUID", "Liquidation");
+		typesOperations[i++] = new TypeOperation("RETRAIT", "Retrait");
+		typesOperations[i++] = new TypeOperation("ACHAT", "Achat d'un bien");
+		typesOperations[i++] = new TypeOperation("VENTE", "Vente d'un bien");
+		typesOperations[i++] = new TypeOperation("COURANT+", "Rémunération des comptes courants");
+		typesOperations[i++] = new TypeOperation("COURANT-", "Frais bancaires des comptes courants");
+		typesOperations[i++] = new TypeOperation("FINANCIER+", "Rémunération des comptes financiers");
+		typesOperations[i++] = new TypeOperation("FINANCIER-", "Frais de gestion des comptes financiers");
+		typesOperations[i++] = new TypeOperation("BIEN+", "Rémunération des biens");
+		typesOperations[i++] = new TypeOperation("BIEN-", "Frais de gestion des biens");
+
+		return typesOperations;
+	}
+	
+	function definirListeComptes() {
+	
+		const comptes = [];
+		
+		let i = 0;
+		comptes[i++] = new Compte("COMPTE-COURANT-1", "Compte courant numéro I", "INTERNE", "COURANT");
+		comptes[i++] = new Compte("COMPTE-COURANT-2", "Compte courant numéro II", "INTERNE", "COURANT");
+		comptes[i++] = new Compte("COMPTE-COURANT-3", "Compte courant numéro III", "INTERNE", "COURANT");
+		comptes[i++] = new Compte("COMPTE-FINANCIER-1", "Compte financier numéro I", "INTERNE", "FINANCIER");
+		comptes[i++] = new Compte("COMPTE-FINANCIER-2", "Compte financier numéro II", "INTERNE", "FINANCIER");
+		comptes[i++] = new Compte("COMPTE-FINANCIER-3", "Compte financier numéro III", "INTERNE", "FINANCIER");
+		comptes[i++] = new Compte("COMPTE-BIEN-1", "Compte du bien numéro I", "INTERNE", "BIEN");
+		comptes[i++] = new Compte("COMPTE-BIEN-2", "Compte du bien numéro II", "INTERNE", "BIEN");
+		comptes[i++] = new Compte("COMPTE-BIEN-3", "Compte du bien numéro III", "INTERNE", "BIEN");
+		comptes[i++] = new Compte("COMPTE-EXTERNE-1", "Compte externe numéro I", "EXTERNE", null);
+		comptes[i++] = new Compte("COMPTE-EXTERNE-2", "Compte externe numéro II", "EXTERNE", null);
+		comptes[i++] = new Compte("COMPTE-EXTERNE-3", "Compte externe numéro III", "EXTERNE", null);
+		comptes[i++] = new Compte("COMPTE-TECHNIQUE", "Compte technique", "TECHNIQUE", null);
+
+		return comptes;
+	}
+	
+	function dessineElementsChoisis(compteChoisi, typeOperationDepenseChoisi, typeOperationRecetteChoisi, compteContrepartieChoisi) {
+	
+		let htmlContent = '';
+
+		if ( compteChoisi != null ) {
+			htmlContent += "Compte du relevé : [" + compteChoisi.identifiant + "] - " + compteChoisi.libelle + '</br>'; 
+		}
+		if ( typeOperationDepenseChoisi != null ) {
+			htmlContent += "Type de l'opération choisie (dépense) : [" + typeOperationDepenseChoisi.code + "] - " + typeOperationDepenseChoisi.libelleCourt + '</br>'; 
+		}
+		if ( typeOperationRecetteChoisi != null ) {
+			htmlContent += "Type de l'opération choisie (recette) : [" + typeOperationRecetteChoisi.code + "] - " + typeOperationRecetteChoisi.libelleCourt + '</br>'; 
+		}
+		if ( compteContrepartieChoisi != null ) {
+			htmlContent += "Compte de contrepartie : [" + compteContrepartieChoisi.identifiant + "] - " + compteContrepartieChoisi.libelle + '</br>'; 
+		}
+		
+		return htmlContent;
+	}
+	
+	function constituerTypesOperationsDepense(compteChoisi) {
+	
+		const selectionTypesOperations = [];
+
+		let j = 0;
+		if ( compteChoisi.typeFonctionnement == 'COURANT' ) {
+			for ( let i=0 ; i<typesOperations.length; i++ ) {
+				let typeOperation = typesOperations[i];
+				if ( typeOperation.code == 'TRANSFERT' 
+						|| typeOperation.code == 'DEPENSE'
+						|| typeOperation.code == 'INVEST'
+						|| typeOperation.code == 'DEPOT'
+						|| typeOperation.code == 'COURANT-' ) {
+					selectionTypesOperations[j++] = typeOperation;
+				}
+			}
+		}
+		else if ( compteChoisi.typeFonctionnement == 'FINANCIER' ) {
+			for ( let i=0 ; i<typesOperations.length; i++ ) {
+				let typeOperation = typesOperations[i];
+				if ( typeOperation.code == 'LIQUID' 
+						|| typeOperation.code == 'RETRAIT'
+						|| typeOperation.code == 'FINANCIER-' ) {
+					selectionTypesOperations[j++] = typeOperation;
+				}
+			}
+		}
+		else if ( compteChoisi.typeFonctionnement == 'BIEN' ) {
+			for ( let i=0 ; i<typesOperations.length; i++ ) {
+				let typeOperation = typesOperations[i];
+				if ( typeOperation.code == 'VENTE' 
+						|| typeOperation.code == 'BIEN-' ) {
+					selectionTypesOperations[j++] = typeOperation;
+				}
+			}
+		}
+
+		if ( selectionTypesOperations.length == 0 ) {
+			return null;
+		}
+		
+		return selectionTypesOperations;
+	}
+	
+	function constituerTypesOperationsRecette(compteChoisi) {
+	
+		const selectionTypesOperations = [];
+
+		let j = 0;
+		if ( compteChoisi.typeFonctionnement == 'COURANT' ) {
+			for ( let i=0 ; i<typesOperations.length; i++ ) {
+				let typeOperation = typesOperations[i];
+				if ( typeOperation.code == 'TRANSFERT' 
+						|| typeOperation.code == 'RECETTE'
+						|| typeOperation.code == 'LIQUID'
+						|| typeOperation.code == 'RETRAIT'
+						|| typeOperation.code == 'COURANT+' ) {
+					selectionTypesOperations[j++] = typeOperation;
+				}
+			}
+		}
+		else if ( compteChoisi.typeFonctionnement == 'FINANCIER' ) {
+			for ( let i=0 ; i<typesOperations.length; i++ ) {
+				let typeOperation = typesOperations[i];
+				if ( typeOperation.code == 'INVEST' 
+						|| typeOperation.code == 'DEPOT'
+						|| typeOperation.code == 'FINANCIER+' ) {
+					selectionTypesOperations[j++] = typeOperation;
+				}
+			}
+		}
+		else if ( compteChoisi.typeFonctionnement == 'BIEN' ) {
+			for ( let i=0 ; i<typesOperations.length; i++ ) {
+				let typeOperation = typesOperations[i];
+				if ( typeOperation.code == 'ACHAT' 
+						|| typeOperation.code == 'BIEN+' ) {
+					selectionTypesOperations[j++] = typeOperation;
+				}
+			}
+		}
+
+		if ( selectionTypesOperations.length == 0 ) {
+			return null;
+		}
+		
+		return selectionTypesOperations;
+	}
+
+	function constituerComptesContrepartieDepense(compteChoisi, typeOperationDepenseChoisi) {
+	
+		let typeCompte = null;
+		let typeFonctionnement = null;
+		
+		if ( typeOperationDepenseChoisi != null ) {
+			if ( typeOperationDepenseChoisi.code == 'TRANSFERT'
+					|| typeOperationDepenseChoisi.code == 'RETRAIT' 
+					|| typeOperationDepenseChoisi.code == 'LIQUID' 
+					|| typeOperationDepenseChoisi.code == 'RECETTE' ) {
+				typeCompte = 'INTERNE';
+				typeFonctionnement = 'COURANT';
+			}
+			else if ( typeOperationDepenseChoisi.code == "DEPOT"
+					|| typeOperationDepenseChoisi.code == "INVEST" ) {
+				typeCompte = 'INTERNE';
+				typeFonctionnement = 'FINANCIER';
+			}
+			else if ( typeOperationDepenseChoisi.code == "ACHAT" ) {
+				typeCompte = 'INTERNE';
+				typeFonctionnement = 'BIEN';
+			}
+			else if ( typeOperationDepenseChoisi.code == "VENTE"
+					|| typeOperationDepenseChoisi.code == "DEPENSE" ) {
+				typeCompte = 'EXTERNE';
+				typeFonctionnement = null;
+			}
+		}
+
+		const selectionComptes = [];
+	
+		let j = 0;
+		for ( let i=0 ; i<comptes.length ; i++ ) {
+			compte = comptes[i];
+			if ( compte.typeCompte == typeCompte 
+					&& compte.typeFonctionnement == typeFonctionnement
+					&& (compteChoisi == null || compteChoisi.identifiant != compte.identifiant) ) {
+				selectionComptes[j++] = compte;
+			}
+		}
+
+		if ( selectionComptes.length == 0 ) {
+			return null;
+		}
+		
+		return selectionComptes;
+	}
+
+	function constituerComptesContrepartieRecette(compteChoisi, typeOperationRecetteChoisi) {
+		
+		let typeCompte = null;
+		let typeFonctionnement = null;
+		
+		if ( typeOperationRecetteChoisi != null ) {
+			if ( typeOperationRecetteChoisi.code == 'TRANSFERT'
+					|| typeOperationRecetteChoisi.code == 'DEPOT' 
+					|| typeOperationRecetteChoisi.code == 'INVEST' 
+					|| typeOperationRecetteChoisi.code == 'DEPENSE' ) {
+				typeCompte = 'INTERNE';
+				typeFonctionnement = 'COURANT';
+			}
+			else if ( typeOperationRecetteChoisi.code == "RETRAIT"
+					|| typeOperationRecetteChoisi.code == "LIQUID" ) {
+				typeCompte = 'INTERNE';
+				typeFonctionnement = 'FINANCIER';
+			}
+			else if ( typeOperationRecetteChoisi.code == "VENTE" ) {
+				typeCompte = 'INTERNE';
+				typeFonctionnement = 'BIEN';
+			}
+			else if ( typeOperationRecetteChoisi.code == "RECETTE"
+					|| typeOperationRecetteChoisi.code == "ACHAT") {
+				typeCompte = 'EXTERNE';
+				typeFonctionnement = null;
+			}
+		}
+		
+		const selectionComptes = [];
+	
+		let j = 0;
+		for ( let i=0 ; i<comptes.length ; i++ ) {
+			compte = comptes[i];
+			if ( compte.typeCompte == typeCompte 
+					&& compte.typeFonctionnement == typeFonctionnement
+					&& (compteChoisi == null || compteChoisi.identifiant != compte.identifiant) ) {
+				selectionComptes[j++] = compte;
+			}
+		}
+
+		if ( selectionComptes.length == 0 ) {
+			return null;
+		}
+		
+		return selectionComptes;
+	}
+	
+	function rechercherUnCompteTechnique() {
+
+		for ( let i=0 ; i<comptes.length ; i++ ) {
+			compte = comptes[i];
+			if ( compte.typeCompte == "TECHNIQUE" ) {
+				return compte;
+			}
+		}
+
+		return null;
+	}
+	
+	function dessineSelectCompte() {
+
+		let htmlContent = '';
+
+		let afficheLaSuite = "afficheLaSuite(this.value, null, null, null, null);";
+		
+		htmlContent += '<select name="identifiantCompteChoisi" id="identifiantCompteChoisi" onchange="' + afficheLaSuite + '">';
+		htmlContent += '<option>Sélectionnez le compte du relevé</option>';
+		for ( let i=0 ; i<comptes.length; i++ ) {
+			let compte = comptes[i];
+			if ( compte.typeCompte == 'INTERNE' ) {
+				htmlOption = '<option value="' + compte.identifiant + '">';
+				htmlOption += compte.libelle;
+				htmlOption += '</option>';
+				htmlContent += htmlOption;
+			}
+		}
+		htmlContent += '</select>';
+
+		return htmlContent;
+	}
+
+	function dessineSelectTypeOperationDepense(compteChoisi) {
+
+		let htmlContent = '';
+	
+		const typesOperationsDepense = constituerTypesOperationsDepense(compteChoisi);
+		
+		let afficheLaSuite = "afficheLaSuite('" + compteChoisi.identifiant + "', this.value, null, null, null);";
+
+		htmlContent += '<select name="codeTypeOperationDepenseChoisi" id="codeTypeOperationDepenseChoisi" onchange="' + afficheLaSuite + '">';
+		htmlContent += '<option>Choisissez un type d\'opération de dépense</option>';
+		for ( let i=0 ; i<typesOperationsDepense.length; i++ ) {
+			let typeOperation = typesOperationsDepense[i];
+			htmlOption = '<option value="' + typeOperation.code + '">';
+			htmlOption += typeOperation.libelleCourt;
+			htmlOption += '</option>';
+			htmlContent += htmlOption;
+		}
+		htmlContent += '</select>';
+
+		return htmlContent;
+	}
+
+	function dessineSelectTypeOperationRecette(compteChoisi) {
+	
+		let htmlContent = '';
+	
+		const typesOperationsRecette = constituerTypesOperationsRecette(compteChoisi);
+
+		let afficheLaSuite = "afficheLaSuite('" + compteChoisi.identifiant + "', null, this.value, null, null);";
+		
+		htmlContent += '<select name="codeTypeOperationRecetteChoisi" id="codeTypeOperationRecetteChoisi" onchange="' + afficheLaSuite + '">';
+		htmlContent += '<option>Choisissez un type d\'opération de recette</option>';
+		for ( let i=0 ; i<typesOperationsRecette.length; i++ ) {
+			let typeOperation = typesOperationsRecette[i];
+			htmlOption = '<option value="' + typeOperation.code + '">';
+			htmlOption += typeOperation.libelleCourt;
+			htmlOption += '</option>';
+			htmlContent += htmlOption;
+		}
+		htmlContent += '</select>';
+
+		return htmlContent;
+	}
+	
+	function dessineSelectCompteContrepartieDepense(compteChoisi, typeOperationDepenseChoisi) {
+	
+		let htmlContent = '';
+
+		let afficheLaSuite = "afficheLaSuite('" + compteChoisi.identifiant + "', '" + typeOperationDepenseChoisi.code + "', null, this.value, null);";
+		
+		const selectionComptes = constituerComptesContrepartieDepense(compteChoisi, typeOperationDepenseChoisi);
+		
+		if ( selectionComptes != null ) {
+			htmlContent += '<select name="identifiantCompteContrepartieChoisi" id="identifiantCompteContrepartieChoisi" onchange="' + afficheLaSuite + '">';
+			htmlContent += '<option>Choisissez le compte de contrepartie</option>';
+			for ( let i=0 ; i<selectionComptes.length; i++ ) {
+				let compte = selectionComptes[i];
+				htmlOption = '<option value="' + compte.identifiant + '">';
+				htmlOption += compte.libelle;
+				htmlOption += '</option>';
+				htmlContent += htmlOption;
+			}
+			htmlContent += '</select>';
+		}
+
+		return htmlContent;
+	}
+	
+	function dessineSelectCompteContrepartieRecette(compteChoisi, typeOperationRecetteChoisi) {
+	
+		let htmlContent = '';
+
+		let afficheLaSuite = "afficheLaSuite('" + compteChoisi.identifiant + "', null, '" + typeOperationRecetteChoisi.code + "', this.value, null);";
+		
+		const selectionComptes = constituerComptesContrepartieRecette(compteChoisi, typeOperationRecetteChoisi);
+		
+		if ( selectionComptes != null ) {
+			htmlContent += '<select name="identifiantCompteContrepartieChoisi" id="identifiantCompteContrepartieChoisi" onchange="' + afficheLaSuite + '">';
+			htmlContent += '<option>Choisissez le compte de contrepartie</option>';
+			for ( let i=0 ; i<selectionComptes.length; i++ ) {
+				let compte = selectionComptes[i];
+				htmlOption = '<option value="' + compte.identifiant + '">';
+				htmlOption += compte.libelle;
+				htmlOption += '</option>';
+				htmlContent += htmlOption;
+			}
+			htmlContent += '</select>';
+		}
+
+		return htmlContent;
+	}
+	
+	function dessineOperations(compteChoisi) {
+
+		let htmlContent = '';
+		
+		htmlContent += '<table style="border-style:solid;">';
+		htmlContent += "<tr>";
+		htmlContent += "<th>Numéro d'opération</td>"; 	
+		htmlContent += "<th>Type d'opération</td>"; 	
+		htmlContent += "<th>Date de valeur</td>"; 	
+		htmlContent += "<th>Montant</td>"; 	
+		htmlContent += "<th>Contrepartie de la recette</td>";
+		htmlContent += "<th>Contrepartie de la dépense</td>";
+		htmlContent += "<th>Sous-catégorie</td>"; 	
+		htmlContent += "<th>Bénéficiaires</td>"; 	
+		htmlContent += "</tr>";
+		
+		for ( let i=0 ; i<operations.length ; i++ ) {
+			operation = operations[i];
+			htmlContent += "<tr>";
+			htmlContent += "<td>" + operation.numero + "</td>"; 	
+			htmlContent += "<td>" + operation.typeOperation + "</td>"; 	
+			htmlContent += "<td>" + operation.dateValeur + "</td>"; 	
+			htmlContent += "<td>" + operation.montantEnEuros + "</td>"; 	
+			if ( operation.compteDepense != compteChoisi.identifiant ) {
+				htmlContent += "<td>" + operation.compteDepense + "</td>";
+				htmlContent += "<td></td>";
+			}
+			else {
+				htmlContent += "<td></td>";
+				htmlContent += "<td>" + operation.compteRecette + "</td>";
+			}
+			htmlContent += "<td>" + operation.sousCategorie + "</td>"; 	
+			htmlContent += "<td>" + operation.beneficiaires + "</td>"; 	
+			htmlContent += "</tr>";
+		}
+		htmlContent += "</table>";
+		
+		return htmlContent;
+	}
+	
+	function dessineSaisieOperation(typeOperationDepenseChoisi, typeOperationRecetteChoisi) {
+	
+		let htmlContent = '';
+		
+		let typeOperationChoisi = typeOperationDepenseChoisi == null ? typeOperationRecetteChoisi : typeOperationDepenseChoisi;
+		
+		htmlContent += '<label for="numero">Numéro:</label><br><input type="text" id="numero" name="numero"><br>';
+		htmlContent += '<label for="libelle">Libellé:</label><br><input type="text" id="libelle" name="libelle"><br>';
+		htmlContent += '<label for="date">Date de valeur:</label><br><input type="text" id="date" name="date"><br>';
+		htmlContent += '<label for="montant">Montant:</label><br><input type="number" id="montant" name="montant"><br>';
+		if ( typeOperationChoisi.code == 'RECETTE' || typeOperationChoisi.code == 'DEPENSE') {
+			htmlContent += '<label for="souscategorie">Sous-catégorie:</label><br><input type="text" id="souscategorie" name="souscategorie"><br>';
+			htmlContent += '<label for="beneficiaires">Beneficiaires:</label><br><input type="text" id="beneficiaires" name="beneficiaires"><br>';
+		}
+		
+		return htmlContent;
+	}
+	
+	function dessineBoutonEnregistrement(compteChoisi, typeOperationDepenseChoisi, typeOperationRecetteChoisi, compteContrepartieChoisi) {
+
+		let onclick = "enregistrerOperation('" + compteChoisi.identifiant + "', "
+			+ (typeOperationDepenseChoisi == null ? "null, " : "'" + typeOperationDepenseChoisi.code + "', ")
+			+ (typeOperationRecetteChoisi == null ? "null, " : "'" + typeOperationRecetteChoisi.code + "', ") 
+			+ (compteContrepartieChoisi == null ? "null);" : "'" + compteContrepartieChoisi.identifiant + "');"); 
+				
+		return '<input id="enregistrementbtn", type="button" value="ENREGISTREMENT" onclick="' + onclick + '">';
+	}
+	
+	function dessineBoutonRetour(compteChoisi, typeOperationDepenseChoisi, typeOperationRecetteChoisi, compteContrepartieChoisi, operationEnregistree) {
+
+		if ( compteChoisi != null ) {
+		
+			let onclick = '';
+		
+			if ( typeOperationDepenseChoisi == null && typeOperationRecetteChoisi == null ) {
+				onclick = "afficheLaSuite(null, null, null, null, null);";
+			}
+			else if ( compteContrepartieChoisi == null ) {
+				onclick = "afficheLaSuite('" + compteChoisi.identifiant + "', null, null, null, null);";
+			}
+			else if ( operationEnregistree == null ) {
+				if ( typeOperationDepenseChoisi != null ) {
+					onclick = "afficheLaSuite('" + compteChoisi.identifiant + "', '" + typeOperationDepenseChoisi.code + "', null, null, null);";
+				}
+				else {
+					onclick = "afficheLaSuite('" + compteChoisi.identifiant + "', null, '" + typeOperationRecetteChoisi.code + "', null, null);";
+				}
+			}
+						
+			return '<input id="retourbtn", type="button" value="RETOUR" onclick="' + onclick + '">';
+		}
+		
+		return '';
+	}
+	
+	function dessineBoutonNouvelleOperation(compteChoisi) {
+	
+		if ( compteChoisi != null ) {
+		
+			let onclick = "afficheLaSuite('" + compteChoisi.identifiant + "', null, null, null, null);";
+
+			return '<input id="nouvelleoperationbtn", type="button" value="NOUVELLE OPERATION" onclick="' + onclick + '">';
+		}
+		
+		return '';
+	}
+	
+	function ajouteLigneLog(ligne) {
+	
+		const historique = document.getElementById("log").value;
+		
+		document.getElementById("log").value = ligne + "\r" + historique;
+	}
+	
+	function afficheLaSuite(identifiantCompteChoisi, codeTypeOperationDepenseChoisi, codeTypeOperationRecetteChoisi, identifiantCompteContrepartieChoisi, numeroOperationSaisie) {
+
+		let compteChoisi;
+		let typeOperationDepenseChoisi = null;
+		let typeOperationRecetteChoisi = null;
+		let compteContrepartieChoisi = null;
+		let operationSaisie = null;
+		
+		if ( identifiantCompteChoisi != null ) {
+			for ( let i=0 ; i<comptes.length ; i++ ) {
+				compte = comptes[i];
+				if ( compte.identifiant == identifiantCompteChoisi ) {
+					compteChoisi = compte;
+					break;
+				}
+			}
+		}
+		
+		if ( codeTypeOperationDepenseChoisi != null ) {
+			for ( let i=0 ; i<typesOperations.length ; i++ ) {
+				typeOperation = typesOperations[i];
+				if ( typeOperation.code == codeTypeOperationDepenseChoisi ) {
+					typeOperationDepenseChoisi = typeOperation;
+					break;
+				}
+			}
+		}
+
+		if ( codeTypeOperationRecetteChoisi != null ) {
+			for ( let i=0 ; i<typesOperations.length ; i++ ) {
+				typeOperation = typesOperations[i];
+				if ( typeOperation.code == codeTypeOperationRecetteChoisi ) {
+					typeOperationRecetteChoisi = typeOperation;
+					break;
+				}
+			}
+		}
+		
+		if ( identifiantCompteContrepartieChoisi != null ) {
+			for ( let i=0 ; i<comptes.length ; i++ ) {
+				compte = comptes[i];
+				if ( compte.identifiant == identifiantCompteContrepartieChoisi ) {
+					compteContrepartieChoisi = compte;
+					break;
+				}
+			}
+		}
+
+		if ( numeroOperationSaisie != null ) {
+			for ( let i=0 ; i<operations.length ; i++ ) {
+				operation = operations[i];
+				if ( operation.numero == numeroOperationSaisie ) {
+					operationSaisie = operation;
+					break;
+				}
+			}
+		}
+
+		if ( compteChoisi == null ) {
+
+			// Préparations choix premier compte
+
+			operations.length = 0;
+
+			document.getElementById("choisi").innerHTML = "";
+			document.getElementById("gauche").innerHTML = "";
+			document.getElementById("milieu").innerHTML = dessineSelectCompte();
+			document.getElementById("droite").innerHTML = "";
+			document.getElementById("boutons").innerHTML = "";
+			document.getElementById("operations").innerHTML = "";
+			
+			ajouteLigneLog("Coucou Thibault :)");
+		}
+		else if ( typeOperationDepenseChoisi == null && typeOperationRecetteChoisi == null ) {
+
+			// Premier compte choisi 
+			// Préparation choix type opération
+
+			document.getElementById("choisi").innerHTML = dessineElementsChoisis(compteChoisi, null, null, null);;
+			document.getElementById("gauche").innerHTML = dessineSelectTypeOperationDepense(compteChoisi);
+			document.getElementById("milieu").innerHTML = " OU BIEN ";
+			document.getElementById("droite").innerHTML = dessineSelectTypeOperationRecette(compteChoisi);
+			document.getElementById("boutons").innerHTML = dessineBoutonRetour(compteChoisi, null, null, null, null);
+			
+			ajouteLigneLog("Compte choisi = " + compteChoisi.identifiant);
+			ajouteLigneLog("URL à utiliser pour la constitution des deux listes de types d'opérations présentées : /monatis/operations/compatibilite/typesoperations/" + compteChoisi.identifiant);
+		}
+		else if ( typeOperationDepenseChoisi != null && compteContrepartieChoisi == null && constituerComptesContrepartieDepense(compteChoisi, typeOperationDepenseChoisi) != null) {
+
+			// Type opération choisi dans la colonne de gauche (en dépense), ce type d'opération nécessitant un second compte de contrepartie
+			// Préparation choix compte de contrepartie
+
+			document.getElementById("choisi").innerHTML = dessineElementsChoisis(compteChoisi, typeOperationDepenseChoisi, null, null);
+			document.getElementById("gauche").innerHTML = compteChoisi.identifiant;
+			document.getElementById("milieu").innerHTML = " ==[" + typeOperationDepenseChoisi.code + "]==> ";
+			document.getElementById("droite").innerHTML = dessineSelectCompteContrepartieDepense(compteChoisi, typeOperationDepenseChoisi);
+			document.getElementById("boutons").innerHTML = dessineBoutonRetour(compteChoisi, typeOperationDepenseChoisi, null, null, null);
+
+			ajouteLigneLog("Type d'opération choisi (en dépense du compte choisi) = " + typeOperationDepenseChoisi.code);
+			ajouteLigneLog("URL à utiliser pour l'affichage des comptes de contrepartie : /monatis/operations/compatibilite/comptes/recette/" + typeOperationDepenseChoisi.code + "/" + compteChoisi.identifiant);
+		}
+		else if ( typeOperationRecetteChoisi != null && compteContrepartieChoisi == null && constituerComptesContrepartieRecette(compteChoisi, typeOperationRecetteChoisi) != null) {
+
+			// Type opération choisi dans la colonne de droite (en recette), ce type d'opération nécessitant un second compte de contrepartie
+			// Préparation choix compte de contrepartie
+
+			document.getElementById("choisi").innerHTML = dessineElementsChoisis(compteChoisi, null, typeOperationRecetteChoisi, null);
+			document.getElementById("gauche").innerHTML = dessineSelectCompteContrepartieRecette(compteChoisi, typeOperationRecetteChoisi);
+			document.getElementById("milieu").innerHTML = " ==[" + typeOperationRecetteChoisi.code + "]==> ";
+			document.getElementById("droite").innerHTML = compteChoisi.identifiant;
+			document.getElementById("boutons").innerHTML = dessineBoutonRetour(compteChoisi, null, typeOperationRecetteChoisi, null, null);
+
+			ajouteLigneLog("Type d'opération choisi (en recette du compte choisi) = " + typeOperationRecetteChoisi.code);
+			ajouteLigneLog("URL à utiliser pour l'affichage des comptes de contrepartie : /monatis/operations/compatibilite/comptes/depense/" + typeOperationRecetteChoisi.code + "/" + compteChoisi.identifiant);
+		}
+		else if ( operationSaisie == null ) {
+
+			// Compte de contrepartie choisi ou inutile
+			// Préparations de la saisie et de l'enregistrement de l'opération
+
+			document.getElementById("choisi").innerHTML = dessineElementsChoisis(compteChoisi, typeOperationDepenseChoisi, typeOperationRecetteChoisi, compteContrepartieChoisi);
+			document.getElementById("gauche").innerHTML = "";
+			document.getElementById("milieu").innerHTML = dessineSaisieOperation(typeOperationDepenseChoisi, typeOperationRecetteChoisi);
+			document.getElementById("droite").innerHTML = "";
+			document.getElementById("boutons").innerHTML = 
+				dessineBoutonRetour(compteChoisi, typeOperationDepenseChoisi, typeOperationRecetteChoisi, compteContrepartieChoisi, null)
+				+ dessineBoutonEnregistrement(compteChoisi, typeOperationDepenseChoisi, typeOperationRecetteChoisi, compteContrepartieChoisi);
+
+
+			if ( compteContrepartieChoisi == null ) {
+				ajouteLigneLog("Aucun compte de contrepartie n'est nécessaire pour ce type d'opération");				
+			}
+			else {
+				ajouteLigneLog("Compte de contrepartie choisi = " + compteContrepartieChoisi.identifiant);
+			}
+		}
+		else {
+
+			// Opération saisie enregistrée
+			
+			let typeOperationChoisi = null;
+			let compteDepenseChoisi = null;
+			let compteRecetteChoisi = null;
+
+			if ( typeOperationDepenseChoisi != null ) {
+				typeOperationChoisi = typeOperationDepenseChoisi;
+				compteDepenseChoisi = compteChoisi;
+				if ( compteContrepartieChoisi != null ) {
+					compteRecetteChoisi = compteContrepartieChoisi;
+				}
+				else {
+					compteRecetteChoisi = rechercherUnCompteTechnique();
+				}
+			}
+			if ( typeOperationRecetteChoisi != null ) {
+				typeOperationChoisi = typeOperationRecetteChoisi;
+				compteRecetteChoisi = compteChoisi;
+				if ( compteContrepartieChoisi != null ) {
+					compteDepenseChoisi = compteContrepartieChoisi;
+				}
+				else {
+					compteDepenseChoisi = rechercherUnCompteTechnique();
+				}
+			}
+
+			document.getElementById("choisi").innerHTML = dessineElementsChoisis(compteChoisi, null, null, null);
+			document.getElementById("gauche").innerHTML = "";
+			document.getElementById("milieu").innerHTML = "";
+			document.getElementById("droite").innerHTML = "";
+			document.getElementById("boutons").innerHTML = dessineBoutonNouvelleOperation(compteChoisi);
+			document.getElementById("operations").innerHTML = dessineOperations(compteChoisi)
+			
+			ajouteLigneLog("Récapitulatif des choix : " + compteDepenseChoisi.identifiant + " ==[" + typeOperationChoisi.code + "]==> " + compteRecetteChoisi.identifiant);
+			ajouteLigneLog("Opération n° " + operationSaisie.numero + " créée");
+			ajouteLigneLog("URL à utiliser pour récupérer quelques opérations d'un compte donné : /monatis/operations/selection/dernieres_par_compte (avec OperationSelectionRequestDto)")
+		}
+	}
+
+	function enregistrerOperation(identifiantCompteChoisi, codeTypeOperationDepenseChoisi, codeTypeOperationRecetteChoisi, identifiantCompteContrepartieChoisi) {
+
+		let codeTypeOperationChoisi = null;
+		let identifiantCompteDepenseChoisi = null;
+		let identifiantCompteRecetteChoisi = null;
+
+		if ( codeTypeOperationDepenseChoisi != null ) {
+			codeTypeOperationChoisi = codeTypeOperationDepenseChoisi;
+			identifiantCompteDepenseChoisi = identifiantCompteChoisi;
+			if ( identifiantCompteContrepartieChoisi != null ) {
+				identifiantCompteRecetteChoisi = identifiantCompteContrepartieChoisi;
+			}
+			else {
+				identifiantCompteRecetteChoisi = rechercherUnCompteTechnique().identifiant;
+			}
+		}
+		if ( codeTypeOperationRecetteChoisi != null ) {
+			codeTypeOperationChoisi = codeTypeOperationRecetteChoisi;
+			identifiantCompteRecetteChoisi = identifiantCompteChoisi;
+			if ( identifiantCompteContrepartieChoisi != null ) {
+				identifiantCompteDepenseChoisi = identifiantCompteContrepartieChoisi;
+			}
+			else {
+				identifiantCompteDepenseChoisi = rechercherUnCompteTechnique().identifiant;
+			}
+		}
+
+		let numero = document.getElementById('numero').value;
+		let libelle = document.getElementById('libelle').value;
+		let dateValeur = document.getElementById('date').value;
+		let montant = document.getElementById('montant').value;
+		let sousCategorie = null;
+		let beneficiaires = null;
+		if ( codeTypeOperationChoisi == 'RECETTE' || codeTypeOperationChoisi == 'DEPENSE' ) {
+			sousCategorie = document.getElementById('souscategorie').value;
+			beneficiaires = document.getElementById('beneficiaires').value;
+		}
+		
+		// numero, libelle, typeOperation, dateValeur, montantEnEuros, compteDepense, compteRecette, sousCategorie, beneficiaires
+		let operation = new Operation(
+			numero, 
+			libelle, 
+			codeTypeOperationChoisi, 
+			dateValeur, 
+			montant, 
+			identifiantCompteDepenseChoisi, 
+			identifiantCompteRecetteChoisi, 
+			sousCategorie, 
+			beneficiaires);
+
+		operations[operations.length] = operation;
+		
+		afficheLaSuite(identifiantCompteChoisi, codeTypeOperationDepenseChoisi, codeTypeOperationRecetteChoisi, identifiantCompteContrepartieChoisi, numero);
+	}
+	
+	const typesOperations = definirListeTypesOperations();
+	const comptes = definirListeComptes();
+	const operations = [];
+	
+	let identifiantCompteChoisi = null;
+	let codeTypeOperationChoisi = null;
+	let identifiantCompteDepenseChoisi = null;
+	let identifiantCompteRecetteChoisi = null;
+	let numeroOperationSaisie = null;
+	
+	afficheLaSuite(identifiantCompteChoisi, codeTypeOperationChoisi, identifiantCompteDepenseChoisi, identifiantCompteRecetteChoisi, numeroOperationSaisie);
+
+</script>
+</form>
+</body>
+
+</html>

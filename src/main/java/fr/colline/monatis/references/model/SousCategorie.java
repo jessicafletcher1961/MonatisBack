@@ -2,6 +2,7 @@ package fr.colline.monatis.references.model;
 
 import java.util.Objects;
 
+import fr.colline.monatis.typologies.model.TypeReference;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;

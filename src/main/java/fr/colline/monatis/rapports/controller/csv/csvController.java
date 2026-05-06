@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import fr.colline.monatis.operations.model.TypeOperation;
+import fr.colline.monatis.typologies.model.TypeOperation;
 import jakarta.transaction.Transactional;
 
 @RestController

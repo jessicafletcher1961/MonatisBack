@@ -1,10 +1,8 @@
 package fr.colline.monatis.comptes.controller.technique;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,11 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import fr.colline.monatis.comptes.controller.CompteResponseDto;
 import fr.colline.monatis.comptes.model.CompteTechnique;
-import fr.colline.monatis.comptes.model.TypeCompte;
 import fr.colline.monatis.comptes.service.CompteTechniqueService;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ControllerVerificateurService;
 import fr.colline.monatis.exceptions.ServiceException;
+import fr.colline.monatis.typologies.model.TypeCompte;
 import jakarta.transaction.Transactional;
 
 @RestController
@@ -38,14 +36,12 @@ public class CompteTechniqueController {
 
 	@GetMapping("/all")
 	public List<CompteResponseDto> getAllCompte() throws ServiceException {
-		
-		List<CompteResponseDto> resultat = new ArrayList<>();
-		Sort tri = Sort.by("identifiant");
-		List<CompteTechnique> liste = compteTechniqueService.rechercherTous(tri);
-		for ( CompteTechnique compteTechnique : liste ) {
-			resultat.add(CompteTechniqueResponseDtoMapper.mapperModelToBasicResponseDto(compteTechnique));
-		}
-		return resultat;
+
+		return compteTechniqueService.rechercherTous()
+				.stream()
+				.sorted((c1, c2) -> {return c1.getIdentifiant().compareTo(c2.getIdentifiant());})
+				.map((c) -> {return CompteTechniqueResponseDtoMapper.mapperModelToBasicResponseDto(c);})
+				.toList();
 	}
 
 	@GetMapping("/get/{identifiant}")

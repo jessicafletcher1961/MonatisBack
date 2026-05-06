@@ -8,7 +8,7 @@ import fr.colline.monatis.rapports.model.composants.depense_recette.DepenseRecet
 import fr.colline.monatis.references.model.Beneficiaire;
 import fr.colline.monatis.references.model.Categorie;
 import fr.colline.monatis.references.model.SousCategorie;
-import fr.colline.monatis.utils.TypePeriode;
+import fr.colline.monatis.typologies.model.TypePeriode;
 
 public class EtatDepenseRecette {
 

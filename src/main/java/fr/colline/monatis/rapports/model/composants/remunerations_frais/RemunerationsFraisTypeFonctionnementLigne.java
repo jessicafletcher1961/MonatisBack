@@ -2,7 +2,7 @@ package fr.colline.monatis.rapports.model.composants.remunerations_frais;
 
 import java.util.List;
 
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
+import fr.colline.monatis.typologies.model.TypeFonctionnement;
 
 public class RemunerationsFraisTypeFonctionnementLigne {
 

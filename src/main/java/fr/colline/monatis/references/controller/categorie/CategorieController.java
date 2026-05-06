@@ -1,10 +1,9 @@
 package fr.colline.monatis.references.controller.categorie;
 
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,9 +19,10 @@ import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ControllerVerificateurService;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.references.controller.ReferenceResponseDto;
+import fr.colline.monatis.references.controller.ReferenceSelectionRequestDto;
 import fr.colline.monatis.references.model.Categorie;
-import fr.colline.monatis.references.model.TypeReference;
 import fr.colline.monatis.references.service.CategorieService;
+import fr.colline.monatis.typologies.model.TypeReference;
 import jakarta.transaction.Transactional;
 
 @RestController
@@ -38,14 +38,12 @@ public class CategorieController {
 
 	@GetMapping("/all")
 	public List<ReferenceResponseDto> getAllReference() throws ServiceException {
-		
-		List<ReferenceResponseDto> resultat = new ArrayList<>();
-		Sort tri = Sort.by("nom");
-		List<Categorie> liste = categorieService.rechercherTous(tri);
-		for ( Categorie categorie : liste ) {
-			resultat.add(CategorieResponseDtoMapper.mapperModelToBasicResponseDto(categorie));
-		}
-		return resultat;
+
+		return categorieService.rechercherTous()
+				.stream()
+				.sorted((c1, c2) -> {return c1.getNom().compareTo(c2.getNom());})
+				.map((c) -> {return CategorieResponseDtoMapper.mapperModelToBasicResponseDto(c);})
+				.toList();
 	}
 
 	@GetMapping("/get/{nom}")
@@ -84,6 +82,24 @@ public class CategorieController {
 
 		Categorie categorie = verificateur.verifierCategorie(nom, OBLIGATOIRE);
 		categorieService.supprimerReference(categorie);
+	}
+
+	@PostMapping("/selection")
+	public List<ReferenceResponseDto>selectionnerCategorie (
+			@RequestBody ReferenceSelectionRequestDto requestDto) throws ControllerException, ServiceException {
+		
+		final String nom = verificateur.standardiserIdentifiantFonctionnel(requestDto.nomContient);
+		final String libelle = verificateur.verifierLibelle(requestDto.libelleContient, FACULTATIF, null);
+		
+		return categorieService.rechercherTous()
+				.stream()
+				.filter((c) -> {return nom == null 
+						|| c.getNom().contains(nom);})
+				.filter((c) -> {return libelle == null 
+						|| c.getLibelle().toUpperCase().contains(libelle.toUpperCase());})
+				.sorted(Comparator.comparing(Categorie::getNom))
+				.map((c) -> {return CategorieResponseDtoMapper.mapperModelToBasicResponseDto(c);})
+				.toList();
 	}
 
 	private Categorie mapperCreationRequestDtoToModel(CategorieRequestDto dto, Categorie categorie) throws ControllerException, ServiceException {

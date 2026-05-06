@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import fr.colline.monatis.comptes.model.CompteInterne;
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.comptes.service.CompteInterneService;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.operations.model.Operation;
@@ -18,8 +17,9 @@ import fr.colline.monatis.rapports.model.composants.remunerations_frais.Remunera
 import fr.colline.monatis.rapports.model.composants.remunerations_frais.RemunerationsFraisTypeFonctionnementLigne;
 import fr.colline.monatis.rapports.model.composants.remunerations_frais.RemunerationsFraisTypeFonctionnementPeriode;
 import fr.colline.monatis.references.model.Titulaire;
+import fr.colline.monatis.typologies.model.TypeFonctionnement;
+import fr.colline.monatis.typologies.model.TypePeriode;
 import fr.colline.monatis.utils.DateEtPeriodeUtils;
-import fr.colline.monatis.utils.TypePeriode;
 
 @Service
 class RemunerationsFraisService {

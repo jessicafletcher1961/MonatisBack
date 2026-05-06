@@ -4,11 +4,11 @@ import java.time.LocalDate;
 import java.util.List;
 
 import fr.colline.monatis.comptes.model.CompteInterne;
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.rapports.model.composants.remunerations_frais.RemunerationsFraisPeriode;
 import fr.colline.monatis.rapports.model.composants.remunerations_frais.RemunerationsFraisTypeFonctionnementLigne;
 import fr.colline.monatis.references.model.Titulaire;
-import fr.colline.monatis.utils.TypePeriode;
+import fr.colline.monatis.typologies.model.TypeFonctionnement;
+import fr.colline.monatis.typologies.model.TypePeriode;
 
 public class EtatRemunerationsFrais {
 

@@ -1,10 +1,9 @@
 package fr.colline.monatis.references.controller.souscategorie;
 
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,9 +19,10 @@ import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ControllerVerificateurService;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.references.controller.ReferenceResponseDto;
+import fr.colline.monatis.references.controller.ReferenceSelectionRequestDto;
 import fr.colline.monatis.references.model.SousCategorie;
-import fr.colline.monatis.references.model.TypeReference;
 import fr.colline.monatis.references.service.SousCategorieService;
+import fr.colline.monatis.typologies.model.TypeReference;
 import jakarta.transaction.Transactional;
 
 @RestController
@@ -38,14 +38,12 @@ public class SousCategorieController {
 
 	@GetMapping("/all")
 	public List<ReferenceResponseDto> getAllReference() throws ServiceException {
-		
-		List<ReferenceResponseDto> resultat = new ArrayList<>();
-		Sort tri = Sort.by("nom");
-		List<SousCategorie> liste = sousCategorieService.rechercherTous(tri);
-		for ( SousCategorie sousCategorie : liste ) {
-			resultat.add(SousCategorieResponseDtoMapper.mapperModelToBasicResponseDto(sousCategorie));
-		}
-		return resultat;
+
+		return sousCategorieService.rechercherTous()
+				.stream()
+				.sorted((sc1, sc2) -> {return sc1.getNom().compareTo(sc2.getNom());})
+				.map((sc) -> {return SousCategorieResponseDtoMapper.mapperModelToBasicResponseDto(sc);})
+				.toList();
 	}
 
 	@GetMapping("/get/{nom}")
@@ -84,6 +82,24 @@ public class SousCategorieController {
 
 		SousCategorie sousCategorie = verificateur.verifierSousCategorie(nom, OBLIGATOIRE);
 		sousCategorieService.supprimerReference(sousCategorie);
+	}
+
+	@PostMapping("/selection")
+	public List<ReferenceResponseDto>selectionnerSousCategorie (
+			@RequestBody ReferenceSelectionRequestDto requestDto) throws ControllerException, ServiceException {
+		
+		final String nom = verificateur.standardiserIdentifiantFonctionnel(requestDto.nomContient);
+		final String libelle = verificateur.verifierLibelle(requestDto.libelleContient, FACULTATIF, null);
+		
+		return sousCategorieService.rechercherTous()
+				.stream()
+				.filter((sc) -> {return nom == null 
+						|| sc.getNom().contains(nom);})
+				.filter((sc) -> {return libelle == null 
+						|| sc.getLibelle().toUpperCase().contains(libelle.toUpperCase());})
+				.sorted(Comparator.comparing(SousCategorie::getNom))
+				.map((sc) -> {return SousCategorieResponseDtoMapper.mapperModelToBasicResponseDto(sc);})
+				.toList();
 	}
 
 	private SousCategorie mapperCreationRequestDtoToModel(SousCategorieRequestDto dto, SousCategorie sousCategorie) throws ControllerException, ServiceException {

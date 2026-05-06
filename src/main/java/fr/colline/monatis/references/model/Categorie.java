@@ -3,6 +3,7 @@ package fr.colline.monatis.references.model;
 import java.util.HashSet;
 import java.util.Set;
 
+import fr.colline.monatis.typologies.model.TypeReference;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;

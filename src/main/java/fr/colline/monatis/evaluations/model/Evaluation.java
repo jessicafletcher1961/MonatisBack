@@ -15,7 +15,6 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(indexes = {
-		@Index(name = "evaluation_cle_idx", columnList = "cle", unique = true),
 		@Index(name = "evaluation_compte_interne_id_date_solde_idx", columnList = "compte_interne_id,date_solde", unique = true)})
 
 public class Evaluation {
@@ -91,13 +90,13 @@ public class Evaluation {
 	public Evaluation() {}
 	
 	public Evaluation(
-			String identifiant,
+			String cle,
 			CompteInterne compteInterne,
 			LocalDate dateSolde,
 			Long montantSoldeEnCentimes,
 			String libelle) {
 		
-		this.cle = identifiant;
+		this.cle = cle;
 		this.compteInterne = compteInterne;
 		this.dateSolde = dateSolde;
 		this.montantSoldeEnCentimes = montantSoldeEnCentimes;

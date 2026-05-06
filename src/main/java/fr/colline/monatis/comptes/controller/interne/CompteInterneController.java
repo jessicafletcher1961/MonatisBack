@@ -1,13 +1,12 @@
 package fr.colline.monatis.comptes.controller.interne;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,13 +20,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import fr.colline.monatis.comptes.controller.CompteResponseDto;
 import fr.colline.monatis.comptes.model.CompteInterne;
-import fr.colline.monatis.comptes.model.TypeCompte;
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
 import fr.colline.monatis.comptes.service.CompteInterneService;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ControllerVerificateurService;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.references.model.Titulaire;
+import fr.colline.monatis.typologies.controller.TypologieResponseDto;
+import fr.colline.monatis.typologies.controller.TypologieResponseDtoMapper;
+import fr.colline.monatis.typologies.model.TypeCompte;
+import fr.colline.monatis.typologies.model.TypeFonctionnement;
 import jakarta.transaction.Transactional;
 
 @RestController
@@ -44,13 +45,11 @@ public class CompteInterneController {
 	@GetMapping("/all")
 	public List<CompteResponseDto> getAllCompte() throws ServiceException {
 
-		List<CompteResponseDto> resultat = new ArrayList<>();
-		Sort tri = Sort.by("identifiant");
-		List<CompteInterne> liste = compteInterneService.rechercherTous(tri);
-		for ( CompteInterne compteInterne : liste ) {
-			resultat.add(CompteInterneResponseDtoMapper.mapperModelToBasicResponseDto(compteInterne));
-		}
-		return resultat;
+		return compteInterneService.rechercherTous()
+				.stream()
+				.sorted((c1, c2) -> {return c1.getIdentifiant().compareTo(c2.getIdentifiant());})
+				.map((c) -> {return CompteInterneResponseDtoMapper.mapperModelToBasicResponseDto(c);})
+				.toList();
 	}
 
 	@GetMapping("/get/{identifiant}")
@@ -100,8 +99,57 @@ public class CompteInterneController {
 		compteInterneService.supprimerCompte(compteInterne);
 	}
 
+	@PostMapping("/selection")
+	public List<CompteResponseDto> selectionnerComptes(
+			@RequestBody CompteInterneSelectionRequestDto requestDto) throws ControllerException, ServiceException {
+		
+		final TypeFonctionnement typeFonctionnement = verificateur.verifierTypeFonctionnement(requestDto.codeTypeFonctionnement, FACULTATIF, null);
+		final LocalDate ouvertAu = verificateur.verifierDate(requestDto.ouvertAu, FACULTATIF, null);
+		final LocalDate clotureAu = verificateur.verifierDate(requestDto.fermeAu, FACULTATIF, null);
+		final String identifiant = verificateur.standardiserIdentifiantFonctionnel(requestDto.identifiantContient);
+		final String libelle = verificateur.verifierLibelle(requestDto.libelleContient, FACULTATIF, null);
+		final String nomBanque = verificateur.standardiserIdentifiantFonctionnel(requestDto.nomBanqueContient);
+		final String nomTitulaire = verificateur.standardiserIdentifiantFonctionnel(requestDto.nomTitulaireContient);
+		
+		return compteInterneService.rechercherTous()
+				.stream()
+				.filter((c) -> {return typeFonctionnement == null 
+						|| c.getTypeFonctionnement() == typeFonctionnement;})
+				.filter((c) -> {return ouvertAu == null 
+						|| (!ouvertAu.isBefore(c.getDateSoldeInitial()) 
+								&& (c.getDateCloture() == null || !ouvertAu.isAfter(c.getDateCloture())));})
+				.filter((c) -> {return clotureAu == null 
+						|| (clotureAu.isBefore(c.getDateSoldeInitial())
+								|| (c.getDateCloture() != null && clotureAu.isAfter(c.getDateCloture())));})
+				.filter((c) -> {return identifiant == null 
+						|| c.getIdentifiant().contains(identifiant);})
+				.filter((c) -> {return libelle == null 
+						|| c.getLibelle().toUpperCase().contains(libelle.toUpperCase());})
+				.filter((c) -> {return nomBanque == null
+						|| (c.getBanque() != null && c.getBanque().getNom().contains(nomBanque));})
+				.filter((c) -> {return nomTitulaire == null
+						|| c.getTitulaires()
+								.stream()
+								.anyMatch((t) -> t.getNom().contains(nomTitulaire));})
+				.sorted((c1, c2) -> {return c1.getIdentifiant().compareTo(c2.getIdentifiant());})
+				.map((c) -> {return CompteInterneResponseDtoMapper.mapperModelToBasicResponseDto(c);})
+				.toList();
+	}
+
+	//-- A SUPPRIMER POUR V2 
+	@GetMapping("/typologie/fonctionnement")
+	public List<TypologieResponseDto> getTypesFonctionnements() {
+
+		return Arrays.asList(TypeFonctionnement.values())
+				.stream()
+				.map((t) -> {return TypologieResponseDtoMapper.mapperModelToResponseDto(t);})
+				.toList();
+		
+	}
+
+	//-- A SUPPRIMER POUR V2 
 	@GetMapping("/fonctionnement/{codeTypeFonctionnement}")
-	public List<CompteResponseDto> getCompteParTypeFonctionnement(@PathVariable String codeTypeFonctionnement) throws ServiceException, ControllerException {
+	public List<CompteResponseDto> getComptesParTypeFonctionnement(@PathVariable String codeTypeFonctionnement) throws ServiceException, ControllerException {
 
 		TypeFonctionnement typeFonctionnement = verificateur.verifierTypeFonctionnement(codeTypeFonctionnement, OBLIGATOIRE, null);
 		
@@ -110,16 +158,6 @@ public class CompteInterneController {
 				.sorted((c1,c2)->{return c1.getIdentifiant().compareTo(c2.getIdentifiant());})
 				.map((c)->{return CompteInterneResponseDtoMapper.mapperModelToBasicResponseDto(c);})
 				.toList();
-	}
-
-	@GetMapping("/typologie/fonctionnement")
-	public List<TypeFonctionnementResponseDto> getAllTypeFonctionnement() {
-
-		List<TypeFonctionnementResponseDto> resultat = new ArrayList<TypeFonctionnementResponseDto>();
-		for ( TypeFonctionnement typeFonctionnement : TypeFonctionnement.values() ) {
-			resultat.add(CompteInterneResponseDtoMapper.mapperModelToResponseDto(typeFonctionnement));
-		}
-		return resultat;
 	}
 
 	private CompteInterne mapperCreationRequestDtoToModel(CompteInterneRequestDto dto, CompteInterne compteInterne) throws ControllerException, ServiceException {

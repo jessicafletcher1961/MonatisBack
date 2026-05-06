@@ -1,5 +1,6 @@
 package fr.colline.monatis.comptes.model;
 
+import fr.colline.monatis.typologies.model.TypeCompte;
 import jakarta.persistence.Entity;
 
 @Entity

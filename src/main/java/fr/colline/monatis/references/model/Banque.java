@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import fr.colline.monatis.comptes.model.CompteInterne;
+import fr.colline.monatis.typologies.model.TypeReference;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;

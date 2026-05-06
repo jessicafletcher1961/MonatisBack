@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import fr.colline.monatis.comptes.model.CompteInterne;
-import fr.colline.monatis.comptes.model.TypeFonctionnement;
+import fr.colline.monatis.typologies.model.TypeFonctionnement;
 
 @Repository
 public interface CompteInterneRepository extends CompteRepository<CompteInterne> {

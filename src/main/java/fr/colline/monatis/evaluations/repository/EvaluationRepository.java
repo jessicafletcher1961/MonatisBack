@@ -21,27 +21,12 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
 	public boolean existsByCle(String cle);
 
 	public List<Evaluation> findByCompteInterneIdOrderByDateSolde(Long id);
-
-	public List<Evaluation> findByCompteInterneIdAndDateSoldeBetweenOrderByDateSolde(
-			Long id, 
-			LocalDate dateDebut,
-			LocalDate dateFin);
-
-	public List<Evaluation> findByCompteInterneIdAndDateSoldeGreaterThanEqualOrderByDateSolde(
-			Long compteInterneId,
-			LocalDate dateDebut);
-
-	public Optional<Evaluation> findFirstByCompteInterneIdAndDateSoldeGreaterThanEqualOrderByDateSolde(
-			Long id,
-			LocalDate dateCible);
-
-	public Optional<Evaluation> findFirstByCompteInterneIdAndDateSoldeLessThanEqualOrderByDateSoldeDesc(
-			Long id, 
-			LocalDate dateCible);
-
+ 
 	public Optional<Evaluation> findFirstByCompteInterneIdAndDateSoldeBetweenOrderByDateSoldeDesc(
 			Long id,
 			LocalDate dateDebut, 
 			LocalDate dateFin);
+
+	public Optional<Evaluation> findByCompteInterneIdAndDateSolde(Long id, LocalDate dateSolde);
 
 }

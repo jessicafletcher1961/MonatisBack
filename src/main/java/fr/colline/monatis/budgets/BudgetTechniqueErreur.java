@@ -66,6 +66,18 @@ public enum BudgetTechniqueErreur implements MonatisErreur {
 	SUPPRESSION(
 			"Un problème technique est survenu lors de la suppression d'un budget correspondant à la référence de type '%s' et de nom '%s' pour la période du %s au %s"),
 
+	/**
+			"Un problème technique est survenu lors de la recherche d'un budget de clé '%s'"),
+	 */
+	RECHERCHE_PAR_IDENTIFIANT_FONCTIONNEL(
+			"Un problème technique est survenu lors de la recherche d'un budget de clé '%s'"),
+	
+	/**
+			"Un problème technique est survenu lors de la vérification de l'existence du budget de clé '%s'"),
+	 */
+	EXISTENCE_PAR_IDENTIFIANT_FONCTIONNEL(
+			"Un problème technique est survenu lors de la vérification de l'existence du budget de clé '%s'"),
+
 	;
 
 	private final TypeDomaine typeDomaine = TypeDomaine.BUDGET;

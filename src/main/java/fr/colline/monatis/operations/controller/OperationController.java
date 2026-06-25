@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -16,6 +15,10 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,16 +41,20 @@ import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.operations.OperationControleErreur;
 import fr.colline.monatis.operations.OperationTechniqueErreur;
 import fr.colline.monatis.operations.controller.request.OperationCreationRequestDto;
+import fr.colline.monatis.operations.controller.request.OperationExempleRequestDto;
 import fr.colline.monatis.operations.controller.request.OperationLigneModificationRequestDto;
 import fr.colline.monatis.operations.controller.request.OperationModificationRequestDto;
-import fr.colline.monatis.operations.controller.request.OperationSelectionRequestDto;
+import fr.colline.monatis.operations.controller.request.OperationPageRequestDto;
 import fr.colline.monatis.operations.controller.response.CompatibilitesResponseDto;
+import fr.colline.monatis.operations.controller.response.OperationPageResponseDto;
 import fr.colline.monatis.operations.controller.response.OperationResponseDto;
 import fr.colline.monatis.operations.model.Operation;
 import fr.colline.monatis.operations.model.OperationLigne;
 import fr.colline.monatis.operations.service.CompatibiliteService;
+import fr.colline.monatis.operations.service.OperationFiltreConstructeur;
 import fr.colline.monatis.operations.service.OperationService;
 import fr.colline.monatis.references.model.Beneficiaire;
+import fr.colline.monatis.references.model.SousCategorie;
 import fr.colline.monatis.typologies.controller.TypologieResponseDto;
 import fr.colline.monatis.typologies.controller.TypologieResponseDtoMapper;
 import fr.colline.monatis.typologies.model.TypeCompte;
@@ -59,6 +66,10 @@ import jakarta.transaction.Transactional;
 @Transactional
 public class OperationController {
 
+	private final int TAILLE_PAGE_OPERATION_PAR_DEFAUT = 25;
+	private final int TAILLE_PAGE_SUGGESTIONS = 5;
+	private final int TAILLE_PAGE_DOUBLONS = 1;
+	
 	private final boolean OBLIGATOIRE = true;
 	private final boolean FACULTATIF = false;
 
@@ -111,48 +122,175 @@ public class OperationController {
 		Operation operation = verificateur.verifierOperation(numero, OBLIGATOIRE);
 		operationService.supprimerOperation(operation);
 	}
+	
+	@PostMapping("/page")
+	public OperationPageResponseDto paginerOperations(
+			@RequestBody OperationPageRequestDto requestDto) throws ServiceException, ControllerException {
 
-	@PostMapping("/selection")
-	public List<OperationResponseDto> selectionnnerOperations(
-			@RequestBody OperationSelectionRequestDto requestDto) throws ServiceException, ControllerException {
+		final int numeroPage = verificateur.verifierNumeroPage(requestDto.numeroPage, FACULTATIF, 0);
+		final int taillePage = verificateur.verifierTaillePage(requestDto.taillePage, FACULTATIF, TAILLE_PAGE_OPERATION_PAR_DEFAUT);
+	    
+		PageRequest pagination = PageRequest.of(
+	            numeroPage, // MODIFIE: API en base 1 convertie en base 0 Spring.
+	            taillePage, // MODIFIE: borne min/max appliquee.
+	            Sort.by(Sort.Direction.DESC, "dateValeur")
+	                .and(Sort.by(Sort.Direction.DESC, "id"))); // MODIFIE: tri stable.
 		
-		final String numero = verificateur.standardiserIdentifiantFonctionnel(requestDto.numeroContient);
-		final String libelle = verificateur.verifierLibelle(requestDto.libelleContient, FACULTATIF, null);
-		final LocalDate dateDebut = verificateur.verifierDate(requestDto.depuisLe, FACULTATIF, null);
-		final LocalDate dateFin = verificateur.verifierDate(requestDto.jusqueAu, FACULTATIF, null);
-		final TypeOperation typeOperation = verificateur.verifierTypeOperation(requestDto.codeTypeOperation, FACULTATIF, null);
-		final Compte compteRecetteOuDepense = verificateur.verifierCompte(requestDto.identifiantCompteRecetteOuDepense, FACULTATIF);
-		final Compte compteDepense = verificateur.verifierCompte(requestDto.identifiantCompteDepense, FACULTATIF);
-		final Compte compteRecette = verificateur.verifierCompte(requestDto.identifiantCompteRecette, FACULTATIF);
-		final Boolean pointee = verificateur.verifierBoolean(requestDto.pointee, FACULTATIF, null);
-		final Long limite = requestDto.nombreLimite == null ? 90L : requestDto.nombreLimite; 
+		String recherche = verificateur.verifierLibelle(requestDto.recherche, FACULTATIF, null);
 		
-		Long montantEnCentimesApproximatif = requestDto.montantEnCentimesApproximatif;
-		final Long montantBasEnCentimes = montantEnCentimesApproximatif == null ? null : montantEnCentimesApproximatif - Math.round(montantEnCentimesApproximatif * 0.1);
-		final Long montantHautEnCentimes = montantEnCentimesApproximatif == null ? null : montantEnCentimesApproximatif + Math.round(montantEnCentimesApproximatif * 0.1);
+		String numero = verificateur.standardiserIdentifiantFonctionnel(requestDto.numeroContient);
+		LocalDate dateCreation = verificateur.verifierDate(requestDto.dateCreationApproximative, FACULTATIF, null);
+		LocalDate dateValeurDebut = verificateur.verifierDate(requestDto.dateValeurDepuisLe, FACULTATIF, null);
+		LocalDate dateValeurFin = verificateur.verifierDate(requestDto.dateValeurJusqueAu, FACULTATIF, null);
+		Boolean pointee = verificateur.verifierBoolean(requestDto.pointee, FACULTATIF, null);
+		Long montantPlancher = verificateur.verifierMontantEnCentimes(requestDto.montantEnCentimesPlancher, FACULTATIF, null);
+		Long montantPlafond = verificateur.verifierMontantEnCentimes(requestDto.montantEnCentimesPlafond, FACULTATIF, null);
+
+		String libelle = verificateur.verifierLibelle(requestDto.libelleContient, FACULTATIF, null);
+		if ( libelle != null && !libelle.isBlank() && !libelle.matches("[0-9 ]+") ) {
+			libelle = libelle.replaceAll("\\d+", "%");
+		}
+
+		Long compte1Id = null;
+		if ( requestDto.compte1Id != null ) {
+			if ( verificateur.verifierExistenceCompte(requestDto.compte1Id) ) {
+				compte1Id = requestDto.compte1Id;
+			}
+		}
+		if ( compte1Id == null && requestDto.identifiantCompte1 != null ) 
+		{
+			Compte compte = verificateur.verifierCompte(requestDto.identifiantCompte1, FACULTATIF);
+			compte1Id = compte == null ? null : compte.getId();
+		}
+
+		Long compte2Id = null;
+		if ( requestDto.compte2Id != null ) {
+			if ( verificateur.verifierExistenceCompte(requestDto.compte2Id) ) {
+				compte2Id = requestDto.compte2Id;
+			}
+		}
+		if ( compte2Id == null && requestDto.identifiantCompte2 != null ) 
+		{
+			Compte compte = verificateur.verifierCompte(requestDto.identifiantCompte2, FACULTATIF);
+			compte2Id = compte == null ? null : compte.getId();
+		}
+
+		Set<Long> sousCategoriesIds = new HashSet<Long>();
+		if ( requestDto.sousCategoriesIds != null && !requestDto.sousCategoriesIds.isEmpty() ) {
+			for ( Long id : requestDto.sousCategoriesIds ) {
+				if ( verificateur.verifierExistenceSousCategorie(id) ) {
+					sousCategoriesIds.add(id);
+				}
+			}
+		}
+		if ( sousCategoriesIds.isEmpty() && requestDto.nomsSousCategories != null && !requestDto.nomsSousCategories.isEmpty() ) {
+			for ( String nom : requestDto.nomsSousCategories ) {
+				SousCategorie sousCategorie = verificateur.verifierSousCategorie(nom, FACULTATIF);
+				if ( sousCategorie != null ) sousCategoriesIds.add(sousCategorie.getId());
+			}
+		}
 		
-		return operationService.rechercherOperationsVisiblesParDateValeurDesc(dateDebut, dateFin)
-				.filter((o) -> {return numero == null
-						|| o.getNumero().contains(numero);})
-				.filter((o) -> {return libelle == null 
-						|| o.getLibelle().toUpperCase().contains(libelle.toUpperCase());})
-				.filter((o) -> {return typeOperation == null 
-						|| o.getTypeOperation() == typeOperation;})
-				.filter((o) -> {return montantEnCentimesApproximatif == null
-						|| (o.getMontantEnCentimes().compareTo(montantBasEnCentimes) >= 0 && o.getMontantEnCentimes().compareTo(montantHautEnCentimes) <= 0);})
-				.filter((o) -> {return compteRecetteOuDepense == null 
-						|| o.getCompteDepense().getId().equals(compteRecetteOuDepense.getId())
-						|| o.getCompteRecette().getId().equals(compteRecetteOuDepense.getId());})
-				.filter((o) -> {return compteDepense == null
-						|| o.getCompteDepense().getId().equals(compteDepense.getId());})
-				.filter((o) -> {return compteRecette == null 
-						|| o.getCompteRecette().getId().equals(compteRecette.getId());})
-				.filter((o) -> {return pointee == null 
-						|| (o.isPointee() != null && o.isPointee().equals(pointee));})
-				.sorted(Comparator.comparing(Operation::getDateValeur, Comparator.reverseOrder()).thenComparing(Operation::getNumero))
-				.map((o) -> {return OperationResponseDtoMapper.mapperModelToBasicResponseDto(o);})
-				.limit(limite)
-				.toList();
+		Set<Long> beneficiairesIds = new HashSet<Long>();
+		if ( requestDto.beneficiairesIds != null && !requestDto.beneficiairesIds.isEmpty() ) {
+			for ( Long id : requestDto.beneficiairesIds ) {
+				if ( verificateur.verifierExistenceBeneficiaire(id) ) {
+					beneficiairesIds.add(id);
+				}
+			}
+		}
+		if ( beneficiairesIds.isEmpty() && requestDto.nomsBeneficiaires != null && !requestDto.nomsBeneficiaires.isEmpty() ) {
+			for ( String nom : requestDto.nomsBeneficiaires ) {
+				Beneficiaire beneficiaire = verificateur.verifierBeneficiaire(nom, FACULTATIF);
+				if ( beneficiaire != null ) beneficiairesIds.add(beneficiaire.getId());
+			}
+		}
+		 
+		Set<TypeOperation> typesOperation = new HashSet<TypeOperation>();
+		if ( requestDto.codesTypeOperation != null && !requestDto.codesTypeOperation.isEmpty() ) {
+			for ( String codeTypeOperation : requestDto.codesTypeOperation ) {
+				typesOperation.add(verificateur.verifierTypeOperation(codeTypeOperation, OBLIGATOIRE, null));
+			}
+		}
+
+		Specification<Operation> filtre = OperationFiltreConstructeur.initialiserFiltre();
+		
+		filtre = OperationFiltreConstructeur.ajouterFiltreRecherche(filtre, recherche);
+		
+		filtre = OperationFiltreConstructeur.ajouterFiltreNumero(filtre, numero);
+		filtre = OperationFiltreConstructeur.ajouterFiltreLibelle(filtre, libelle);
+		filtre = OperationFiltreConstructeur.ajouterFiltreDateCreationApproximative(filtre, dateCreation);
+		filtre = OperationFiltreConstructeur.ajouterFiltreDateValeur(filtre, dateValeurDebut, dateValeurFin);
+		filtre = OperationFiltreConstructeur.ajouterFiltreCompte(filtre, compte1Id);
+		filtre = OperationFiltreConstructeur.ajouterFiltreCompte(filtre, compte2Id);
+		filtre = OperationFiltreConstructeur.ajouterFiltrePointee(filtre, pointee);
+		filtre = OperationFiltreConstructeur.ajouterFiltreMontant(filtre, montantPlancher, montantPlafond);
+		filtre = OperationFiltreConstructeur.ajouterFiltreSousCCategories(filtre, sousCategoriesIds);
+		filtre = OperationFiltreConstructeur.ajouterFiltreBeneficiaires(filtre, beneficiairesIds);
+		filtre = OperationFiltreConstructeur.ajouterFiltreTypesOperation(filtre, typesOperation);
+		
+		Page<Operation> page = operationService.rechercherOperationsParFiltre(
+				filtre,
+				pagination);
+		
+	    return OperationResponseDtoMapper.mapperPageToResponseDto(page); // MODIFIE: transforme Page<Operation> en contrat API front-friendly.
+
+	}
+
+	@PostMapping("/suggestions")
+	public OperationPageResponseDto paginerSuggestions(
+			@RequestBody OperationExempleRequestDto requestDto) throws ControllerException, ServiceException {
+
+		final int numeroPage = verificateur.verifierNumeroPage(requestDto.numeroPage, FACULTATIF, 0);
+		final int taillePage = verificateur.verifierTaillePage(requestDto.taillePage, FACULTATIF, TAILLE_PAGE_SUGGESTIONS);
+
+		PageRequest pagination = PageRequest.of(
+	            numeroPage,
+	            taillePage,
+	            Sort.by(Sort.Direction.DESC, "dateValeur")
+	                .and(Sort.by(Sort.Direction.DESC, "id")));
+	    
+		Operation exempleOperation = new Operation();
+		
+		exempleOperation.setLibelle(verificateur.verifierLibelle(requestDto.libelle, FACULTATIF, null));
+		exempleOperation.setCompteRecette(verificateur.verifierCompte(requestDto.identifiantCompteRecette, FACULTATIF));
+		exempleOperation.setCompteDepense(verificateur.verifierCompte(requestDto.identifiantCompteDepense, FACULTATIF));
+		exempleOperation.setTypeOperation(verificateur.verifierTypeOperation(requestDto.codeTypeOperation, FACULTATIF, null));
+		
+		Page<Operation> page = operationService.rechercherOperationsParExemple(
+				exempleOperation,
+				pagination);
+		
+	    return OperationResponseDtoMapper.mapperPageToResponseDto(page); // MODIFIE: transforme Page<Operation> en contrat API front-friendly.
+	}
+
+	@PostMapping("/doublons")
+	public OperationPageResponseDto paginerDoublons(
+			@RequestBody OperationExempleRequestDto requestDto) throws ControllerException, ServiceException {
+
+		final int numeroPage = verificateur.verifierNumeroPage(requestDto.numeroPage, FACULTATIF, 0);
+		final int taillePage = verificateur.verifierTaillePage(requestDto.taillePage, FACULTATIF, TAILLE_PAGE_DOUBLONS);
+
+		PageRequest pagination = PageRequest.of(
+	            numeroPage,
+	            taillePage,
+	            Sort.by(Sort.Direction.DESC, "dateValeur")
+	                .and(Sort.by(Sort.Direction.DESC, "id")));
+	    
+		Operation exempleOperation = new Operation();
+		
+		exempleOperation.setLibelle(verificateur.verifierLibelle(requestDto.libelle, FACULTATIF, null));
+		exempleOperation.setCompteRecette(verificateur.verifierCompte(requestDto.identifiantCompteRecette, FACULTATIF));
+		exempleOperation.setCompteDepense(verificateur.verifierCompte(requestDto.identifiantCompteDepense, FACULTATIF));
+		exempleOperation.setTypeOperation(verificateur.verifierTypeOperation(requestDto.codeTypeOperation, FACULTATIF, null));
+		
+		exempleOperation.setDateValeur(verificateur.verifierDate(requestDto.dateValeur, FACULTATIF, null));
+		exempleOperation.setMontantEnCentimes(verificateur.verifierMontantEnCentimes(requestDto.montantEnCentimes, FACULTATIF, null));
+		
+		Page<Operation> page = operationService.rechercherOperationsParExemple(
+				exempleOperation,
+				pagination);
+		
+	    return OperationResponseDtoMapper.mapperPageToResponseDto(page); // MODIFIE: transforme Page<Operation> en contrat API front-friendly.
 	}
 
 	@GetMapping("/compatibilite/comptes/{codeTypeOperationChoisi}") 
@@ -325,8 +463,8 @@ public class OperationController {
 		
 		return dto;
 	}
-
-	//-- A SUPPRIMER POUR V2 
+	
+	@Deprecated(forRemoval = true) //-- A SUPPRIMER POUR V2 
 	@GetMapping("/typologie/operation")
 	public List<TypologieResponseDto> getTypesOperations() {
 		
@@ -345,6 +483,7 @@ public class OperationController {
 		operation.setNumero(verificateur.verifierNumeroValideEtUnique(dto.numero, operation.getId(), FACULTATIF));
 		operation.setLibelle(verificateur.verifierLibelle(dto.libelle, FACULTATIF, null));
 		operation.setTypeOperation(verificateur.verifierTypeOperation(dto.codeTypeOperation, OBLIGATOIRE, null));
+		operation.setDateCreation(verificateur.verifierDate(dto.dateCreation, FACULTATIF, LocalDate.now()));
 		operation.setDateValeur(verificateur.verifierDate(dto.dateValeur, FACULTATIF, LocalDate.now()));
 		operation.setMontantEnCentimes(verificateur.verifierMontantEnCentimes(dto.montantEnCentimes, OBLIGATOIRE, null));
 		operation.setCompteDepense(verificateur.verifierCompte(dto.identifiantCompteDepense, OBLIGATOIRE));
@@ -360,8 +499,9 @@ public class OperationController {
 
 		ligne.setNumeroLigne(0);
 		ligne.setLibelle(operation.getLibelle());
-		ligne.setDateComptabilisation(operation.getDateValeur());
 		ligne.setMontantEnCentimes(operation.getMontantEnCentimes());
+		
+		ligne.setDateComptabilisation(verificateur.verifierDate(dto.dateComptabilisation, FACULTATIF, operation.getDateValeur()));
 		ligne.setSousCategorie(verificateur.verifierSousCategorie(dto.nomSousCategorie, FACULTATIF));
 		Set<Beneficiaire> beneficiaires = new HashSet<>();
 		if ( dto.nomsBeneficiaires != null ) {
@@ -383,6 +523,7 @@ public class OperationController {
 		if ( dto.numero != null ) operation.setNumero(verificateur.verifierNumeroValideEtUnique(dto.numero, operation.getId(), OBLIGATOIRE));
 		if ( dto.codeTypeOperation != null ) operation.setTypeOperation(verificateur.verifierTypeOperation(dto.codeTypeOperation, OBLIGATOIRE, null));
 		if ( dto.libelle != null ) operation.setLibelle(verificateur.verifierLibelle(dto.libelle, FACULTATIF, null));
+		if ( dto.dateCreation != null ) operation.setDateCreation(verificateur.verifierDate(dto.dateCreation, FACULTATIF, LocalDate.now()));
 		if ( dto.dateValeur != null ) operation.setDateValeur(verificateur.verifierDate(dto.dateValeur, FACULTATIF, LocalDate.now()));
 		if ( dto.montantEnCentimes != null ) operation.setMontantEnCentimes(verificateur.verifierMontantEnCentimes(dto.montantEnCentimes, OBLIGATOIRE, null));
 		if ( dto.identifiantCompteDepense != null ) operation.setCompteDepense(verificateur.verifierCompte(dto.identifiantCompteDepense, OBLIGATOIRE));
@@ -453,7 +594,7 @@ public class OperationController {
 		
 		return operation;
 	}
-
+	
 	private int rechercherDernierNumeroLigne(Set<OperationLigne> lignes) {
 
 		int numeroLigne = 0;

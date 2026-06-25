@@ -5,7 +5,9 @@ import org.springframework.stereotype.Service;
 
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.references.ReferenceFonctionnelleErreur;
+import fr.colline.monatis.references.ReferenceTechniqueErreur;
 import fr.colline.monatis.references.model.Categorie;
+import fr.colline.monatis.references.model.SousCategorie;
 import fr.colline.monatis.references.repository.CategorieRepository;
 
 @Service
@@ -29,6 +31,7 @@ public class CategorieService extends ReferenceService<Categorie> {
 		categorie = super.controlerEtPreparerPourSuppression(categorie);
 
 		verifierAbsenceSousCategorieAssociee(categorie);
+		verifierAbsenceBudgetAssocie(categorie);
 		
 		return categorie;
 	}
@@ -43,5 +46,27 @@ public class CategorieService extends ReferenceService<Categorie> {
 					categorie.getSousCategories().size());
 		}
 	}
-	
+
+	private void verifierAbsenceBudgetAssocie(Categorie categorie) throws ServiceException {
+
+		int nombreBudgetAssocie;
+		try {
+			nombreBudgetAssocie = categorieRepository.compterBudgetParReferenceId(categorie.getId());
+		}
+		catch ( Throwable t ) {
+			throw new ServiceException(
+					t,
+					ReferenceTechniqueErreur.COMPTAGE_USAGE_PAR_ID,
+					SousCategorie.class.getSimpleName(),
+					categorie.getId());
+		}
+
+		if ( nombreBudgetAssocie > 0 ) {
+			throw new ServiceException(
+					ReferenceFonctionnelleErreur.SUPPRESSION_SOUS_CATEGORIE_AVEC_BUDGET, 
+					categorie.getNom(),
+					nombreBudgetAssocie);
+		}
+	}
+
 }

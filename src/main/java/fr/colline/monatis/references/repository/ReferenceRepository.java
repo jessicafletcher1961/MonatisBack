@@ -3,6 +3,7 @@ package fr.colline.monatis.references.repository;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import fr.colline.monatis.references.model.Reference;
@@ -17,5 +18,9 @@ public abstract interface ReferenceRepository<T extends Reference> extends JpaRe
 	Optional<T> findByNom(String nom);
 
 	boolean existsByNom(String nom);
+
+	@Query(nativeQuery = true,
+			value = "select count(1) from public.budget where reference_id = :id")
+	public int compterBudgetParReferenceId(Long id);
 
 }

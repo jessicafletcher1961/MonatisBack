@@ -30,13 +30,13 @@ public class OperationLigne {
 	private Long id;
 
 	private int numeroLigne;
-	
+
 	private Long montantEnCentimes;
 
 	private LocalDate dateComptabilisation;
-	
-		@Column(length = 240)
-		private String libelle;
+
+	@Column(length = 240)
+	private String libelle;
 
 	@ManyToOne
 	@JoinColumn(name = "operation_id")
@@ -48,9 +48,9 @@ public class OperationLigne {
 
 	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(
-			  name = "operation_ligne_beneficiaire", 
-			  joinColumns = @JoinColumn(name = "operation_ligne_id"), 
-			  inverseJoinColumns = @JoinColumn(name = "beneficiaire_id"))
+			name = "operation_ligne_beneficiaire", 
+			joinColumns = @JoinColumn(name = "operation_ligne_id"), 
+			inverseJoinColumns = @JoinColumn(name = "beneficiaire_id"))
 	private Set<Beneficiaire> beneficiaires = new HashSet<>();
 
 	public Operation getOperation() {
@@ -106,7 +106,7 @@ public class OperationLigne {
 	}
 
 	public OperationLigne() {}
-	
+
 	public OperationLigne(
 			int numeroLigne,
 			String libelle,
@@ -124,9 +124,9 @@ public class OperationLigne {
 	}
 
 	public void changerBeneficiaires(Set<Beneficiaire> nouveauxBeneficiaires) {
-		
+
 		List<Beneficiaire> anciensBeneficiaires = new ArrayList<>(this.beneficiaires);
-		
+
 		List<Beneficiaire> aCreer = new ArrayList<>(nouveauxBeneficiaires);
 		aCreer.removeAll(anciensBeneficiaires);
 		for ( Beneficiaire beneficiaire : aCreer ) {

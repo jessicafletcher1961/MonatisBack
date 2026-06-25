@@ -12,9 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
 
 import fr.colline.monatis.budgets.model.Budget;
 import fr.colline.monatis.budgets.service.BudgetService;
@@ -23,11 +21,8 @@ import fr.colline.monatis.exceptions.ControllerVerificateurService;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.references.model.Reference;
 import fr.colline.monatis.references.service.ReferenceService;
-import jakarta.transaction.Transactional;
+import fr.colline.monatis.typologies.model.TypeBudget;
 
-//@RestController
-//@RequestMapping("/monatis/budgets")
-//@Transactional
 public abstract class BudgetController<T extends Reference> {
 
 	private final boolean OBLIGATOIRE = true;
@@ -101,9 +96,12 @@ public abstract class BudgetController<T extends Reference> {
 		final LocalDate avantLe = verificateur.verifierDate(requestDto.avantLe, FACULTATIF, null);
 		final LocalDate apresLe = verificateur.verifierDate(requestDto.apresLe, FACULTATIF, null);
 		final LocalDate dateCible = verificateur.verifierDate(requestDto.dateCible, FACULTATIF, null);
+		final TypeBudget typeBudget = verificateur.verifierTypeBudget(requestDto.codeTypeBudget, FACULTATIF, null);
 		
 		return budgetService.rechercherTous()
 				.stream()
+				.filter((b) -> {return typeBudget == null 
+						|| b.getTypeBudget() == typeBudget;})
 				.filter((b) -> {return cle == null 
 						|| b.getCle().contains(cle);})
 				.filter((b) -> {return libelle == null 
@@ -129,6 +127,7 @@ public abstract class BudgetController<T extends Reference> {
 		budget.setReference(getReferenceVerifiee(dto.nomReference, OBLIGATOIRE));
 		budget.setTypePeriode(verificateur.verifierTypePeriode(dto.codeTypePeriode, OBLIGATOIRE, null));
 		budget.setDateDebut(verificateur.verifierDate(dto.dateCible, OBLIGATOIRE, null));
+		budget.setTypeBudget(verificateur.verifierTypeBudget(dto.codeTypeBudget, OBLIGATOIRE, null));
 		budget.setMontantBudgetEnCentimes(verificateur.verifierMontantEnCentimes(dto.montantBudgetEnCentimes, OBLIGATOIRE, null));
 		budget.setLibelle(verificateur.verifierLibelle(dto.libelle, FACULTATIF, null));
 		
@@ -142,7 +141,8 @@ public abstract class BudgetController<T extends Reference> {
 		if ( requestDto.cle != null ) budget.setCle(verificateur.verifierCleBudgetValideEtUnique(requestDto.cle, budget.getId(), OBLIGATOIRE));
 		if ( requestDto.nomReference != null ) budget.setReference(getReferenceVerifiee(requestDto.nomReference, OBLIGATOIRE));
 		if ( requestDto.codeTypePeriode != null ) budget.setTypePeriode(verificateur.verifierTypePeriode(requestDto.codeTypePeriode, OBLIGATOIRE, null));
-		if ( requestDto.dateDebut != null ) budget.setDateDebut(verificateur.verifierDate(requestDto.dateDebut, OBLIGATOIRE, null));
+		if ( requestDto.dateCible != null ) budget.setDateDebut(verificateur.verifierDate(requestDto.dateCible, OBLIGATOIRE, null));
+		if ( requestDto.codeTypeBudget != null ) budget.setTypeBudget(verificateur.verifierTypeBudget(requestDto.codeTypeBudget, OBLIGATOIRE, null));
 		if ( requestDto.montantBudgetEnCentimes != null ) budget.setMontantBudgetEnCentimes(verificateur.verifierMontantEnCentimes(requestDto.montantBudgetEnCentimes, OBLIGATOIRE, null));
 		if ( requestDto.libelle != null ) budget.setLibelle(verificateur.verifierLibelle(requestDto.libelle, FACULTATIF, null));
 		

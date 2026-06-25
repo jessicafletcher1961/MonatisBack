@@ -13,6 +13,9 @@ import fr.colline.monatis.comptes.CompteControleErreur;
 import fr.colline.monatis.comptes.model.Compte;
 import fr.colline.monatis.comptes.model.CompteInterne;
 import fr.colline.monatis.comptes.service.CompteGeneriqueService;
+import fr.colline.monatis.emprunts.EmpruntControleErreur;
+import fr.colline.monatis.emprunts.model.Emprunt;
+import fr.colline.monatis.emprunts.service.EmpruntService;
 import fr.colline.monatis.evaluations.EvaluationControleErreur;
 import fr.colline.monatis.evaluations.model.Evaluation;
 import fr.colline.monatis.evaluations.service.EvaluationService;
@@ -31,6 +34,7 @@ import fr.colline.monatis.references.service.BeneficiaireService;
 import fr.colline.monatis.references.service.CategorieService;
 import fr.colline.monatis.references.service.SousCategorieService;
 import fr.colline.monatis.references.service.TitulaireService;
+import fr.colline.monatis.typologies.model.TypeBudget;
 import fr.colline.monatis.typologies.model.TypeCompte;
 import fr.colline.monatis.typologies.model.TypeFonctionnement;
 import fr.colline.monatis.typologies.model.TypeOperation;
@@ -39,6 +43,8 @@ import fr.colline.monatis.typologies.model.TypeReference;
 
 @Service
 public class ControllerVerificateurService {
+
+	private final int TAILLE_PAGE_OPERATION_MAX = 100; // MODIFIE: garde-fou contre les pages trop lourdes.
 
 	@Autowired private BanqueService banqueService;
 	@Autowired private BeneficiaireService beneficiaireService;
@@ -49,6 +55,7 @@ public class ControllerVerificateurService {
 	@Autowired private OperationService operationService;
 	@Autowired private EvaluationService evaluationService;
 	@Autowired private BudgetService budgetService;
+	@Autowired private EmpruntService empruntService;
 
 	public String verifierNom(String nom, boolean obligatoire) throws ControllerException {
 
@@ -217,6 +224,24 @@ public class ControllerVerificateurService {
 		return cle;
 	}
 
+	public String verifierCleEmpruntValideEtUnique(String cle, Long id, boolean obligatoire) throws ControllerException, ServiceException {
+
+		cle = verifierCle(cle, obligatoire);
+		if ( cle == null ) {
+			return null;
+		}
+
+		Emprunt emprunt = empruntService.rechercherParCle(cle);
+		if ( emprunt != null && ! emprunt.getId().equals(id) ) {
+			throw new ControllerException(
+					EmpruntControleErreur.CLE_DEJA_UTILISE,
+					emprunt,
+					emprunt.getClass().getSimpleName());
+		}
+
+		return cle;
+	}
+
 	public String verifierLibelle(String libelle, boolean obligatoire, String valeurParDefaut) throws ControllerException {
 
 		if ( libelle == null || libelle.isBlank() ) {
@@ -280,6 +305,110 @@ public class ControllerVerificateurService {
 		return booleen;
 	}
 
+	public Long verifierNombre(Long nombre, boolean obligatoire, Long valeurParDefaut, Long valeurMinimum, Long valeurMaximum) throws ControllerException {
+
+		if ( nombre == null ) {
+			if ( obligatoire ) {
+				throw new ControllerException(
+						GeneriqueControleErreur.NOMBRE_OBLIGATOIRE);
+			}
+			return valeurParDefaut;
+		}
+
+		if ( valeurMinimum != null && nombre < valeurMinimum ) {
+			throw new ControllerException(
+					GeneriqueControleErreur.NOMBRE_TROP_PETIT,
+					nombre,
+					valeurMinimum);
+		}
+		if ( valeurMaximum != null && nombre > valeurMaximum ) {
+			throw new ControllerException(
+					GeneriqueControleErreur.NOMBRE_TROP_GRAND,
+					nombre,
+					valeurMaximum);
+		}
+		
+		return nombre;
+	}
+
+	public Double verifierNombre(Double nombre, boolean obligatoire, Double valeurParDefaut, Double valeurMinimum, Double valeurMaximum) throws ControllerException {
+
+		if ( nombre == null ) {
+			if ( obligatoire ) {
+				throw new ControllerException(
+						GeneriqueControleErreur.NOMBRE_OBLIGATOIRE);
+			}
+			return valeurParDefaut;
+		}
+
+		if ( valeurMinimum != null && nombre < valeurMinimum ) {
+			throw new ControllerException(
+					GeneriqueControleErreur.NOMBRE_TROP_PETIT,
+					nombre,
+					valeurMinimum);
+		}
+		if ( valeurMaximum != null && nombre > valeurMaximum ) {
+			throw new ControllerException(
+					GeneriqueControleErreur.NOMBRE_TROP_GRAND,
+					nombre,
+					valeurMaximum);
+		}
+		
+		return nombre;
+	}
+
+	public Integer verifierNombre(Integer nombre, boolean obligatoire, Integer valeurParDefaut, Integer valeurMinimum, Integer valeurMaximum) throws ControllerException {
+
+		if ( nombre == null ) {
+			if ( obligatoire ) {
+				throw new ControllerException(
+						GeneriqueControleErreur.NOMBRE_OBLIGATOIRE);
+			}
+			return valeurParDefaut;
+		}
+
+		if ( valeurMinimum != null && nombre < valeurMinimum ) {
+			throw new ControllerException(
+					GeneriqueControleErreur.NOMBRE_TROP_PETIT,
+					nombre,
+					valeurMinimum);
+		}
+		if ( valeurMaximum != null && nombre > valeurMaximum ) {
+			throw new ControllerException(
+					GeneriqueControleErreur.NOMBRE_TROP_GRAND,
+					nombre,
+					valeurMaximum);
+		}
+		
+		return nombre;
+	}
+
+	public int verifierNumeroPage(Integer numeroPage, boolean obligatoire, int valeurParDefaut) throws ControllerException {
+
+		if ( numeroPage == null ) {
+			if ( obligatoire ) {
+				throw new ControllerException(
+						GeneriqueControleErreur.NUMERO_PAGE_OBLIGATOIRE);
+			}
+			return valeurParDefaut;
+		}
+		
+		return Math.max(0, numeroPage - 1); 
+	}
+
+	public int verifierTaillePage(Integer taillePage, boolean obligatoire, int valeurParDefaut) throws ControllerException {
+	
+		if ( taillePage == null ) {
+			if ( obligatoire ) {
+				throw new ControllerException(
+						GeneriqueControleErreur.TAILLE_PAGE_OBLIGATOIRE);
+			}
+			return valeurParDefaut;
+		}
+		
+		return Math.max(1, Math.min(taillePage, TAILLE_PAGE_OPERATION_MAX));
+	}
+	
 	public Long verifierMontantEnCentimes(Long montantEnCentimes, boolean obligatoire, Long valeurParDefaut) throws ControllerException {
 
 		if ( montantEnCentimes == null ) {
@@ -340,6 +469,21 @@ public class ControllerVerificateurService {
 		return type;
 	}
 
+	public TypeBudget verifierTypeBudget(String codeTypeBudget, boolean obligatoire, TypeBudget valeurParDefaut) throws ControllerException {
+
+		TypeBudget type = TypeBudget.findByCode(codeTypeBudget);
+		if ( type == null ) {
+			if ( obligatoire ) {
+				throw new ControllerException(
+						GeneriqueControleErreur.NON_TROUVE_PAR_CODE,
+						TypeBudget.class.getSimpleName(),
+						codeTypeBudget);
+			}
+			return valeurParDefaut;
+		}
+		return type;
+	}
+
 	public Banque verifierBanque(String nomBanque, boolean obligatoire) throws ServiceException, ControllerException {
 
 		nomBanque = verifierNom(nomBanque, obligatoire);
@@ -376,6 +520,11 @@ public class ControllerVerificateurService {
 			}
 			return beneficiaire;
 		}
+	}
+
+	public boolean verifierExistenceBeneficiaire(Long beneficiaireId) throws ControllerException, ServiceException {
+
+		return beneficiaireService.isExistantParId(beneficiaireId);
 	}
 
 	public Categorie verifierCategorie(String nomCategorie, boolean obligatoire) throws ControllerException, ServiceException {
@@ -416,6 +565,11 @@ public class ControllerVerificateurService {
 		}
 	}
 
+	public boolean verifierExistenceSousCategorie(Long sousCategorieId) throws ControllerException, ServiceException {
+
+		return sousCategorieService.isExistantParId(sousCategorieId);
+	}
+
 	public Titulaire verifierTitulaire(String nomTitulaire, boolean obligatoire) throws ControllerException, ServiceException {
 
 		nomTitulaire = verifierNom(nomTitulaire, obligatoire);
@@ -451,6 +605,11 @@ public class ControllerVerificateurService {
 			}
 			return compte;
 		}
+	}
+	
+	public boolean verifierExistenceCompte(Long compteId) throws ServiceException {
+		
+		return compteGeneriqueService.isExistantParId(compteId); 
 	}
 
 	public Compte verifierCompteEtTypeCompte(TypeCompte typeCompte, String identifiant, boolean obligatoire) throws ServiceException, ControllerException {
@@ -522,6 +681,24 @@ public class ControllerVerificateurService {
 						cle);
 			}
 			return budget;
+		}
+	}
+
+	public Emprunt verifierEmprunt(String cle, boolean obligatoire) throws ControllerException, ServiceException {
+
+		cle = verifierCle(cle, obligatoire);
+
+		if ( cle == null ) {
+			return null;
+		}
+		else {
+			Emprunt emprunt = empruntService.rechercherParCle(cle);
+			if ( emprunt == null ) {
+				throw new ControllerException(
+						EmpruntControleErreur.NON_TROUVE_PAR_CLE,
+						cle);
+			}
+			return emprunt;
 		}
 	}
 	

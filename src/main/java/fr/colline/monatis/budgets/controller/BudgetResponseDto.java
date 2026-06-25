@@ -10,12 +10,14 @@ public class BudgetResponseDto implements Serializable {
 
 	private static final long serialVersionUID = -449293913563674883L;
 
+	public Long id;
 	public String cle;
 	public String libelle;
 	public ReferenceResponseDto reference;
 	public TypologieResponseDto typePeriode;
 	public LocalDate dateDebut;
 	public LocalDate dateFin;
+	public TypologieResponseDto codeTypeBudget;
 	public Long montantBudgetEnCentimes;
 
 }

@@ -12,5 +12,6 @@ public class BudgetSelectionRequestDto implements Serializable {
 	public LocalDate avantLe;
 	public LocalDate apresLe;
 	public LocalDate dateCible;
+	public String codeTypeBudget;
 
 }

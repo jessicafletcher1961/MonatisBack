@@ -16,6 +16,7 @@ public class CompteInterneResponseDtoMapper {
 
 		CompteInterneBasicResponseDto dto = new CompteInterneBasicResponseDto();
 		
+		dto.id = compteInterne.getId();
 		dto.identifiant = compteInterne.getIdentifiant();
 		dto.libelle = compteInterne.getLibelle();
 		
@@ -43,6 +44,7 @@ public class CompteInterneResponseDtoMapper {
 
 		CompteInterneSimpleResponseDto dto = new CompteInterneSimpleResponseDto();
 		
+		dto.id = compteInterne.getId();
 		dto.identifiant = compteInterne.getIdentifiant();
 		dto.libelle = compteInterne.getLibelle();
 
@@ -70,6 +72,7 @@ public class CompteInterneResponseDtoMapper {
 
 		CompteInterneDetailedResponseDto dto = new CompteInterneDetailedResponseDto();
 		
+		dto.id = compteInterne.getId();
 		dto.identifiant = compteInterne.getIdentifiant();
 		dto.libelle = compteInterne.getLibelle();
 

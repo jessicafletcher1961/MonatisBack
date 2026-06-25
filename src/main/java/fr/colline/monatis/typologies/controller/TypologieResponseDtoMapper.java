@@ -1,5 +1,6 @@
 package fr.colline.monatis.typologies.controller;
 
+import fr.colline.monatis.typologies.model.TypeBudget;
 import fr.colline.monatis.typologies.model.TypeCompte;
 import fr.colline.monatis.typologies.model.TypeFonctionnement;
 import fr.colline.monatis.typologies.model.TypeOperation;
@@ -64,6 +65,16 @@ public class TypologieResponseDtoMapper {
 
 	public static TypologieResponseDto mapperModelToResponseDto(TypeReference type) {
 		
+		TypologieResponseDto dto = new TypologieResponseDto();
+		
+		dto.code = type.getCode();
+		dto.libelle = type.getLibelle();
+		
+		return dto;
+	}
+
+	public static TypologieResponseDto mapperModelToResponseDto(TypeBudget type) {
+
 		TypologieResponseDto dto = new TypologieResponseDto();
 		
 		dto.code = type.getCode();

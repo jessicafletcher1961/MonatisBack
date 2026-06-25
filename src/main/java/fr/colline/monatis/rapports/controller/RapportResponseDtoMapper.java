@@ -1,11 +1,15 @@
 package fr.colline.monatis.rapports.controller;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 import fr.colline.monatis.comptes.model.Compte;
 import fr.colline.monatis.comptes.model.CompteExterne;
 import fr.colline.monatis.comptes.model.CompteInterne;
 import fr.colline.monatis.comptes.model.CompteTechnique;
+import fr.colline.monatis.emprunts.model.ConditionEmprunt;
+import fr.colline.monatis.emprunts.model.Echeance;
+import fr.colline.monatis.emprunts.model.Emprunt;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.GeneriqueTechniqueErreur;
 import fr.colline.monatis.operations.model.Operation;
@@ -23,14 +27,19 @@ import fr.colline.monatis.rapports.controller.commun.EnteteCompteExterneResponse
 import fr.colline.monatis.rapports.controller.commun.EnteteCompteInterneResponseDto;
 import fr.colline.monatis.rapports.controller.commun.EnteteCompteResponseDto;
 import fr.colline.monatis.rapports.controller.commun.EnteteCompteTechniqueResponseDto;
+import fr.colline.monatis.rapports.controller.commun.EnteteEmpruntResponseDto;
 import fr.colline.monatis.rapports.controller.commun.SousCategorieResponseDto;
 import fr.colline.monatis.rapports.controller.commun.TitulaireResponseDto;
 import fr.colline.monatis.rapports.controller.depense_recette.DepenseRecetteCategorieLigneResponseDto;
-import fr.colline.monatis.rapports.controller.depense_recette.DepenseRecetteCategoriePeriodeResponseDto;
 import fr.colline.monatis.rapports.controller.depense_recette.DepenseRecettePeriodeResponseDto;
 import fr.colline.monatis.rapports.controller.depense_recette.DepenseRecetteSousCategorieLigneResponseDto;
-import fr.colline.monatis.rapports.controller.depense_recette.DepenseRecetteSousCategoriePeriodeResponseDto;
 import fr.colline.monatis.rapports.controller.depense_recette.EtatDepenseRecetteResponseDto;
+import fr.colline.monatis.rapports.controller.depense_recette.SuiviBudgetResponseDto;
+import fr.colline.monatis.rapports.controller.echeancier.EcheancierConditionEmpruntResponseDto;
+import fr.colline.monatis.rapports.controller.echeancier.EcheancierCumulsResponseDto;
+import fr.colline.monatis.rapports.controller.echeancier.EcheancierLigneResponseDto;
+import fr.colline.monatis.rapports.controller.echeancier.EcheancierPeriodeResponseDto;
+import fr.colline.monatis.rapports.controller.echeancier.EcheancierResponseDto;
 import fr.colline.monatis.rapports.controller.plus_moins_values.EtatPlusMoinsValueResponseDto;
 import fr.colline.monatis.rapports.controller.plus_moins_values.PlusMoinsValueCompteInterneLigneResponseDto;
 import fr.colline.monatis.rapports.controller.plus_moins_values.PlusMoinsValueCompteInternePeriodeResponseDto;
@@ -50,12 +59,13 @@ import fr.colline.monatis.rapports.controller.remunerations_frais.RemunerationsF
 import fr.colline.monatis.rapports.controller.remunerations_frais.RemunerationsFraisTypeFonctionnementLigneResponseDto;
 import fr.colline.monatis.rapports.controller.remunerations_frais.RemunerationsFraisTypeFonctionnementPeriodeResponseDto;
 import fr.colline.monatis.rapports.controller.resumes_comptes_internes.ResumeCompteInterneResponseDto;
+import fr.colline.monatis.rapports.model.Echeancier;
 import fr.colline.monatis.rapports.model.EtatBilanPatrimoine;
 import fr.colline.monatis.rapports.model.EtatDepenseRecette;
 import fr.colline.monatis.rapports.model.EtatPlusMoinsValue;
 import fr.colline.monatis.rapports.model.EtatRemunerationsFrais;
+import fr.colline.monatis.rapports.model.ReleveCompte;
 import fr.colline.monatis.rapports.model.ReleveNonCategorise;
-import fr.colline.monatis.rapports.model.ReleveOperationCompte;
 import fr.colline.monatis.rapports.model.ReleveSousCategorie;
 import fr.colline.monatis.rapports.model.ResumeCompteInterne;
 import fr.colline.monatis.rapports.model.composants.bilan_patrimoine.BilanPatrimoineCompteInterneLigne;
@@ -64,10 +74,14 @@ import fr.colline.monatis.rapports.model.composants.bilan_patrimoine.BilanPatrim
 import fr.colline.monatis.rapports.model.composants.bilan_patrimoine.BilanPatrimoineTypeFonctionnementLigne;
 import fr.colline.monatis.rapports.model.composants.bilan_patrimoine.BilanPatrimoineTypeFonctionnementPeriode;
 import fr.colline.monatis.rapports.model.composants.depense_recette.DepenseRecetteCategorieLigne;
-import fr.colline.monatis.rapports.model.composants.depense_recette.DepenseRecetteCategoriePeriode;
 import fr.colline.monatis.rapports.model.composants.depense_recette.DepenseRecettePeriode;
 import fr.colline.monatis.rapports.model.composants.depense_recette.DepenseRecetteSousCategorieLigne;
-import fr.colline.monatis.rapports.model.composants.depense_recette.DepenseRecetteSousCategoriePeriode;
+import fr.colline.monatis.rapports.model.composants.depense_recette.SuiviBudgetPeriode;
+import fr.colline.monatis.rapports.model.composants.echeancier.EcheancierConditionEmpruntLigne;
+import fr.colline.monatis.rapports.model.composants.echeancier.EcheancierCumuls;
+import fr.colline.monatis.rapports.model.composants.echeancier.EcheancierEcheanceLigne;
+import fr.colline.monatis.rapports.model.composants.echeancier.EcheancierLigne;
+import fr.colline.monatis.rapports.model.composants.echeancier.EcheancierPeriodeLigne;
 import fr.colline.monatis.rapports.model.composants.plus_moins_value.PlusMoinsValueCompteInterneLigne;
 import fr.colline.monatis.rapports.model.composants.plus_moins_value.PlusMoinsValueCompteInternePeriode;
 import fr.colline.monatis.rapports.model.composants.plus_moins_value.PlusMoinsValuePeriode;
@@ -85,6 +99,7 @@ import fr.colline.monatis.references.model.SousCategorie;
 import fr.colline.monatis.references.model.Titulaire;
 import fr.colline.monatis.typologies.controller.TypeOperationResponseDto;
 import fr.colline.monatis.typologies.controller.TypologieResponseDto;
+import fr.colline.monatis.typologies.model.TypeBudget;
 import fr.colline.monatis.typologies.model.TypeFonctionnement;
 import fr.colline.monatis.typologies.model.TypeOperation;
 import fr.colline.monatis.typologies.model.TypePeriode;
@@ -93,7 +108,7 @@ public class RapportResponseDtoMapper {
 
 	// --- Relevé de compte
 
-	public static ReleveCompteResponseDto mapperReleveCompte(ReleveOperationCompte releve) throws ControllerException {
+	public static ReleveCompteResponseDto mapperReleveCompte(ReleveCompte releve) throws ControllerException {
 
 		ReleveCompteResponseDto dto = new ReleveCompteResponseDto();
 
@@ -240,141 +255,200 @@ public class RapportResponseDtoMapper {
 		
 		return dto;
 	}
-//	
-//	public static EtatAvancementBudgetResponseDto mapperEtatAvancementBudget(
-//			EtatAvancementBudget etatAvancement) {
-//
-//		EtatAvancementBudgetResponseDto dto = new EtatAvancementBudgetResponseDto();
-//
-//		dto.reference = SousCategorieResponseDtoMapper.mapperModelToBasicResponseDto(etatAvancement.getSousCategorie());
-//		dto.budget = BudgetResponseDtoMapper.mapperModelToResponseDto(etatAvancement.getBudget());
-//
-//		dto.montantBudgeteEnEuros = (float) (etatAvancement.getMontantBudgetEnCentimes() / 100.00);
-//		dto.montantExecutionEnEuros = (float) (etatAvancement.getMontantExecutionEnCentimes() / 100.00);
-//		dto.montantExecutionEnPourcentage = etatAvancement.getMontantExecutionEnPourcentage();
-//		dto.resteADepenserEnEuros = (float) (etatAvancement.getResteADepenserEnCentimes() / 100.00);
-//
-//		dto.montantTotalLignesDepenseEnEuros = (float) (etatAvancement.getMontantTotalLignesDepenseEnCentimes() / 100.00);
-//		dto.montantTotalLignesRecetteEnEuros = (float) (etatAvancement.getMontantTotalLignesRecetteEnCentimes() / 100.00);
-//		dto.montantTotalLignesExcluesEnEuros = (float) (etatAvancement.getMontantTotalLignesExcluesEnCentimes() / 100.00);
-//
-//		return dto;
-//	}
+
+	// Echeancier
+	
+	public static EcheancierResponseDto mapperEcheancier(Echeancier etat) {
+		
+		EcheancierResponseDto dto = new EcheancierResponseDto();
+		
+		dto.emprunt = mapperEnteteEmprunt(etat.getEmprunt());
+		dto.cumulFinal = mapperEcheancierCumuls(etat.getCumulFinal());
+		dto.lignes = new ArrayList<EcheancierLigneResponseDto>();
+		for ( EcheancierLigne ligne : etat.getLignes() ) {
+			if ( EcheancierConditionEmpruntLigne.class.isAssignableFrom(ligne.getClass()) ) dto.lignes.add(mapperEcheancierLigne((EcheancierConditionEmpruntLigne) ligne));
+			else if ( EcheancierPeriodeLigne.class.isAssignableFrom(ligne.getClass()) ) dto.lignes.add(mapperEcheancierLigne((EcheancierPeriodeLigne) ligne));
+			else if ( EcheancierEcheanceLigne.class.isAssignableFrom(ligne.getClass()) ) dto.lignes.add(mapperEcheancierLigne((EcheancierEcheanceLigne) ligne));
+		}
+		dto.cumulDateCible = mapperEcheancierCumuls(etat.getCumulDateCible());
+		
+		return dto;
+	}
+
+	private static EcheancierLigneResponseDto mapperEcheancierLigne(EcheancierConditionEmpruntLigne ligne) {
+		
+		EcheancierConditionEmpruntResponseDto dto = new EcheancierConditionEmpruntResponseDto();
+		
+		ConditionEmprunt conditionEmprunt = ligne.getConditionEmprunt();
+		
+		dto.libelle = ligne.getConditionEmprunt().getLibelle();
+		dto.numeroEcheanceApplicabilite = conditionEmprunt.getNumeroPremiereEcheance();
+		dto.montantPretEnEuros = (double) (conditionEmprunt.getCapitalEmprunteEnCentimes() / 100.00);
+		dto.dureePret = conditionEmprunt.getDuree();
+		dto.periodiciteEcheances = mapperTypePeriode(conditionEmprunt.getTypePeriodeEcheances());
+		dto.tauxAnnuel = conditionEmprunt.getTauxAnnuel();
+
+		EcheancierCumuls cumuls = ligne.getCumuls();
+
+		dto.dateDebutApplicabilite = cumuls.getDatePremiereEcheance();
+		dto.dateFinApplicabilite = cumuls.getDateDerniereEcheance();
+		dto.nombreEcheancesApplicabilite = cumuls.getNombreEcheances();
+		dto.cumuls = mapperEcheancierCumuls(cumuls);
+		
+		return dto;
+	}
+
+	private static EcheancierLigneResponseDto mapperEcheancierLigne(EcheancierPeriodeLigne ligne) {
+
+		EcheancierPeriodeResponseDto dto = new EcheancierPeriodeResponseDto();
+		
+		dto.dateDebutPeriode = ligne.getDateDebutPeriode();
+		dto.dateFinPeriode = ligne.getDateFinPeriode();
+
+		EcheancierCumuls cumuls = ligne.getCumuls();
+
+		dto.datePremiereEcheancePeriode = cumuls.getDatePremiereEcheance();
+		dto.dateDerniereEcheancePeriode = cumuls.getDateDerniereEcheance();
+		dto.nombreEcheancesPeriode = cumuls.getNombreEcheances();
+		dto.cumuls = mapperEcheancierCumuls(cumuls);
+
+		return dto;
+	}
+
+	private static EcheancierLigneResponseDto mapperEcheancierLigne(EcheancierEcheanceLigne ligne) {
+	
+		EcheancierEcheanceResponseDto dto = new EcheancierEcheanceResponseDto();
+		
+		Echeance echeance = ligne.getEcheance();
+		
+		dto.rang = echeance.getNumeroEcheance();
+		dto.dateEcheance = echeance.getDateEcheance();
+		dto.montantARecouvrerEnEuros = (double) (echeance.getMontantPaiementEnCentimes() / 100.00);
+		dto.capitalAmortiEnEuros = (double) (echeance.getPartCapitalEnCentimes() / 100.00);
+		dto.partInteretsEnEuros = (double) (echeance.getPartInteretsEnCentimes() / 100.00);
+		dto.capitalRestantDuEnEuros = (double) (echeance.getCapitalEmprunteRestantDuEnCentimes() / 100.00);
+		dto.partFraisFixesEnEuros = (double) (echeance.getPartFraisFixesEnCentimes() / 100.00);
+		
+		return dto;
+	}
+
+	private static EcheancierCumulsResponseDto mapperEcheancierCumuls(EcheancierCumuls cumuls) {
+		
+		EcheancierCumulsResponseDto dto = new EcheancierCumulsResponseDto();
+
+		dto.cumulMontantPaiementsEnEuros = (double) (cumuls.getCumulMontantPaiement() / 100.00);
+		dto.cumulPartCapitalEnEuros = (double) (cumuls.getCumulPartCapital() / 100.00);
+		dto.cumulPartInteretsEnEuros = (double) (cumuls.getCumulPartInterets() / 100.00);
+		dto.cumulPartFraisFixesEnEuros = (double) (cumuls.getCumulPartFraisFixes() / 100.00);
+		dto.capitalEmpruntDejaRembourseEnEuros = (double) (cumuls.getCapitalEmprunteDejaRembourse() / 100.00);
+		dto.capitalEmpruntRestantDuEnEuros = (double) (cumuls.getCapitalEmprunteRestantDu() / 100.00);
+
+		return dto;
+	}
 	
 	// --- Dépenses et recettes
-
 
 	public static EtatDepenseRecetteResponseDto mapperEtatDepenseRecette(EtatDepenseRecette etat) {
 
 		EtatDepenseRecetteResponseDto dto = new EtatDepenseRecetteResponseDto();
 
-		int nombrePeriodes = etat.getCumuls().length;
+		int nombrePeriodes = etat.getCumulEtat().length;
 
 		dto.dateDebutEtat = etat.getDateDebutEtat();
 		dto.dateFinEtat = etat.getDateFinEtat();
 		dto.typePeriode = mapperTypePeriode(etat.getTypePeriode());
-		
 		dto.sousCategories = new ArrayList<SousCategorieResponseDto>();
 		for ( SousCategorie sousCategorie : etat.getSousCategories() ) {
 			dto.sousCategories.add(mapperSousCategorie(sousCategorie));
 		}
-		dto.categories = new ArrayList<CategorieResponseDto>();
-		for ( Categorie categorie : etat.getCategories() ) {
-			dto.categories.add(mapperCategorie(categorie));
-		}
-		dto.beneficiaire = mapperBeneficiaire(etat.getBeneficiaire());
+		dto.beneficiaire = mapperBeneficiaire(etat.getBeneficiaire());	
 
 		dto.lignesCategorie = new ArrayList<DepenseRecetteCategorieLigneResponseDto>();
 		for ( DepenseRecetteCategorieLigne ligneCategorie : etat.getLignesCategorie() ) {
 			dto.lignesCategorie.add(mapperDepenseRecetteCategorieLigne(ligneCategorie));
 		}
-		dto.cumuls = new DepenseRecettePeriodeResponseDto[nombrePeriodes];
+		dto.cumulEtat = new DepenseRecettePeriodeResponseDto[nombrePeriodes];
 		for ( int numeroPeriode = 0 ; numeroPeriode < nombrePeriodes ; numeroPeriode++ ) {
-			dto.cumuls[numeroPeriode] = mapperDepenseRecettePeriode(etat.getCumuls()[numeroPeriode]);
+			dto.cumulEtat[numeroPeriode] = mapperDepenseRecettePeriode(etat.getCumulEtat()[numeroPeriode]);
 		}
-		
-		return dto;
-
-	}
-
-	private static DepenseRecettePeriodeResponseDto mapperDepenseRecettePeriode(
-			DepenseRecettePeriode etat) {
-
-		DepenseRecettePeriodeResponseDto dto = new DepenseRecettePeriodeResponseDto();
-		
-		dto.dateDebutPeriode = etat.getDateDebutPeriode();
-		dto.dateFinPeriode = etat.getDateFinPeriode();
-		dto.montantRecetteEnEuros = (double) (etat.getMontantRecetteEnCentimes() / 100.00);
-		dto.montantDepenseEnEuros = (double) (etat.getMontantDepenseEnCentimes() / 100.00);
-		dto.soldeDepenseRecetteEnEuros = (double) (etat.getSoldeDepenseRecetteEnCentimes() / 100.00);
 		
 		return dto;
 	}
 
 	private static DepenseRecetteCategorieLigneResponseDto mapperDepenseRecetteCategorieLigne(
-			DepenseRecetteCategorieLigne etat) {
+			DepenseRecetteCategorieLigne ligneCategorie) {
 
 		DepenseRecetteCategorieLigneResponseDto dto = new DepenseRecetteCategorieLigneResponseDto();
 
-		int nombrePeriodes = etat.getCumuls().length;
+		int nombrePeriodes = ligneCategorie.getCumulCategorie().length;
 
-		dto.categorie = mapperCategorie(etat.getCategorie());
+		dto.categorie = mapperCategorie(ligneCategorie.getCategorie());
 		dto.lignesSousCategorie = new ArrayList<DepenseRecetteSousCategorieLigneResponseDto>();
-		for ( DepenseRecetteSousCategorieLigne detail : etat.getLignesSousCategorie() ) {
-			dto.lignesSousCategorie.add(mapperDepenseRecetteSousCategorieLigne(detail));
+		for ( DepenseRecetteSousCategorieLigne ligneSousCategorie : ligneCategorie.getLignesSousCategorie() ) {
+			dto.lignesSousCategorie.add(mapperDepenseRecetteSousCategorieLigne(ligneSousCategorie));
 		}
-		dto.cumuls = new DepenseRecetteCategoriePeriodeResponseDto[nombrePeriodes];
+		dto.cumulCategorie = new DepenseRecettePeriodeResponseDto[nombrePeriodes];
 		for ( int numeroPeriode = 0 ; numeroPeriode < nombrePeriodes ; numeroPeriode++ ) {
-			dto.cumuls[numeroPeriode] = mapperDepenseRecetteCategoriePeriode(etat.getCumuls()[numeroPeriode]);
+			dto.cumulCategorie[numeroPeriode] = mapperDepenseRecettePeriode(ligneCategorie.getCumulCategorie()[numeroPeriode]);
 		}
 		
-		return dto;
-	}
-
-	private static DepenseRecetteCategoriePeriodeResponseDto mapperDepenseRecetteCategoriePeriode(
-			DepenseRecetteCategoriePeriode etat) {
-
-		DepenseRecetteCategoriePeriodeResponseDto dto = new DepenseRecetteCategoriePeriodeResponseDto();
-		
-		dto.dateDebutPeriode = etat.getDateDebutPeriode();
-		dto.dateFinPeriode = etat.getDateFinPeriode();
-		dto.montantRecetteEnEuros = (double) (etat.getMontantRecetteEnCentimes() / 100.00);
-		dto.montantDepenseEnEuros = (double) (etat.getMontantDepenseEnCentimes() / 100.00);
-		dto.soldeDepenseRecetteEnEuros = (double) (etat.getSoldeDepenseRecetteEnCentimes() / 100.00);
-
 		return dto;
 	}
 
 	private static DepenseRecetteSousCategorieLigneResponseDto mapperDepenseRecetteSousCategorieLigne(
-			DepenseRecetteSousCategorieLigne etat) {
+			DepenseRecetteSousCategorieLigne ligneSousCategorie) {
 
 		DepenseRecetteSousCategorieLigneResponseDto dto = new DepenseRecetteSousCategorieLigneResponseDto();
 		
-		int nombrePeriodes = etat.getPeriodes().length;
+		int nombrePeriodes = ligneSousCategorie.getCumulSousCategorie().length;
 
-		dto.sousCategorie = mapperSousCategorie(etat.getSousCategorie());
-		dto.periodes = new DepenseRecetteSousCategoriePeriodeResponseDto[nombrePeriodes];
+		dto.sousCategorie = mapperSousCategorie(ligneSousCategorie.getSousCategorie());
+		dto.cumulSousCategorie = new DepenseRecettePeriodeResponseDto[nombrePeriodes];
 		for ( int numeroPeriode = 0 ; numeroPeriode < nombrePeriodes ; numeroPeriode++ ) {
-			dto.periodes[numeroPeriode] = mapperDepenseRecetteSousCategoriePeriode(etat.getPeriodes()[numeroPeriode]);
+			dto.cumulSousCategorie[numeroPeriode] = mapperDepenseRecettePeriode(ligneSousCategorie.getCumulSousCategorie()[numeroPeriode]);
 		}
 
 		return dto;
 	}
 	
-	private static DepenseRecetteSousCategoriePeriodeResponseDto mapperDepenseRecetteSousCategoriePeriode(
-			DepenseRecetteSousCategoriePeriode etat) {
+	private static DepenseRecettePeriodeResponseDto mapperDepenseRecettePeriode(
+			DepenseRecettePeriode cumulPeriode) {
 		
-		DepenseRecetteSousCategoriePeriodeResponseDto dto = new DepenseRecetteSousCategoriePeriodeResponseDto();
+		DepenseRecettePeriodeResponseDto dto = new DepenseRecettePeriodeResponseDto();
 		
-		dto.dateDebutPeriode = etat.getDateDebutPeriode();
-		dto.dateFinPeriode = etat.getDateFinPeriode();
-		dto.montantRecetteEnEuros = (double) (etat.getMontantRecetteEnCentimes() / 100.00);
-		dto.montantDepenseEnEuros = (double) (etat.getMontantDepenseEnCentimes() / 100.00);
-		dto.soldeDepenseRecetteEnEuros = (double) (etat.getSoldeDepenseRecetteEnCentimes() / 100.00);
-
+		dto.dateDebutPeriode = cumulPeriode.getDateDebutPeriode();
+		dto.dateFinPeriode = cumulPeriode.getDateFinPeriode();
+		
+		dto.montantRecetteEnEuros = (double) (cumulPeriode.getMontantRecetteEnCentimes() / 100.00);
+		dto.montantDepenseEnEuros = (double) (cumulPeriode.getMontantDepenseEnCentimes() / 100.00);
+		dto.soldeDepenseRecetteEnEuros = (double) (cumulPeriode.getSoldeDepenseRecetteEnCentimes() / 100.00);
+		
+		if ( cumulPeriode.getSuiviBudget() != null ) {
+			dto.suiviBudget = mapperSuiviBudget(cumulPeriode.getSuiviBudget());
+		}
 		
 		return dto;
 	}
+	
+	private static SuiviBudgetResponseDto mapperSuiviBudget(SuiviBudgetPeriode suiviBudget) {
+
+		SuiviBudgetResponseDto dto = null;
+		
+		if ( suiviBudget != null ) {
+
+			dto = new SuiviBudgetResponseDto();
+
+			dto.montantBudgetEnEuros = (double) (suiviBudget.getMontantBudgetEnCentimes() / 100.00);
+			dto.montantExecutionEnEuros = (double) (suiviBudget.getMontantExecutionEnCentimes() / 100.00);
+			dto.montantVertEnEuros = (double) (suiviBudget.getMontantVertEnCentimes() / 100.00);
+			dto.montantRougeEnEuros = (double) (suiviBudget.getMontantRougeEnCentimes() / 100.00);
+			dto.tauxExecutionBudget = suiviBudget.getTauxExecutionBudget();
+			dto.typeBudget = mapperTypeBudget(dto.montantBudgetEnEuros > 0 ? TypeBudget.SOLDE_PREVU_POSITIF : TypeBudget.SOLDE_PREVU_NEGATIF);
+		}
+
+		return dto;
+	}
+	
 	// --- Plus et moins values
 
 	public static EtatPlusMoinsValueResponseDto mapperEtatPlusMoinsValue(EtatPlusMoinsValue etat) throws ControllerException {
@@ -784,6 +858,23 @@ public class RapportResponseDtoMapper {
 		}
 	}
 
+	private static EnteteEmpruntResponseDto mapperEnteteEmprunt(Emprunt emprunt) {
+		
+		EnteteEmpruntResponseDto dto = new EnteteEmpruntResponseDto();
+		
+		dto.momentCalcul = LocalDateTime.now();
+		if ( emprunt.getCompteInterne() != null && emprunt.getCompteInterne().getBanque() != null ) {
+			dto.banque = mapperBanque(emprunt.getCompteInterne().getBanque());
+		}
+		dto.cle = emprunt.getCle();
+		dto.libelle = emprunt.getLibelle();
+		dto.montantPretEnEuros = (double) (emprunt.getConditionEmpruntInitiale().getCapitalEmprunteEnCentimes() / 100);
+		dto.dureePret = emprunt.getConditionEmpruntInitiale().getDuree();
+		dto.periodiciteEcheances = mapperTypePeriode(emprunt.getConditionEmpruntInitiale().getTypePeriodeEcheances());
+
+		return dto;
+	}
+	
 	private static CategorieResponseDto mapperCategorie(Categorie categorie) {
 
 		CategorieResponseDto dto = new CategorieResponseDto();
@@ -915,6 +1006,23 @@ public class RapportResponseDtoMapper {
 			dto.categorisable = false;
 			
 		}
+		
 		return dto; 
+	}
+	
+	private static TypologieResponseDto mapperTypeBudget(TypeBudget typeBudget) {
+		
+		TypologieResponseDto dto = new TypologieResponseDto();
+		
+		if ( typeBudget != null ) {
+			dto.code = typeBudget.getCode();
+			dto.libelle = typeBudget.getLibelle();
+		}
+		else {
+			dto.code = "INDETERMINE";
+			dto.libelle = "Type de budget non spécifié";
+		}
+			
+		return dto;
 	}
 }

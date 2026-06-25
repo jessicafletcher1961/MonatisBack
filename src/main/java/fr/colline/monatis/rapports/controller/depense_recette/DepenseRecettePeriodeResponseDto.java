@@ -12,5 +12,5 @@ public class DepenseRecettePeriodeResponseDto implements Serializable {
 	public double montantRecetteEnEuros;
 	public double montantDepenseEnEuros;
 	public double soldeDepenseRecetteEnEuros;
-
+	public SuiviBudgetResponseDto suiviBudget;
 }

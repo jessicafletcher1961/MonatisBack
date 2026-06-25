@@ -9,7 +9,7 @@ public class DepenseRecetteCategorieLigne {
 	private Categorie categorie;
 	
 	private List<DepenseRecetteSousCategorieLigne> lignesSousCategorie;
-	private DepenseRecetteCategoriePeriode[] cumuls;
+	private DepenseRecettePeriode[] cumulCategorie;
 
 	public Categorie getCategorie() {
 		return categorie;
@@ -27,11 +27,11 @@ public class DepenseRecetteCategorieLigne {
 		this.lignesSousCategorie = lignesSousCategorie;
 	}
 
-	public DepenseRecetteCategoriePeriode[] getCumuls() {
-		return cumuls;
+	public DepenseRecettePeriode[] getCumulCategorie() {
+		return cumulCategorie;
 	}
 
-	public void setCumuls(DepenseRecetteCategoriePeriode[] cumuls) {
-		this.cumuls = cumuls;
+	public void setCumulCategorie(DepenseRecettePeriode[] periodes) {
+		this.cumulCategorie = periodes;
 	}
 }

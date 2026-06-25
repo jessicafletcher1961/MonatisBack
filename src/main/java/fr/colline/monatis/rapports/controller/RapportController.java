@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import fr.colline.monatis.comptes.model.Compte;
 import fr.colline.monatis.comptes.model.CompteInterne;
 import fr.colline.monatis.comptes.service.CompteInterneService;
+import fr.colline.monatis.emprunts.model.Emprunt;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.exceptions.ControllerVerificateurService;
 import fr.colline.monatis.exceptions.ServiceException;
@@ -24,6 +26,8 @@ import fr.colline.monatis.rapports.controller.bilan_patrimoine.EtatBilanPatrimoi
 import fr.colline.monatis.rapports.controller.bilan_patrimoine.EtatBilanPatrimoineResponseDto;
 import fr.colline.monatis.rapports.controller.depense_recette.EtatDepenseRecetteRequestDto;
 import fr.colline.monatis.rapports.controller.depense_recette.EtatDepenseRecetteResponseDto;
+import fr.colline.monatis.rapports.controller.echeancier.EcheancierRequestDto;
+import fr.colline.monatis.rapports.controller.echeancier.EcheancierResponseDto;
 import fr.colline.monatis.rapports.controller.plus_moins_values.EtatPlusMoinsValueRequestDto;
 import fr.colline.monatis.rapports.controller.plus_moins_values.EtatPlusMoinsValueResponseDto;
 import fr.colline.monatis.rapports.controller.releve_compte.ReleveCompteRequestDto;
@@ -36,12 +40,13 @@ import fr.colline.monatis.rapports.controller.remunerations_frais.EtatRemunerati
 import fr.colline.monatis.rapports.controller.remunerations_frais.EtatRemunerationsFraisResponseDto;
 import fr.colline.monatis.rapports.controller.resumes_comptes_internes.ResumeCompteInterneRequestDto;
 import fr.colline.monatis.rapports.controller.resumes_comptes_internes.ResumeCompteInterneResponseDto;
+import fr.colline.monatis.rapports.model.Echeancier;
 import fr.colline.monatis.rapports.model.EtatBilanPatrimoine;
 import fr.colline.monatis.rapports.model.EtatDepenseRecette;
 import fr.colline.monatis.rapports.model.EtatPlusMoinsValue;
 import fr.colline.monatis.rapports.model.EtatRemunerationsFrais;
 import fr.colline.monatis.rapports.model.ReleveNonCategorise;
-import fr.colline.monatis.rapports.model.ReleveOperationCompte;
+import fr.colline.monatis.rapports.model.ReleveCompte;
 import fr.colline.monatis.rapports.model.ReleveSousCategorie;
 import fr.colline.monatis.rapports.model.ResumeCompteInterne;
 import fr.colline.monatis.rapports.service.RapportService;
@@ -50,7 +55,7 @@ import fr.colline.monatis.references.model.Beneficiaire;
 import fr.colline.monatis.references.model.Categorie;
 import fr.colline.monatis.references.model.SousCategorie;
 import fr.colline.monatis.references.model.Titulaire;
-import fr.colline.monatis.references.service.CategorieService;
+import fr.colline.monatis.references.service.SousCategorieService;
 import fr.colline.monatis.typologies.model.TypeCompte;
 import fr.colline.monatis.typologies.model.TypeFonctionnement;
 import fr.colline.monatis.typologies.model.TypePeriode;
@@ -69,7 +74,7 @@ public class RapportController {
 	@Autowired private RapportService rapportService;
 
 	@Autowired private CompteInterneService compteInterneService;
-	@Autowired private CategorieService categorieService;
+	@Autowired private SousCategorieService sousCategorieService;
 
 	@GetMapping("/releve_compte")
 	public ReleveCompteResponseDto getReleveCompte(
@@ -77,7 +82,6 @@ public class RapportController {
 
 		LocalDate dateDebut = verificateur.verifierDate(requestDto.dateDebut, OBLIGATOIRE, null);
 		LocalDate dateFin = verificateur.verifierDate(requestDto.dateFin, FACULTATIF, LocalDate.now());
-		
 		if ( dateFin.isBefore(dateDebut) ) {
 			throw new ControllerException(
 					RapportControleErreur.DATE_FIN_AVANT_DATE_DEBUT, 
@@ -86,7 +90,7 @@ public class RapportController {
 		}
 		Compte compte = verificateur.verifierCompte(requestDto.identifiantCompte, OBLIGATOIRE);
 
-		ReleveOperationCompte releve = rapportService.rechercherReleveOperationCompte(compte, dateDebut, dateFin);
+		ReleveCompte releve = rapportService.rechercherReleveOperationCompte(compte, dateDebut, dateFin);
 		
 		return RapportResponseDtoMapper.mapperReleveCompte(releve);
 	}
@@ -126,7 +130,6 @@ public class RapportController {
 		}
 
 		ReleveSousCategorie releve = rapportService.rechercherReleveOperationSousCategorie(sousCategorie, dateDebut, dateFin);
-		
 		return RapportResponseDtoMapper.mapperReleveSousCategorie(releve);
 
 	}
@@ -171,6 +174,20 @@ public class RapportController {
 		return dto;
 	}
 	
+	@PostMapping("/echeancier")
+	public EcheancierResponseDto getEcheancier(
+			@RequestBody EcheancierRequestDto requestDto ) throws ControllerException, ServiceException {
+		
+		Emprunt emprunt = verificateur.verifierEmprunt(requestDto.cleEmprunt, OBLIGATOIRE);
+		LocalDate dateCible = verificateur.verifierDate(requestDto.dateCible, FACULTATIF, null);
+
+		Echeancier etat = rapportService.rechercherEcheancier(
+				emprunt,
+				dateCible);
+		
+		return RapportResponseDtoMapper.mapperEcheancier(etat);
+	}
+	
 	@GetMapping("/depense_recette")
 	public EtatDepenseRecetteResponseDto getEtatDepenseRecette
 	(@RequestBody EtatDepenseRecetteRequestDto requestDto) throws ServiceException, ControllerException {
@@ -193,31 +210,31 @@ public class RapportController {
 				sousCategories.add(sousCategorie);
 			}
 		}
-		List<Categorie> categories;
-		if ( requestDto.nomsCategories == null || requestDto.nomsCategories.isEmpty() ) {
-			categories = categorieService.rechercherTous();
-		}
-		else {
-			categories = new ArrayList<Categorie>();
+		else if ( requestDto.nomsCategories != null && ! requestDto.nomsCategories.isEmpty() ) {
 			for ( String nomCategorie : requestDto.nomsCategories ) {
 				Categorie categorie = verificateur.verifierCategorie(nomCategorie, OBLIGATOIRE);
-				categories.add(categorie);
+				sousCategories.addAll(categorie.getSousCategories());
 			}
 		}
-		Beneficiaire beneficiaire = verificateur.verifierBeneficiaire(requestDto.nomBeneficiaire, FACULTATIF);
+		else {
+			sousCategories.addAll(sousCategorieService.rechercherTous());
+		}
+		
+		Beneficiaire beneficiaire = null;
+		if ( requestDto.nomBeneficiaire != null ) {
+			beneficiaire = verificateur.verifierBeneficiaire(requestDto.nomBeneficiaire, OBLIGATOIRE);
+		}
 		
 		EtatDepenseRecette etat = rapportService.rechercherEtatDepenseRecette(
 				sousCategories,
-				categories,
 				beneficiaire,
 				dateDebut, 
 				dateFin, 
 				typePeriode);
 		
 		return RapportResponseDtoMapper.mapperEtatDepenseRecette(etat);
-		
 	}
-
+	
 	@GetMapping("/plus_moins_value")
 	public EtatPlusMoinsValueResponseDto getEtatPlusMoinsValue(
 			@RequestBody EtatPlusMoinsValueRequestDto requestDto) throws ControllerException, ServiceException {
@@ -374,7 +391,7 @@ public class RapportController {
 					dateDebut);
 		}
 
-		ReleveOperationCompte releve = rapportService.rechercherReleveOperationCompte(compte, dateDebut, dateFin);
+		ReleveCompte releve = rapportService.rechercherReleveOperationCompte(compte, dateDebut, dateFin);
 		
 		RapportResponsePdfMapper.mapperReleveCompteToPdf(releve, response.getOutputStream());
 	}

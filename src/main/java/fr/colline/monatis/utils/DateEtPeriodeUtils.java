@@ -96,6 +96,7 @@ public class DateEtPeriodeUtils {
 			break;
 		default:
 			throw new ServiceException(
+
 					GeneriqueTechniqueErreur.TYPE_NON_GERE,
 					TypePeriode.class.getSimpleName(),
 					typePeriode.getCode(),
@@ -105,30 +106,21 @@ public class DateEtPeriodeUtils {
 		return dateDebutPeriode;
 	}
 
-	public static LocalDate rechercherDebutPeriodeSuivante(TypePeriode typePeriode, LocalDate dateCible) throws ServiceException {
-
-		LocalDate dateDebutPeriodeCourante = DateEtPeriodeUtils.recadrerDateDebutPeriode(typePeriode, dateCible);
-		LocalDate dateDebutPeriodeSuivante;
-
+	public static int calculerNombreMoisPeriode(TypePeriode typePeriode) throws ServiceException {
+		
 		switch(typePeriode) {
 		case ANNUEL:
-			dateDebutPeriodeSuivante = dateDebutPeriodeCourante.plusYears(1);
-			break;
+			return 12;
 		case SEMESTRIEL:
-			dateDebutPeriodeSuivante = dateDebutPeriodeCourante.plusMonths(6);
-			break;
+			return 6;
 		case QUADRIMESTRIEL:
-			dateDebutPeriodeSuivante = dateDebutPeriodeCourante.plusMonths(4);
-			break;
+			return 4;
 		case TRIMESTRIEL:
-			dateDebutPeriodeSuivante = dateDebutPeriodeCourante.plusMonths(3);
-			break;
+			return 3;
 		case BIMESTRIEL:
-			dateDebutPeriodeSuivante = dateDebutPeriodeCourante.plusMonths(2);
-			break;
+			return 2;
 		case MENSUEL:
-			dateDebutPeriodeSuivante = dateDebutPeriodeCourante.plusMonths(1);
-			break;
+			return 1;
 		default:
 			throw new ServiceException(
 					GeneriqueTechniqueErreur.TYPE_NON_GERE,
@@ -136,8 +128,11 @@ public class DateEtPeriodeUtils {
 					typePeriode.getCode(),
 					typePeriode.getLibelle());
 		}
+	}
 
-		return dateDebutPeriodeSuivante;
+	public static LocalDate rechercherDebutPeriodeSuivante(TypePeriode typePeriode, LocalDate dateCible) throws ServiceException {
+
+		return recadrerDateDebutPeriode(typePeriode, dateCible).plusMonths(calculerNombreMoisPeriode(typePeriode));
 	}
 
 	public static LocalDate rechercherDateFinPeriode(TypePeriode typePeriode, LocalDate dateDebutPeriode) throws ServiceException {
@@ -145,6 +140,11 @@ public class DateEtPeriodeUtils {
 		return rechercherDebutPeriodeSuivante(typePeriode, dateDebutPeriode).minus(1, ChronoUnit.DAYS);
 	}
 
+	public static long calculerNombreJoursEntreDeuxDates(LocalDate dateDebut, LocalDate dateFin) {
+
+		return ChronoUnit.DAYS.between(dateDebut, dateFin.plus(1, ChronoUnit.DAYS));
+	}
+	
 	public static long calculerNombreMoisEntreDeuxDates(LocalDate dateDebut, LocalDate dateFin) {
 
 		return ChronoUnit.MONTHS.between(dateDebut, dateFin.plus(1, ChronoUnit.DAYS));

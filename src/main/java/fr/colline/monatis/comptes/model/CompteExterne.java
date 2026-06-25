@@ -10,10 +10,11 @@ public class CompteExterne extends Compte {
 	public TypeCompte getTypeCompte() {
 		return TypeCompte.EXTERNE;
 	}
-	
+
 	public CompteExterne() {};
 	
 	public CompteExterne(String identifiant, String libelle) {
 		super(identifiant, libelle);
 	}
+	
 }

@@ -3,6 +3,7 @@ package fr.colline.monatis.budgets.model;
 import java.time.LocalDate;
 
 import fr.colline.monatis.references.model.Reference;
+import fr.colline.monatis.typologies.model.TypeBudget;
 import fr.colline.monatis.typologies.model.TypePeriode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -40,6 +41,9 @@ public class Budget {
 	
 	@Column(nullable = false)
 	private LocalDate dateFin;
+	
+	@Column(nullable = false)
+	private TypeBudget typeBudget;
 	
 	@Column(nullable = false)
 	private Long montantBudgetEnCentimes;
@@ -101,6 +105,14 @@ public class Budget {
 
 	public void setDateFin(LocalDate dateFin) {
 		this.dateFin = dateFin;
+	}
+
+	public TypeBudget getTypeBudget() {
+		return typeBudget;
+	}
+
+	public void setTypeBudget(TypeBudget typeBudget) {
+		this.typeBudget = typeBudget;
 	}
 
 	public Long getMontantBudgetEnCentimes() {

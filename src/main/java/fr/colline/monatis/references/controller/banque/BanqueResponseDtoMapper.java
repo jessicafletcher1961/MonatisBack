@@ -14,6 +14,7 @@ public class BanqueResponseDtoMapper {
 		
 		BanqueBasicResponseDto dto = new BanqueBasicResponseDto();
 		
+		dto.id = banque.getId();
 		dto.nom = banque.getNom();
 		dto.libelle = banque.getLibelle();
 
@@ -34,6 +35,7 @@ public class BanqueResponseDtoMapper {
 		
 		BanqueSimpleResponseDto dto = new BanqueSimpleResponseDto();
 		
+		dto.id = banque.getId();
 		dto.nom = banque.getNom();
 		dto.libelle = banque.getLibelle();
 
@@ -54,6 +56,7 @@ public class BanqueResponseDtoMapper {
 		
 		BanqueDetailedResponseDto dto = new BanqueDetailedResponseDto();
 		
+		dto.id = banque.getId();
 		dto.nom = banque.getNom();
 		dto.libelle = banque.getLibelle();
 

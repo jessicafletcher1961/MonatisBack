@@ -10,23 +10,24 @@ import org.springframework.stereotype.Service;
 
 import fr.colline.monatis.comptes.model.Compte;
 import fr.colline.monatis.comptes.model.CompteInterne;
+import fr.colline.monatis.emprunts.model.Emprunt;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.operations.model.Operation;
 import fr.colline.monatis.operations.model.OperationLigne;
 import fr.colline.monatis.operations.service.OperationService;
+import fr.colline.monatis.rapports.model.Echeancier;
 import fr.colline.monatis.rapports.model.EtatBilanPatrimoine;
 import fr.colline.monatis.rapports.model.EtatDepenseRecette;
 import fr.colline.monatis.rapports.model.EtatPlusMoinsValue;
 import fr.colline.monatis.rapports.model.EtatRemunerationsFrais;
+import fr.colline.monatis.rapports.model.ReleveCompte;
 import fr.colline.monatis.rapports.model.ReleveNonCategorise;
-import fr.colline.monatis.rapports.model.ReleveOperationCompte;
 import fr.colline.monatis.rapports.model.ReleveSousCategorie;
 import fr.colline.monatis.rapports.model.ResumeCompteInterne;
 import fr.colline.monatis.rapports.model.composants.bilan_patrimoine.BilanPatrimoinePeriode;
 import fr.colline.monatis.rapports.model.composants.bilan_patrimoine.BilanPatrimoineTypeFonctionnementLigne;
 import fr.colline.monatis.rapports.model.composants.bilan_patrimoine.BilanPatrimoineTypeFonctionnementPeriode;
 import fr.colline.monatis.rapports.model.composants.depense_recette.DepenseRecetteCategorieLigne;
-import fr.colline.monatis.rapports.model.composants.depense_recette.DepenseRecetteCategoriePeriode;
 import fr.colline.monatis.rapports.model.composants.depense_recette.DepenseRecettePeriode;
 import fr.colline.monatis.rapports.model.composants.plus_moins_value.PlusMoinsValuePeriode;
 import fr.colline.monatis.rapports.model.composants.plus_moins_value.PlusMoinsValueTypeFonctionnementLigne;
@@ -36,7 +37,6 @@ import fr.colline.monatis.rapports.model.composants.remunerations_frais.Remunera
 import fr.colline.monatis.rapports.model.composants.remunerations_frais.RemunerationsFraisTypeFonctionnementPeriode;
 import fr.colline.monatis.references.model.Banque;
 import fr.colline.monatis.references.model.Beneficiaire;
-import fr.colline.monatis.references.model.Categorie;
 import fr.colline.monatis.references.model.SousCategorie;
 import fr.colline.monatis.references.model.Titulaire;
 import fr.colline.monatis.typologies.model.TypeFonctionnement;
@@ -58,8 +58,9 @@ public class RapportService {
 	@Autowired private DepenseRecetteService depenseRecetteService;
 	@Autowired private RemunerationsFraisService remunerationsFraisService;
 	@Autowired private BilanPatrimoineService bilanPatrimoineService;
+	@Autowired private EcheancierService echeancierService;
 
-	public ReleveOperationCompte rechercherReleveOperationCompte(
+	public ReleveCompte rechercherReleveOperationCompte(
 			Compte compte,
 			LocalDate dateDebutReleve,
 			LocalDate dateFinReleve) throws ServiceException {
@@ -82,7 +83,7 @@ public class RapportService {
 			// Tout à 0 si le relevé est situé entièrement avant ou après la période de "vie" du compte interne.  
 			if ( dateFinReleve.isBefore(compteInterne.getDateSoldeInitial()) 
 					|| (compteInterne.getDateCloture() != null && dateDebutReleve.isAfter(compteInterne.getDateCloture())) )  {
-				ReleveOperationCompte releve = new ReleveOperationCompte();
+				ReleveCompte releve = new ReleveCompte();
 
 				releve.setCompte(compte);
 				releve.setDateDebutReleve(dateDebutReleve);
@@ -123,7 +124,7 @@ public class RapportService {
 
 		montantTotalEcartEnCentimems = montantSoldeFinReleveEnCentimes - (montantSoldeDebutReleveEnCentimes + montantTotalOperationsRecetteEnCentimes - montantTotalOperationsDepenseEnCentimes);
 		
-		ReleveOperationCompte releve = new ReleveOperationCompte();
+		ReleveCompte releve = new ReleveCompte();
 
 		releve.setCompte(compte);
 		releve.setDateDebutReleve(dateDebutReleve);
@@ -188,53 +189,33 @@ public class RapportService {
 
 		return resume;
 	}
-
+	
+	public Echeancier rechercherEcheancier(
+			Emprunt emprunt,
+			LocalDate dateCible) throws ServiceException {
+		
+		return echeancierService.calculerEcheancier(emprunt, dateCible);
+	}
+	
 	public EtatDepenseRecette rechercherEtatDepenseRecette(
 			List<SousCategorie> sousCategories,
-			List<Categorie> categories,
 			Beneficiaire beneficiaire,
 			LocalDate dateDebutEtat,
 			LocalDate dateFinEtat,
 			TypePeriode typePeriode) throws ServiceException {
 		
-		int nombrePeriodes = DateEtPeriodeUtils.calculerNombrePeriodesEntreDateDebutEtDateFin(typePeriode, dateDebutEtat, dateFinEtat);
-
 		List<DepenseRecetteCategorieLigne> lignesCategorie = new ArrayList<DepenseRecetteCategorieLigne>();
-		DepenseRecettePeriode[] cumulsEtat = new DepenseRecettePeriode[nombrePeriodes];
+		DepenseRecettePeriode[] cumulEtat = depenseRecetteService.initialiserPeriodes(dateDebutEtat, dateFinEtat, typePeriode);
 
-		for ( Categorie categorie : categories ) {
-
-			DepenseRecetteCategorieLigne ligneCategorie = depenseRecetteService.rechercherDepenseRecetteCategorieLigne(
+		for ( DepenseRecetteCategorieLigne ligneCategorie : depenseRecetteService.rechercherDepenseRecetteCategorieLignes(
 					sousCategories,
-					categorie,
 					beneficiaire,
 					dateDebutEtat, 
 					dateFinEtat,
-					typePeriode);
+					typePeriode) ) {
 
 			lignesCategorie.add(ligneCategorie);
-			for ( int numeroPeriode = 0 ; numeroPeriode < nombrePeriodes ; numeroPeriode++ ) {
-				DepenseRecetteCategoriePeriode categoriePeriode = ligneCategorie.getCumuls()[numeroPeriode];
-				DepenseRecettePeriode cumulPeriode;
-				if ( cumulsEtat[numeroPeriode] == null ) {
-					cumulPeriode = new DepenseRecettePeriode();
-					
-					cumulPeriode.setDateDebutPeriode(categoriePeriode.getDateDebutPeriode());
-					cumulPeriode.setDateFinPeriode(categoriePeriode.getDateFinPeriode());
-					cumulPeriode.setMontantRecetteEnCentimes(categoriePeriode.getMontantRecetteEnCentimes());
-					cumulPeriode.setMontantDepenseEnCentimes(categoriePeriode.getMontantDepenseEnCentimes());
-					cumulPeriode.setSoldeDepenseRecetteEnCentimes(categoriePeriode.getSoldeDepenseRecetteEnCentimes());
-					
-					cumulsEtat[numeroPeriode] = cumulPeriode;
-				}
-				else {
-					cumulPeriode = cumulsEtat[numeroPeriode];
-					
-					cumulPeriode.setMontantRecetteEnCentimes(cumulPeriode.getMontantRecetteEnCentimes() + categoriePeriode.getMontantRecetteEnCentimes());
-					cumulPeriode.setMontantDepenseEnCentimes(cumulPeriode.getMontantDepenseEnCentimes() + categoriePeriode.getMontantDepenseEnCentimes());
-					cumulPeriode.setSoldeDepenseRecetteEnCentimes(cumulPeriode.getSoldeDepenseRecetteEnCentimes() + categoriePeriode.getSoldeDepenseRecetteEnCentimes());
-				}
-			}
+			cumulEtat = depenseRecetteService.cumulerPeriodes(cumulEtat, ligneCategorie.getCumulCategorie());
 		}
 
 		EtatDepenseRecette etat = new EtatDepenseRecette();
@@ -243,11 +224,10 @@ public class RapportService {
 		etat.setDateFinEtat(dateFinEtat);
 		etat.setTypePeriode(typePeriode);
 		etat.setSousCategories(sousCategories);
-		etat.setCategories(categories);
 		etat.setBeneficiaire(beneficiaire);
 		
 		etat.setLignesCategorie(lignesCategorie);
-		etat.setCumuls(cumulsEtat);
+		etat.setCumulEtat(cumulEtat);
 
 		return etat;
 	}

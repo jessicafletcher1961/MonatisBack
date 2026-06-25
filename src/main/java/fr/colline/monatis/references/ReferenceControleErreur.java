@@ -22,7 +22,13 @@ public enum ReferenceControleErreur implements MonatisErreur {
 			"Le nom '%s' est déjà utilisé par une référence de type '%s'" ),
 	 */
 	NOM_DEJA_UTILISE(
-			"Le nom '%s' est déjà utilisé par une référence de type '%s'" ),
+			"Le nom '%s' est déjà utilisé par une référence de type '%s'" ), 
+	
+	/**
+			"Aucune référence de type '%s' et d'ID %s n'a été trouvée"),
+	 */
+	NON_TROUVE_PAR_ID(
+			"Aucune référence de type '%s' et d'ID %s n'a été trouvée"),
 	
 	;
 

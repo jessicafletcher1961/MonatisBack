@@ -9,6 +9,7 @@ public class CompteExterneResponseDtoMapper {
 
 		CompteExterneBasicResponseDto dto = new CompteExterneBasicResponseDto();
 		
+		dto.id = compteExterne.getId();
 		dto.identifiant = compteExterne.getIdentifiant();
 		dto.libelle = compteExterne.getLibelle();
 				
@@ -19,6 +20,7 @@ public class CompteExterneResponseDtoMapper {
 
 		CompteExterneSimpleResponseDto dto = new CompteExterneSimpleResponseDto();
 		
+		dto.id = compteExterne.getId();
 		dto.identifiant = compteExterne.getIdentifiant();
 		dto.libelle = compteExterne.getLibelle();
 
@@ -29,6 +31,7 @@ public class CompteExterneResponseDtoMapper {
 
 		CompteExterneDetailedResponseDto dto = new CompteExterneDetailedResponseDto();
 		
+		dto.id = compteExterne.getId();
 		dto.identifiant = compteExterne.getIdentifiant();
 		dto.libelle = compteExterne.getLibelle();
 		

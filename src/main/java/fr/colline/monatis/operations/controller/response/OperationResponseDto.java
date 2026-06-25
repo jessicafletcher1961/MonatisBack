@@ -10,6 +10,7 @@ public abstract class OperationResponseDto implements Serializable, MonatisRespo
 	private static final long serialVersionUID = 6335181972860713927L;
 
 	public String numero;
+	public LocalDate dateCreation;
 	public String libelle;
 	public LocalDate dateValeur;
 	public Long montantEnCentimes;

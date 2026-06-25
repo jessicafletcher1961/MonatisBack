@@ -7,9 +7,9 @@ target/
 ### Odile le 21/03/2026 ( ! signifie ne pas ignorer)
 !**/src/main/**/admin/initialisation/basic/
 
-data/**
-sauvegardes/**
-echanges/**
+data/
+sauvegardes/
+echanges/
 
 ### STS ###
 .apt_generated

@@ -9,6 +9,7 @@ public class BeneficiaireResponseDtoMapper {
 		
 		BeneficiaireBasicResponseDto dto = new BeneficiaireBasicResponseDto();
 		
+		dto.id = beneficiaire.getId();
 		dto.nom = beneficiaire.getNom();
 		dto.libelle = beneficiaire.getLibelle();
 
@@ -19,6 +20,7 @@ public class BeneficiaireResponseDtoMapper {
 		
 		BeneficiaireSimpleResponseDto dto = new BeneficiaireSimpleResponseDto();
 		
+		dto.id = beneficiaire.getId();
 		dto.nom = beneficiaire.getNom();
 		dto.libelle = beneficiaire.getLibelle();
 
@@ -29,6 +31,7 @@ public class BeneficiaireResponseDtoMapper {
 		
 		BeneficiaireDetailedResponseDto dto = new BeneficiaireDetailedResponseDto();
 		
+		dto.id = beneficiaire.getId();
 		dto.nom = beneficiaire.getNom();
 		dto.libelle = beneficiaire.getLibelle();
 		

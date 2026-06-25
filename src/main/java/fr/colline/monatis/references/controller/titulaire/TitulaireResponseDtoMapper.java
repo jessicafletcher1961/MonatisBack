@@ -14,6 +14,7 @@ public class TitulaireResponseDtoMapper {
 
 		TitulaireBasicResponseDto dto = new TitulaireBasicResponseDto();
 		
+		dto.id = titulaire.getId();
 		dto.nom = titulaire.getNom();
 		dto.libelle = titulaire.getLibelle();
 		
@@ -34,6 +35,7 @@ public class TitulaireResponseDtoMapper {
 
 		TitulaireSimpleResponseDto dto = new TitulaireSimpleResponseDto();
 		
+		dto.id = titulaire.getId();
 		dto.nom = titulaire.getNom();
 		dto.libelle = titulaire.getLibelle();
 		
@@ -54,6 +56,7 @@ public class TitulaireResponseDtoMapper {
 
 		TitulaireDetailedResponseDto dto = new TitulaireDetailedResponseDto();
 		
+		dto.id = titulaire.getId();
 		dto.nom = titulaire.getNom();
 		dto.libelle = titulaire.getLibelle();
 		

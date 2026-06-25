@@ -9,6 +9,7 @@ public abstract class EvaluationResponseDto implements Serializable, MonatisResp
 
 	private static final long serialVersionUID = 4876864948950927695L;
 
+	public Long id;
 	public String cle;
 	public LocalDate dateSolde;
 	public Long montantSoldeEnCentimes;

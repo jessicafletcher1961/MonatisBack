@@ -123,13 +123,11 @@ public class CompatibiliteService {
 
 		case TRANSFERT:
 		case DEPOT:
-		case INVESTISSEMENT:
 		case DEPENSE:
 		case FRAIS_COMPTE_COURANT:
 			resultat = new CaracteristiqueCompte(TypeCompte.INTERNE, TypeFonctionnement.COURANT);
 			break;
 		case RETRAIT:
-		case LIQUIDATION:
 		case FRAIS_COMPTE_FINANCIER:
 			resultat = new CaracteristiqueCompte(TypeCompte.INTERNE, TypeFonctionnement.FINANCIER);
 			break;
@@ -163,13 +161,11 @@ public class CompatibiliteService {
 
 		case TRANSFERT:
 		case RETRAIT:
-		case LIQUIDATION:
 		case RECETTE:
 		case REMUNERATION_COMPTE_COURANT:
 			resultat = new CaracteristiqueCompte(TypeCompte.INTERNE, TypeFonctionnement.COURANT);
 			break;
 		case DEPOT:
-		case INVESTISSEMENT:
 		case REMUNERATION_COMPTE_FINANCIER:
 			resultat = new CaracteristiqueCompte(TypeCompte.INTERNE, TypeFonctionnement.FINANCIER);
 			break;

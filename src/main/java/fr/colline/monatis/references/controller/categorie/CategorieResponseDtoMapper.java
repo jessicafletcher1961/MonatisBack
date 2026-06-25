@@ -14,6 +14,7 @@ public class CategorieResponseDtoMapper {
 		
 		CategorieBasicResponseDto dto = new CategorieBasicResponseDto();
 		
+		dto.id = categorie.getId();
 		dto.nom = categorie.getNom();
 		dto.libelle = categorie.getLibelle();
 
@@ -34,6 +35,7 @@ public class CategorieResponseDtoMapper {
 		
 		CategorieSimpleResponseDto dto = new CategorieSimpleResponseDto();
 		
+		dto.id = categorie.getId();
 		dto.nom = categorie.getNom();
 		dto.libelle = categorie.getLibelle();
 
@@ -54,6 +56,7 @@ public class CategorieResponseDtoMapper {
 		
 		CategorieDetailedResponseDto dto = new CategorieDetailedResponseDto();
 		
+		dto.id = categorie.getId();
 		dto.nom = categorie.getNom();
 		dto.libelle = categorie.getLibelle();
 

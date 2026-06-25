@@ -9,6 +9,7 @@ public class OperationModificationRequestDto implements Serializable {
 	private static final long serialVersionUID = -3863830393882191680L;
 	
 	public String numero;
+	public LocalDate dateCreation;
 	public String libelle;
 	public String codeTypeOperation;
 	public LocalDate dateValeur;

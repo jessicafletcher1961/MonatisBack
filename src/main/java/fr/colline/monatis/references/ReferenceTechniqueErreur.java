@@ -56,10 +56,10 @@ public enum ReferenceTechniqueErreur implements MonatisErreur {
 			"Un problème technique est survenu lors de la suppression d'une référence de type '%s' de nom '%s'"),
 
 	/**
-			"Un problème technique est survenu lors de la vérification de la non-utilisation par des opérations de la référence de type '%s' et d'ID %s"),
+			"Un problème technique est survenu lors de la vérification de la non-utilisation de la référence de type '%s' et d'ID %s"),
 	 */
 	COMPTAGE_USAGE_PAR_ID(
-			"Un problème technique est survenu lors de la vérification de la non-utilisation par des opérations de la référence de type '%s' et d'ID %s"),
+			"Un problème technique est survenu lors de la vérification de la non-utilisation de la référence de type '%s' et d'ID %s"),
 
 
 	;

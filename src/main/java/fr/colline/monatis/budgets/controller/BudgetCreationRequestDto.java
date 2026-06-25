@@ -11,6 +11,7 @@ public class BudgetCreationRequestDto implements Serializable {
 	public String nomReference;
 	public String codeTypePeriode;
 	public LocalDate dateCible;
+	public String codeTypeBudget;
 	public Long montantBudgetEnCentimes;
 	public String libelle;
 	

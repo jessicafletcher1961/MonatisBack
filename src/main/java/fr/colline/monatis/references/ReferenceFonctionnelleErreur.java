@@ -37,10 +37,28 @@ public enum ReferenceFonctionnelleErreur implements MonatisErreur {
 			"Suppression de la sous-catégorie de nom '%s' : cette sous-catégorie ne peut être supprimée car elle est associée à %s opérations"), 
 	
 	/**
-			"Suppression du titulaire de nom '%s' : ce titulaire ne peut être supprimée car il est associé à %s comptes internes"), 
+			"Suppression de la sous-catégorie de nom '%s' : cette sous-catégorie ne peut être supprimée car elle est associée à %s budgets"),
+	 */
+	SUPPRESSION_SOUS_CATEGORIE_AVEC_BUDGET(
+			"Suppression de la sous-catégorie de nom '%s' : cette sous-catégorie ne peut être supprimée car elle est associée à %s budgets"),
+	
+	/**
+			"Suppression de la catégorie de nom '%s' : cette catégorie ne peut être supprimée car elle est associée à %s budgets"),
+	 */
+	SUPPRESSION_CATEGORIE_AVEC_BUDGET(
+			"Suppression de la catégorie de nom '%s' : cette catégorie ne peut être supprimée car elle est associée à %s budgets"),
+
+	/**
+			"Suppression du bénéficiaire de nom '%s' : ce bénéficiaire ne peut être supprimé car il est associé à %s budgets"),
+	 */
+	SUPPRESSION_BENEFICIAIRE_AVEC_BUDGET(
+			"Suppression du bénéficiaire de nom '%s' : ce bénéficiaire ne peut être supprimé car il est associé à %s budgets"),
+
+	/**
+			"Suppression du titulaire de nom '%s' : ce titulaire ne peut être supprimé car il est associé à %s comptes internes"), 
 	 */
 	SUPPRESSION_TITULAIRE_AVEC_COMPTES_INTERNES(
-			"Suppression du titulaire de nom '%s' : ce titulaire ne peut être supprimée car il est associé à %s comptes internes"), 
+			"Suppression du titulaire de nom '%s' : ce titulaire ne peut être supprimé car il est associé à %s comptes internes"), 
 
 	;
 

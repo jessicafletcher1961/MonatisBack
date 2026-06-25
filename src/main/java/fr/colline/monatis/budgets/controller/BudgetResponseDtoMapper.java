@@ -10,15 +10,16 @@ public class BudgetResponseDtoMapper {
 		
 		BudgetResponseDto dto = new BudgetResponseDto();
 		
+		dto.id = budget.getId();
 		dto.cle = budget.getCle();
 		dto.libelle = budget.getLibelle();
 		dto.reference = ReferenceResponseDtoMapper.mapperModelToBasicResponseDto(budget.getReference());
 		dto.typePeriode = TypologieResponseDtoMapper.mapperModelToResponseDto(budget.getTypePeriode());
 		dto.dateDebut = budget.getDateDebut();
 		dto.dateFin = budget.getDateFin();
+		dto.codeTypeBudget = TypologieResponseDtoMapper.mapperModelToResponseDto(budget.getTypeBudget());
 		dto.montantBudgetEnCentimes = budget.getMontantBudgetEnCentimes();
 		
 		return dto;
 	}
-
 }

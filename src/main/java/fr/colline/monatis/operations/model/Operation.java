@@ -13,7 +13,6 @@ import fr.colline.monatis.typologies.model.TypeOperation;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -33,6 +32,8 @@ public class Operation {
 	@SequenceGenerator(name = "gen_seq_operation", sequenceName = "seq_operation", allocationSize = 1)
 	private Long id;
 	
+	private LocalDate dateCreation;
+
 	@Column(length = 30)
 	private String numero;
 	
@@ -61,8 +62,7 @@ public class Operation {
 	@OneToMany(
 			mappedBy = "operation",
 			cascade = CascadeType.ALL,
-			orphanRemoval = true,
-			fetch = FetchType.LAZY)
+			orphanRemoval = true)
 	private Set<OperationLigne> lignes = new HashSet<OperationLigne>();
 
 	public Long getId() {
@@ -71,6 +71,14 @@ public class Operation {
 
 	public void setId(Long id) {
 		this.id = id;
+	}
+
+	public LocalDate getDateCreation() {
+		return dateCreation;
+	}
+
+	public void setDateCreation(LocalDate dateCreation) {
+		this.dateCreation = dateCreation;
 	}
 
 	public String getNumero() {
@@ -147,6 +155,7 @@ public class Operation {
 			String numero,
 			TypeOperation typeOperation,
 			String libelle,
+			LocalDate dateCreation,
 			LocalDate dateValeur,
 			Long montantEnCentimes,
 			Compte compteRecette,
@@ -155,6 +164,7 @@ public class Operation {
 	
 		this.numero = numero;
 		this.libelle = libelle;
+		this.dateCreation = dateCreation;
 		this.dateValeur = dateValeur;
 		this.typeOperation = typeOperation;
 		this.montantEnCentimes = montantEnCentimes;
@@ -167,6 +177,7 @@ public class Operation {
 			String numero,
 			TypeOperation typeOperation,
 			String libelle,
+			LocalDate dateCreation,
 			LocalDate dateValeur,
 			Long montantEnCentimes,
 			Compte compteRecette,
@@ -176,6 +187,7 @@ public class Operation {
 		
 		this.numero = numero;
 		this.libelle = libelle;
+		this.dateCreation = dateCreation;
 		this.dateValeur = dateValeur;
 		this.typeOperation = typeOperation;
 		this.montantEnCentimes = montantEnCentimes;
@@ -190,6 +202,7 @@ public class Operation {
 		return Objects.hash(
 				compteDepense, 
 				compteRecette, 
+				dateCreation,
 				dateValeur, 
 				id, 
 				libelle, 
@@ -210,6 +223,7 @@ public class Operation {
 		Operation other = (Operation) obj;
 		return Objects.equals(compteDepense, other.compteDepense) 
 				&& Objects.equals(compteRecette, other.compteRecette)
+				&& Objects.equals(dateCreation, other.dateCreation) 
 				&& Objects.equals(dateValeur, other.dateValeur) 
 				&& Objects.equals(id, other.id)
 				&& Objects.equals(libelle, other.libelle) 

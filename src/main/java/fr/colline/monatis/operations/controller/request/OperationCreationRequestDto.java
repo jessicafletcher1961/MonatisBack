@@ -9,6 +9,8 @@ public class OperationCreationRequestDto implements Serializable {
 	private static final long serialVersionUID = 6286435068357380112L;
 	
 	public String numero;
+	
+	public LocalDate dateCreation;
 
 	public String libelle;
 
@@ -21,6 +23,8 @@ public class OperationCreationRequestDto implements Serializable {
 	public String identifiantCompteDepense;
 
 	public String identifiantCompteRecette;
+	
+	public LocalDate dateComptabilisation;
 	
 	public String nomSousCategorie;
 

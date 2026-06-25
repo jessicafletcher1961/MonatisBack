@@ -10,6 +10,7 @@ public class EvaluationResponseDtoMapper {
 		
 		EvaluationBasicResponseDto dto = new EvaluationBasicResponseDto();
 		
+		dto.id = evaluation.getId();
 		dto.cle = evaluation.getCle();
 		dto.dateSolde = evaluation.getDateSolde();
 		dto.montantSoldeEnCentimes = evaluation.getMontantSoldeEnCentimes();
@@ -24,6 +25,7 @@ public class EvaluationResponseDtoMapper {
 		
 		EvaluationSimpleResponseDto dto = new EvaluationSimpleResponseDto();
 		
+		dto.id = evaluation.getId();
 		dto.cle = evaluation.getCle();
 		dto.dateSolde = evaluation.getDateSolde();
 		dto.montantSoldeEnCentimes = evaluation.getMontantSoldeEnCentimes();
@@ -37,6 +39,7 @@ public class EvaluationResponseDtoMapper {
 		
 		EvaluationDetailedResponseDto dto = new EvaluationDetailedResponseDto();
 		
+		dto.id = evaluation.getId();
 		dto.cle = evaluation.getCle();
 		dto.dateSolde = evaluation.getDateSolde();
 		dto.montantSoldeEnCentimes = evaluation.getMontantSoldeEnCentimes();

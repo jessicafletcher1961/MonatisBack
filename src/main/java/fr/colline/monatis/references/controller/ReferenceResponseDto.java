@@ -8,6 +8,7 @@ public abstract class ReferenceResponseDto implements Serializable, MonatisRespo
 
 	private static final long serialVersionUID = 4129405708810085743L;
 
+	public Long id;
 	public String nom;
 	public String libelle;
 	

@@ -9,10 +9,9 @@ public class BudgetModificationRequestDto implements Serializable {
 	public String cle;
 	public String nomReference;
 	public String codeTypePeriode;
-	public LocalDate dateDebut;
+	public LocalDate dateCible;
+	public String codeTypeBudget;
 	public Long montantBudgetEnCentimes;
 	public String libelle;
-	
-
 	
 }

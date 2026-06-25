@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import fr.colline.monatis.typologies.model.TypeBudget;
 import fr.colline.monatis.typologies.model.TypeCompte;
 import fr.colline.monatis.typologies.model.TypeFonctionnement;
 import fr.colline.monatis.typologies.model.TypeOperation;
@@ -55,6 +56,15 @@ public class TypologieController {
 		return Arrays.asList(TypePeriode.values())
 				.stream()
 				.map((to) -> {return TypologieResponseDtoMapper.mapperModelToResponseDto(to);})
+				.toList();
+	}
+	
+	@GetMapping("/budget")
+	public List<TypologieResponseDto> getTypesBudgets() {
+		
+		return Arrays.asList(TypeBudget.values())
+				.stream()
+				.map((tb) -> {return TypologieResponseDtoMapper.mapperModelToResponseDto(tb);})
 				.toList();
 	}
 	

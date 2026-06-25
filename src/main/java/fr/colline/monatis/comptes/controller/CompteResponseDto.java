@@ -8,6 +8,7 @@ public abstract class CompteResponseDto implements Serializable, MonatisResponse
 
 	private static final long serialVersionUID = 6926376429549463963L;
 
+	public Long id;
 	public String identifiant;
 	public String libelle;
 	

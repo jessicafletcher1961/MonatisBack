@@ -7,6 +7,7 @@ import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.references.ReferenceFonctionnelleErreur;
 import fr.colline.monatis.references.ReferenceTechniqueErreur;
 import fr.colline.monatis.references.model.Beneficiaire;
+import fr.colline.monatis.references.model.SousCategorie;
 import fr.colline.monatis.references.repository.BeneficiaireRepository;
 
 @Service
@@ -31,6 +32,7 @@ public class BeneficiaireService extends ReferenceService<Beneficiaire>{
 		beneficiaire = super.controlerEtPreparerPourSuppression(beneficiaire);
 		
 		verifierAbsenceDetailOperationAssocie(beneficiaire);
+		verifierAbsenceBudgetAssocie(beneficiaire);
 
 		return beneficiaire;
 	}
@@ -54,6 +56,28 @@ public class BeneficiaireService extends ReferenceService<Beneficiaire>{
 					ReferenceFonctionnelleErreur.SUPPRESSION_BENEFICIAIRE_AVEC_OPERATION, 
 					beneficiaire.getNom(),
 					nombreDetailOperation);
+		}
+	}
+
+	private void verifierAbsenceBudgetAssocie(Beneficiaire beneficiaire) throws ServiceException {
+
+		int nombreBudgetAssocie;
+		try {
+			nombreBudgetAssocie = beneficiaireRepository.compterBudgetParReferenceId(beneficiaire.getId());
+		}
+		catch ( Throwable t ) {
+			throw new ServiceException(
+					t,
+					ReferenceTechniqueErreur.COMPTAGE_USAGE_PAR_ID,
+					SousCategorie.class.getSimpleName(),
+					beneficiaire.getId());
+		}
+
+		if ( nombreBudgetAssocie > 0 ) {
+			throw new ServiceException(
+					ReferenceFonctionnelleErreur.SUPPRESSION_BENEFICIAIRE_AVEC_BUDGET, 
+					beneficiaire.getNom(),
+					nombreBudgetAssocie);
 		}
 	}
 

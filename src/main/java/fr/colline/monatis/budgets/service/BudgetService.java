@@ -13,7 +13,6 @@ import fr.colline.monatis.budgets.model.Budget;
 import fr.colline.monatis.budgets.repository.BudgetRepository;
 import fr.colline.monatis.exceptions.ServiceException;
 import fr.colline.monatis.references.model.Reference;
-import fr.colline.monatis.typologies.model.TypePeriode;
 import fr.colline.monatis.utils.DateEtPeriodeUtils;
 
 @Service
@@ -100,32 +99,6 @@ public class BudgetService {
 		}
 	}
 
-	public List<Budget> rechercherParReferenceId(Long referenceId) throws ServiceException {
-
-		try {
-			return budgetRepository.findByReferenceIdOrderByDateFinDesc(referenceId);
-		}
-		catch (Throwable t) {
-			throw new ServiceException(
-					t,
-					BudgetTechniqueErreur.RECHERCHE_HISTORIQUE_PAR_REFERENCE_ID,
-					referenceId);
-		}
-	}
-
-	public boolean isExistantParReferenceId(Long referenceId) throws ServiceException {
-
-		try {
-			return budgetRepository.existsByReferenceId(referenceId);
-		}
-		catch (Throwable t) {
-			throw new ServiceException(
-					t,
-					BudgetTechniqueErreur.EXISTENCE_HISTORIQUE_PAR_REFERENCE_ID,
-					referenceId);
-		}
-	}
-
 	public Budget rechercherParReferenceIdEtDateCible(Long referenceId, LocalDate dateCible) throws ServiceException {
 
 		try {
@@ -143,19 +116,24 @@ public class BudgetService {
 					dateCible);
 		}
 	}
-
-	public boolean isExistantParReferenceIdEtDateCible(Long referenceId, LocalDate dateCible) throws ServiceException {
+	
+	public List<Budget> rechercherParReferenceIdEntreDateDebutEtDateFin(Long referenceId, LocalDate dateDebut, LocalDate dateFin) throws ServiceException {
 
 		try {
-			return budgetRepository.existsByReferenceIdAndDateDebutLessThanEqualAndDateFinGreaterThan(referenceId, dateCible, dateCible);
+			return budgetRepository.findByReferenceIdAndDateRange(
+					referenceId, 
+					dateDebut, 
+					dateFin);
 		}
 		catch (Throwable t) {
 			throw new ServiceException(
 					t,
-					BudgetTechniqueErreur.EXISTENCE_PAR_REFERENCE_ID_ET_DATE_CIBLE,
+					BudgetTechniqueErreur.RECHERCHE_PAR_REFERENCE_ID_ET_PERIODE,
 					referenceId,
-					dateCible);
+					dateDebut,
+					dateFin);
 		}
+
 	}
 
 	public Budget rechercherDernierParReferenceId(Long referenceId) throws ServiceException {
@@ -242,7 +220,7 @@ public class BudgetService {
 		LocalDate dateDebutPeriode = DateEtPeriodeUtils.recadrerDateDebutPeriode(budget.getTypePeriode(), budget.getDateDebut());
 		LocalDate dateFinPeriode = DateEtPeriodeUtils.rechercherDateFinPeriode(budget.getTypePeriode(), dateDebutPeriode);
 
-		verifierChevauchementPeriode(budget.getReference(), budget.getTypePeriode(), dateDebutPeriode, dateFinPeriode);
+		verifierChevauchementPeriode(budget, dateDebutPeriode, dateFinPeriode);
 		
 		budget.setDateDebut(dateDebutPeriode);
 		budget.setDateFin(dateFinPeriode);
@@ -262,9 +240,10 @@ public class BudgetService {
 		budgetReconduit.setDateDebut(dateDebutPeriode);
 		budgetReconduit.setDateFin(dateFinPeriode);
 		budgetReconduit.setLibelle(budgetAReconduire.getLibelle());
+		budgetReconduit.setTypeBudget(budgetAReconduire.getTypeBudget());
 		budgetReconduit.setMontantBudgetEnCentimes(budgetAReconduire.getMontantBudgetEnCentimes());
 
-		verifierChevauchementPeriode(budgetReconduit.getReference(), budgetReconduit.getTypePeriode(), dateDebutPeriode, dateFinPeriode);
+		verifierChevauchementPeriode(budgetReconduit, dateDebutPeriode, dateFinPeriode);
 		
 		return budgetReconduit;
 	}
@@ -274,7 +253,7 @@ public class BudgetService {
 		LocalDate dateDebutPeriode = DateEtPeriodeUtils.recadrerDateDebutPeriode(budget.getTypePeriode(), budget.getDateDebut());
 		LocalDate dateFinPeriode = DateEtPeriodeUtils.rechercherDateFinPeriode(budget.getTypePeriode(), dateDebutPeriode);
 
-		verifierChevauchementPeriode(budget.getReference(), budget.getTypePeriode(), dateDebutPeriode, dateFinPeriode);
+		verifierChevauchementPeriode(budget, dateDebutPeriode, dateFinPeriode);
 		
 		budget.setDateDebut(dateDebutPeriode);
 		budget.setDateFin(dateFinPeriode);
@@ -287,37 +266,40 @@ public class BudgetService {
 		return budget;
 	}
 	
-	private void verifierChevauchementPeriode(Reference reference, TypePeriode typePeriode, LocalDate dateDebutPeriode, LocalDate dateFinPeriode) throws ServiceException {
+	private void verifierChevauchementPeriode(Budget budget, LocalDate dateDebutPeriode, LocalDate dateFinPeriode) throws ServiceException {
 
+		Reference reference = budget.getReference();
+		
 		if ( rechercherDernierParReferenceId(reference.getId()) != null ) {
 
 			// Au moins un budget existe déjà
 			
 			// Vérification chevauchement avec une période antérieure
 			Budget budgetChevauchementDebut = rechercherParReferenceIdEtDateCible(reference.getId(), dateDebutPeriode); 
-			if ( budgetChevauchementDebut != null ) {
+			if ( budgetChevauchementDebut != null && !budgetChevauchementDebut.getId().equals(budget.getId())) {
 				throw new ServiceException(
 						BudgetFonctionnelleErreur.CHEVAUCHEMENT_PERIODE_PRECEDENTE, 
 						reference.getClass().getSimpleName(),
 						reference.getNom(),
 						budgetChevauchementDebut.getTypePeriode().getCode(),
 						budgetChevauchementDebut.getDateFin(),
-						typePeriode,
+						budget.getTypePeriode().getCode(),
 						dateDebutPeriode);
 			}
 			
 			// Vérification chevauchement avec une période postérieure
 			Budget budgetChevauchementFin = rechercherParReferenceIdEtDateCible(reference.getId(), dateFinPeriode);
-			if ( budgetChevauchementFin != null ) {
+			if ( budgetChevauchementFin != null && !budgetChevauchementFin.getId().equals(budget.getId()) ) {
 				throw new ServiceException(
 						BudgetFonctionnelleErreur.CHEVAUCHEMENT_PERIODE_SUIVANTE, 
 						reference.getClass().getSimpleName(),
 						reference.getNom(),
 						budgetChevauchementFin.getTypePeriode().getCode(),
 						budgetChevauchementFin.getDateDebut(),
-						typePeriode,
+						budget.getTypePeriode().getCode(),
 						dateFinPeriode);
 			}
 		}
 	}
+
 }

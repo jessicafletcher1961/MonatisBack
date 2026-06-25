@@ -6,7 +6,6 @@ import java.util.List;
 import fr.colline.monatis.rapports.model.composants.depense_recette.DepenseRecetteCategorieLigne;
 import fr.colline.monatis.rapports.model.composants.depense_recette.DepenseRecettePeriode;
 import fr.colline.monatis.references.model.Beneficiaire;
-import fr.colline.monatis.references.model.Categorie;
 import fr.colline.monatis.references.model.SousCategorie;
 import fr.colline.monatis.typologies.model.TypePeriode;
 
@@ -16,11 +15,10 @@ public class EtatDepenseRecette {
 	private LocalDate dateFinEtat;
 	private TypePeriode typePeriode;
 	private List<SousCategorie> sousCategories;
-	private List<Categorie> categories;
 	private Beneficiaire beneficiaire;
 	
 	private List<DepenseRecetteCategorieLigne> lignesCategorie;
-	private DepenseRecettePeriode[] cumuls;
+	private DepenseRecettePeriode[] cumulEtat;
 		
 	public LocalDate getDateDebutEtat() {
 		return dateDebutEtat;
@@ -54,14 +52,6 @@ public class EtatDepenseRecette {
 		this.sousCategories = sousCategories;
 	}
 
-	public List<Categorie> getCategories() {
-		return categories;
-	}
-
-	public void setCategories(List<Categorie> categories) {
-		this.categories = categories;
-	}
-
 	public Beneficiaire getBeneficiaire() {
 		return beneficiaire;
 	}
@@ -78,12 +68,12 @@ public class EtatDepenseRecette {
 		this.lignesCategorie = lignesCategorie;
 	}
 
-	public DepenseRecettePeriode[] getCumuls() {
-		return cumuls;
+	public DepenseRecettePeriode[] getCumulEtat() {
+		return cumulEtat;
 	}
 
-	public void setCumuls(DepenseRecettePeriode[] cumuls) {
-		this.cumuls = cumuls;
+	public void setCumulEtat(DepenseRecettePeriode[] periodes) {
+		this.cumulEtat = periodes;
 	}
 
 }

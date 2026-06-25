@@ -6,7 +6,7 @@ public class DepenseRecetteSousCategorieLigne {
 
 	private SousCategorie sousCategorie;
 	
-	private DepenseRecetteSousCategoriePeriode[] periodes;
+	private DepenseRecettePeriode[] cumulSousCategorie;
 
 	public SousCategorie getSousCategorie() {
 		return sousCategorie;
@@ -16,11 +16,11 @@ public class DepenseRecetteSousCategorieLigne {
 		this.sousCategorie = sousCategorie;
 	}
 
-	public DepenseRecetteSousCategoriePeriode[] getPeriodes() {
-		return periodes;
+	public DepenseRecettePeriode[] getCumulSousCategorie() {
+		return cumulSousCategorie;
 	}
 
-	public void setPeriodes(DepenseRecetteSousCategoriePeriode[] periodes) {
-		this.periodes = periodes;
+	public void setCumulSousCategorie(DepenseRecettePeriode[] periodes) {
+		this.cumulSousCategorie = periodes;
 	}
 }

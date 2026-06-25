@@ -8,14 +8,14 @@ import com.itextpdf.layout.element.Paragraph;
 import fr.colline.monatis.comptes.model.CompteInterne;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.rapports.RapportControleErreur;
-import fr.colline.monatis.rapports.model.ReleveOperationCompte;
+import fr.colline.monatis.rapports.model.ReleveCompte;
 import fr.colline.monatis.references.model.Banque;
 import fr.colline.monatis.references.model.Titulaire;
 import jakarta.servlet.ServletOutputStream;
 
 public class RapportResponsePdfMapper {
 
-	public static void mapperReleveCompteToPdf(ReleveOperationCompte releve, ServletOutputStream stream) throws ControllerException {
+	public static void mapperReleveCompteToPdf(ReleveCompte releve, ServletOutputStream stream) throws ControllerException {
 
 		try {
 			PdfWriter pdfWriter = new PdfWriter(stream);

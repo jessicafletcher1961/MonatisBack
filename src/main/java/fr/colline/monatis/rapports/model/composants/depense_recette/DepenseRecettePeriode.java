@@ -6,10 +6,10 @@ public class DepenseRecettePeriode {
 
 	private LocalDate dateDebutPeriode;
 	private LocalDate dateFinPeriode;
-	
 	private Long montantRecetteEnCentimes;
 	private Long montantDepenseEnCentimes;
 	private Long soldeDepenseRecetteEnCentimes;
+	private SuiviBudgetPeriode suiviBudget;
 
 	public LocalDate getDateDebutPeriode() {
 		return dateDebutPeriode;
@@ -49,6 +49,14 @@ public class DepenseRecettePeriode {
 
 	public void setSoldeDepenseRecetteEnCentimes(Long soldeDepenseRecetteEnCentimes) {
 		this.soldeDepenseRecetteEnCentimes = soldeDepenseRecetteEnCentimes;
+	}
+
+	public SuiviBudgetPeriode getSuiviBudget() {
+		return suiviBudget;
+	}
+
+	public void setSuiviBudget(SuiviBudgetPeriode suiviBudget) {
+		this.suiviBudget = suiviBudget;
 	}
 
 }

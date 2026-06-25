@@ -3,6 +3,8 @@ package fr.colline.monatis.operations.controller;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import org.springframework.data.domain.Page;
+
 import fr.colline.monatis.comptes.controller.CompteResponseDtoMapper;
 import fr.colline.monatis.exceptions.ControllerException;
 import fr.colline.monatis.operations.controller.response.OperationBasicResponseDto;
@@ -10,6 +12,7 @@ import fr.colline.monatis.operations.controller.response.OperationDetailedRespon
 import fr.colline.monatis.operations.controller.response.OperationLigneBasicResponseDto;
 import fr.colline.monatis.operations.controller.response.OperationLigneDetailedResponseDto;
 import fr.colline.monatis.operations.controller.response.OperationLigneSimpleResponseDto;
+import fr.colline.monatis.operations.controller.response.OperationPageResponseDto;
 import fr.colline.monatis.operations.controller.response.OperationResponseDto;
 import fr.colline.monatis.operations.controller.response.OperationSimpleResponseDto;
 import fr.colline.monatis.operations.model.Operation;
@@ -27,6 +30,7 @@ public class OperationResponseDtoMapper {
 		
 		dto.codeTypeOperation = operation.getTypeOperation().getCode();
 		dto.numero = operation.getNumero();
+		dto.dateCreation = operation.getDateCreation();
 		dto.dateValeur = operation.getDateValeur();
 		dto.montantEnCentimes = operation.getMontantEnCentimes();
 		dto.libelle = operation.getLibelle();
@@ -53,6 +57,7 @@ public class OperationResponseDtoMapper {
 		
 		dto.typeOperation = TypologieResponseDtoMapper.mapperModelToResponseDto(operation.getTypeOperation());
 		dto.numero = operation.getNumero();
+		dto.dateCreation = operation.getDateCreation();
 		dto.dateValeur = operation.getDateValeur();
 		dto.montantEnCentimes = operation.getMontantEnCentimes();
 		dto.libelle = operation.getLibelle();
@@ -79,6 +84,7 @@ public class OperationResponseDtoMapper {
 		
 		dto.typeOperation = TypologieResponseDtoMapper.mapperModelToResponseDto(operation.getTypeOperation());
 		dto.numero = operation.getNumero();
+		dto.dateCreation = operation.getDateCreation();
 		dto.dateValeur = operation.getDateValeur();
 		dto.montantEnCentimes = operation.getMontantEnCentimes();
 		dto.libelle = operation.getLibelle();
@@ -96,6 +102,24 @@ public class OperationResponseDtoMapper {
 			});
 		}
 
+		return dto;
+	}
+
+	public static OperationPageResponseDto mapperPageToResponseDto(Page<Operation> page) { // MODIFIE: ajoute les metadonnees de pagination.
+
+		OperationPageResponseDto dto = new OperationPageResponseDto();
+		
+		dto.operations = page.getContent()
+				.stream()
+				.map((o) -> {return OperationResponseDtoMapper.mapperModelToBasicResponseDto(o);})
+				.toList();
+		dto.numeroPage = page.getNumber() + 1;
+		dto.taillePage = page.getSize();
+		dto.totalOperations = page.getTotalElements();
+		dto.totalPages = page.getTotalPages();
+		dto.premierElement = page.getTotalElements() == 0 ? 0L : page.getNumber() * (long) page.getSize() + 1;
+		dto.dernierElement = page.getTotalElements() == 0 ? 0L : dto.premierElement + page.getNumberOfElements() - 1;
+		
 		return dto;
 	}
 
@@ -173,5 +197,4 @@ public class OperationResponseDtoMapper {
 
 		return dto;
 	}
-
 }

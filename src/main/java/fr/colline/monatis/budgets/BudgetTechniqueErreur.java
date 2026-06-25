@@ -78,6 +78,12 @@ public enum BudgetTechniqueErreur implements MonatisErreur {
 	EXISTENCE_PAR_IDENTIFIANT_FONCTIONNEL(
 			"Un problème technique est survenu lors de la vérification de l'existence du budget de clé '%s'"),
 
+	/**
+			"Un problème technique est survenu lors de la recherche des budgets correspondant à la référence d'ID %s pour la période du %s au %s"),
+	 */
+	RECHERCHE_PAR_REFERENCE_ID_ET_PERIODE(
+			"Un problème technique est survenu lors de la recherche des budgets correspondant à la référence d'ID %s pour la période du %s au %s"),
+
 	;
 
 	private final TypeDomaine typeDomaine = TypeDomaine.BUDGET;

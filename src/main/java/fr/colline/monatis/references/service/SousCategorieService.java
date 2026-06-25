@@ -31,7 +31,8 @@ public class SousCategorieService extends ReferenceService<SousCategorie> {
 		sousCategorie = super.controlerEtPreparerPourSuppression(sousCategorie);
 
 		verifierAbsenceDetailOperationAssocie(sousCategorie);
-
+		verifierAbsenceBudgetAssocie(sousCategorie);
+		
 		return sousCategorie;
 	}
 
@@ -54,6 +55,28 @@ public class SousCategorieService extends ReferenceService<SousCategorie> {
 					ReferenceFonctionnelleErreur.SUPPRESSION_SOUS_CATEGORIE_AVEC_OPERATION, 
 					sousCategorie.getNom(),
 					nombreDetailOperationAssocie);
+		}
+	}
+
+	private void verifierAbsenceBudgetAssocie(SousCategorie sousCategorie) throws ServiceException {
+
+		int nombreBudgetAssocie;
+		try {
+			nombreBudgetAssocie = sousCategorieRepository.compterBudgetParReferenceId(sousCategorie.getId());
+		}
+		catch ( Throwable t ) {
+			throw new ServiceException(
+					t,
+					ReferenceTechniqueErreur.COMPTAGE_USAGE_PAR_ID,
+					SousCategorie.class.getSimpleName(),
+					sousCategorie.getId());
+		}
+
+		if ( nombreBudgetAssocie > 0 ) {
+			throw new ServiceException(
+					ReferenceFonctionnelleErreur.SUPPRESSION_SOUS_CATEGORIE_AVEC_BUDGET, 
+					sousCategorie.getNom(),
+					nombreBudgetAssocie);
 		}
 	}
 

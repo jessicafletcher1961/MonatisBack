@@ -8,7 +8,8 @@ public class CompteTechniqueResponseDtoMapper {
 	public static CompteResponseDto mapperModelToBasicResponseDto(CompteTechnique compteTechnique) {
 
 		CompteTechniqueBasicResponseDto dto = new CompteTechniqueBasicResponseDto();
-		
+
+		dto.id = compteTechnique.getId();
 		dto.identifiant = compteTechnique.getIdentifiant();
 		dto.libelle = compteTechnique.getLibelle();
 		
@@ -19,6 +20,7 @@ public class CompteTechniqueResponseDtoMapper {
 
 		CompteTechniqueSimpleResponseDto dto = new CompteTechniqueSimpleResponseDto();
 		
+		dto.id = compteTechnique.getId();
 		dto.identifiant = compteTechnique.getIdentifiant();
 		dto.libelle = compteTechnique.getLibelle();
 
@@ -29,6 +31,7 @@ public class CompteTechniqueResponseDtoMapper {
 
 		CompteTechniqueDetailedResponseDto dto = new CompteTechniqueDetailedResponseDto();
 		
+		dto.id = compteTechnique.getId();
 		dto.identifiant = compteTechnique.getIdentifiant();
 		dto.libelle = compteTechnique.getLibelle();
 

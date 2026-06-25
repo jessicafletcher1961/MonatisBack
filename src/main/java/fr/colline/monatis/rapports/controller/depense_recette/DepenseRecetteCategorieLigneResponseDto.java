@@ -12,6 +12,6 @@ public class DepenseRecetteCategorieLigneResponseDto implements Serializable {
 	public CategorieResponseDto categorie;
 
 	public List<DepenseRecetteSousCategorieLigneResponseDto> lignesSousCategorie;
-	public DepenseRecetteCategoriePeriodeResponseDto[] cumuls;
+	public DepenseRecettePeriodeResponseDto[] cumulCategorie;
 
 }

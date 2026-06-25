@@ -65,7 +65,19 @@ public enum OperationTechniqueErreur implements MonatisErreur {
 	 */
 	RECHERCHE_OPERATION_PAR_COMPTE_ENTRE_DATE_DEBUT_ET_DATE_FIN(
 			"Un problème technique est survenu lors de la recherche des opérations du compte d'identifiant '%s' entre les dates %s et %s"),
-	
+
+	/**
+			"Un problème technique est survenu lors de la recherche paginées d'opérations filtrées sur un exemple de libelle"),
+	 */
+	RECHERCHE_OPERATION_PAR_EXEMPLE(
+			"Un problème technique est survenu lors de la recherche paginées d'opérations filtrées sur un exemple de libelle"),
+
+	/**
+			"Un problème technique est survenu lors de la recherche paginées d'opérations filtrées par critères"), 
+	 */
+	RECHERCHE_OPERATION_PAR_PAGE_FILTREES(
+			"Un problème technique est survenu lors de la recherche paginées d'opérations filtrées par critères"), 
+
 	/**
 			"Un problème technique est survenu lors de la recherche des opérations visibles"), 
 	 */
@@ -82,8 +94,8 @@ public enum OperationTechniqueErreur implements MonatisErreur {
 			"Un problème technique est survenu lors de la lecture du fichier '%s'"), 
 	 */
 	FICHIER_NON_LISIBLE(
-			"Un problème technique est survenu lors de la lecture du fichier '%s'"), 
-
+			"Un problème technique est survenu lors de la lecture du fichier '%s'"),
+	
 	;
 
 	private final TypeDomaine typeDomaine = TypeDomaine.OPERATION;
